@@ -1,8 +1,0 @@
-# Aurora startup configuration file
-Config:
-  RobotName: gr2t2v2 # specify the robot configuration to be used
-  RunType: 0 # 0 run simulator / 1 control real robot
-  UseJoyStick: true # use as default
-  DomainID: 123 # domain ID for dds communication
-  SerialNumber: "null" # if not "null", add prefix "RobotName/SerialNumber/"to the topic names
-

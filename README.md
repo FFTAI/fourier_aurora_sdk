@@ -9,16 +9,18 @@ If you are new to Aurora, please read the following documentation for basic unde
 
 For video introduction, please check the following link: [Video Introduction](https://pan.baidu.com/s/1Zcq6ZnGziW1BQBPGOnmG_A?pwd=upiv)
 
-## v1.1.0 Release 
+## v1.2.0 Release 
+
+Support Robots:
+- Fourier GR1
+- Fourier GR2
+- Fourier N1
 
 Prerequisites:
-
-- GR-2 robot. (support for other fourier robots will be added in the future)
 - Actuator version: 
     - Communication firmware version 0.3.12.31 or above.
     - Driver firmware version 0.2.10.30 or above.
     - NOTE: Actuator version can be upgraded using **FSA Assistant**. Click [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) to download the latest version.
-    - 
 - Submodule: 
     - Aurora base environment.
     - **fourier_dds** version 1.1.0 or above. 
@@ -38,7 +40,7 @@ Please follow the steps below to get started with controllers provided using joy
 You can start the container by running the following command in your terminal under the **root directory** of the repository:
 
 ```bash
-bash docker_run.bash
+(sudo) bash docker_run.bash
 ```
 
 NOTE: Please make sure that you have installed fourier-aurora and relative modules in the docker image as described in the [Installation Guide](./doc/EN/installation_EN.md).
