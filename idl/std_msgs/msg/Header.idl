@@ -1,0 +1,11 @@
+#include "std_msgs/msg/Time.idl" 
+module std_msgs { module msg { 
+ 
+struct Header { 
+    // timestamp .
+    std_msgs::msg::Time stamp; 
+    // a robot frame .
+    string frame_id; 
+}; 
+ 
+}; }; 

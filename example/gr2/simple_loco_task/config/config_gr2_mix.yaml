@@ -1,0 +1,118 @@
+
+SimpleLocoRLTask_Config:
+  dt: 0.02 # 时间步长
+  control_freq: 50 # 控制频率
+
+  robot_joint_num: 29 # 机器人关节数量
+  control_joint_num: 13 # 6+6+1 实际控制关节数量
+
+  default_pos: [
+    [-0.1309,  0.00,  0.00,   0.2618,   -0.1309,   0.00],
+    [-0.1309,  0.00,  0.00,   0.2618,   -0.1309,   0.00],
+    [0.00],
+    [0.00],
+    [0.00,  0.00,  0.00,  0.00,  0.00,  0.00],
+    [0.00,  0.00,  0.00,  0.00,  0.00,  0.00]
+  ]
+
+  kp_joint_space: [
+    [90, 180, 120, 90, 30, 60],
+    [90, 180, 120, 90, 30, 60],
+    [20],
+    [30, 30],
+    [45, 45, 25, 25, 10, 10, 10],
+    [45, 45, 25, 25, 10, 10, 10]
+  ]
+  kd_joint_space: [
+    [19, 10, 9, 19, 5, 3.5],
+    [19, 10, 9, 19, 5, 3.5],
+    [7.0],
+    [2.4, 2.4],
+    [4.5, 4.5, 2.5, 2.5, 0.1, 0.1, 0.1],
+    [4.5, 4.5, 2.5, 2.5, 0.1, 0.1, 0.1]
+  ] 
+
+
+SimpleLocoRLPolicy_Config:
+  policy_path: "policy/gr2_mix.pt"
+  obs_scales_lin_vel: 1.0 
+  obs_scales_ang_vel: 1.0
+  obs_scale_gravity: 1.0 
+  obs_scale_joint_pos: 1.0 
+  obs_scale_joint_vel: 0.1 
+  obs_scale_height_measurements: 5.0 
+  obs_scale_action: 1.0 
+  act_scale_action: [
+    2.0, 1.0, 1.0, 2.0, 2.0, 1.0,
+    2.0, 1.0, 1.0, 2.0, 2.0, 1.0,
+    1.0
+  ]
+
+  num_actor_obs: 52 
+  num_actor_hist: 5 
+
+  command_filter_cf: 0.5
+
+  command_safety_ratio: 0.9
+  command_vel_x_range: [-0.50, 0.75]
+  command_vel_y_range: [-0.50, 0.50]
+  command_vel_yaw_range: [-1.00, 1.00]
+
+
+  actor_output_max: [
+    2.6180, 1.5708, 1.5708, 2.3562, 0.7854, 0.38397,
+    2.6180, 0.5934, 0.6981, 2.3562, 0.7854, 0.38397,
+    2.6180
+  ]
+  actor_output_min: [
+    -2.6180, -0.5934, -0.6981, -0.0873, -0.7854, -0.38397,
+    -2.6180, -1.5708, -1.5708, -0.0873, -0.7854, -0.38397,
+    -2.6180
+  ]
+
+  actor_output_clip_margin_max: [
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
+    1.0
+  ]
+  actor_output_clip_margin_min: [    
+    -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+    -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
+    -1.0
+  ]
+
+
+Gait_Config:
+  num_legs: 2 # 腿数量
+  step_period: 0.9 # 步态周期
+  reference_speed: 0.5 # 参考速度
+
+  cycle_r_range: [0.001, 1.0]
+
+  coff_b: 1000.0
+  rate_xy: 10.0
+
+  Gait_pattern:
+    GAIT_PATTERN_OFF:
+      step_freq: 1.11
+      cycle_r: 0.001
+      coupling_change_rate: 2.0
+      amplitude_change_rate: 0.995
+      phase_offset_target: [0.0, 0.0]
+      contact_ratio: [0.5, 0.5]
+
+    GAIT_PATTERN_STAND:
+      step_freq: 1.11
+      cycle_r: 0.001
+      coupling_change_rate: 2.0
+      amplitude_change_rate: 0.995
+      phase_offset_target: [0.0, 0.0]
+      contact_ratio: [0.5, 0.5]
+
+    GAIT_PATTERN_WALK:
+      step_freq: 1.11
+      cycle_r: 1.0
+      coupling_change_rate: 4.0
+      amplitude_change_rate: 1.05
+      phase_offset_target: [0.0, -3.14159]
+      contact_ratio: [0.666, 0.666]
