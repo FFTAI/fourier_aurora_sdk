@@ -4,7 +4,7 @@ from fourier_aurora_client import AuroraClient
 if __name__ == "__main__":
 
     # Initialize client
-    client = AuroraClient.get_instance(domain_id=123, robot_name="gr2t2v2", serial_number=None)
+    client = AuroraClient.get_instance(domain_id=123, robot_name="PPWAVEV2", serial_number=None)
     time.sleep(1)
     
     # Use set_fsm_state() to switch FSM state. For state mapping please refer to the robot controller reference doc.

@@ -26,7 +26,7 @@ def move_joints(client, init_pos, target_pos, frequency, duration):
 if __name__ == "__main__":
 
     # Initialize client
-    client = AuroraClient.get_instance(domain_id=123, robot_name="gr2t2v2", serial_number=None)
+    client = AuroraClient.get_instance(domain_id=123, robot_name="PPWAVEV2", serial_number=None)
     time.sleep(1)
     
     """
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     target_pos = {
         "left_leg": [0, 0, 0, 0, 0, 0],
         "right_leg": [0, 0, 0, 0, 0, 0],
-        "waist": [0],
+        "waist": [0, 0, 0],
         "head": [0, 0],
         "left_manipulator": [0, 0, 0, 0, 0, 0, 0],
         "right_manipulator": [0, 0, 0, 0, 0, 0, 0],
