@@ -9,7 +9,8 @@ if __name__ == "__main__":
     
     # Use set_fsm_state() to switch FSM state. For state mapping please refer to the robot controller reference doc.
     cmd = input("Press Enter to switch to PdStand...")
-    client.set_fsm_state(2)
+    client.set_fsm_state(6)
+    client.set_velocity_source(2)
     time.sleep(1.0)
 
     # Use set_stand_pose() to set stand pose.
@@ -23,7 +24,7 @@ if __name__ == "__main__":
 
     # Use set_velocity_source() to set velocity command. For client velocity control, velocity source should be set to 2.
     cmd = input("Press Enter to enter walk task...")
-    client.set_fsm_state(3)
+    client.set_fsm_state(6)
     time.sleep(1.0)
     client.set_velocity_source(2)
 
@@ -41,6 +42,7 @@ if __name__ == "__main__":
     client.set_velocity(0.0, 0.0, 0.0)
     time.sleep(1.0)
 
+    client.set_velocity_source(0)
     client.close()
     print("User command test completed successfully.")
 
