@@ -4,36 +4,51 @@ This is the Python client for **Fourier Aurora** *(Advanced Unified Robot Operat
 
 If you are new to Aurora, please read the following documentation for basic understanding of the system:
 
-- [Aurora Introduction](./docs/EN/introduction_EN.md)
-- [Developer Guide](./docs/EN/developer_guide_EN.md)
+- [Aurora Introduction](../doc/EN/introduction_EN.md)
 
 ## Installation
 
-```python
+### Dependencies
+
+- Python >= 3.9
+
+For [demo_walk.py](../../../example/gr2/demo_walk.py) example, some extra dependencies are required:
+
+- numpy >= 2.0.0
+- torch >= 2.8.0
+- pygame == 2.6.1
+- ischedule == 1.2.7
+
+### Installing
+
+```bash
+sudo apt install python3-pip
 pip install fourier-aurora-client
 ```
 
-## Using the Client
+## Usage
 
-After running Aurora, start another terminal and enter the python environment where fourier-aurora-client is installed. Run the example.
+Under [example](../../../example) section, some client usage example is provided.
 
-```python
-cd examples
-python3 client_usage.py
-```
+### demo_client_usage.py
 
-After running the example, the terminal will display that the Aurora and Aurora client are successfully subscribed and published to each other, and the DDS communication is established.
+Avaliable for all robot types, goes through an example on setting Aurora's state and command.
 
-![图1](./images/matched.png)
+### demo_move_joints.py
 
-For more detailed usage tutorials and API documentation, please refer to:
-更为详尽的使用教程以及接口文档请参考:
+Avaliable for all robot types, goes through an example on setting upper body's joint angles.
 
-- [usage tutorials](./docs/CN/client_usage_tutorial_CN.md)
-- [API documentation](./docs/CN/client_CN.md)
+### demo_get_states.py
+
+Avaliable for all robot types, goes through an example on receiving aurora published states.
+
+### demo_walk.py
+
+Avaliable for GR2, goes through an example on applying locomotion policy on robot using user command task.
 
 ## Note
-If Aurora is running in a docker container and the client is run on the host machine, set the environment variable 
+
+If Aurora is running in a docker container and the client is run on the host machine, set the environment variable.
 
 ```python
 export FASTDDS_BUILTIN_TRANSPORTS=UDPv4

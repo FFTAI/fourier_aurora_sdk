@@ -26,7 +26,7 @@ def move_joints(client, init_pos, target_pos, frequency, duration):
 if __name__ == "__main__":
 
     # Initialize client
-    client = AuroraClient.get_instance(domain_id=123, robot_name="PPWAVEV2", serial_number=None)
+    client = AuroraClient.get_instance(domain_id=123, robot_name="gr3", serial_number=None)
     time.sleep(1)
     
     """
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     
     client.close()
-    print("User command test completed successfully.")
+    print("move joints demo completed successfully.")
 
 
 

@@ -42,5 +42,5 @@ if __name__ == "__main__":
     time.sleep(1.0)
 
     client.close()
-    print("User command test completed successfully.")
+    print("client usage demo completed successfully.")
 

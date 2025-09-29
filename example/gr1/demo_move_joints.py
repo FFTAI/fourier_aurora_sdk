@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     
     client.close()
-    print("User command test completed successfully.")
+    print("move joints demo completed successfully.")
 
 
 

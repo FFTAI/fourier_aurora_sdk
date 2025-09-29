@@ -44,5 +44,5 @@ if __name__ == "__main__":
 
     client.set_velocity_source(0)
     client.close()
-    print("User command test completed successfully.")
+    print("client usage demo completed successfully.")
 
