@@ -28,28 +28,34 @@ pip install fourier-aurora-client
 
 ## Usage
 
+### API
+
+For API specification of fourier aurora client , please refer to [API Documentation](./docs/EN/API_document.md)
+
+### Example
+
 Under [example](../../../example) section, some client usage example is provided.
 
-### demo_client_usage.py
+#### demo_client_usage.py
 
 Avaliable for all robot types, goes through an example on setting Aurora's state and command.
 
-### demo_move_joints.py
+#### demo_move_joints.py
 
 Avaliable for all robot types, goes through an example on setting upper body's joint angles.
 
-### demo_get_states.py
+#### demo_get_states.py
 
 Avaliable for all robot types, goes through an example on receiving aurora published states.
 
-### demo_walk.py
+#### demo_walk.py
 
 Avaliable for GR2, goes through an example on applying locomotion policy on robot using user command task.
 
-## Note
+### Note
 
 If Aurora is running in a docker container and the client is run on the host machine, set the environment variable.
 
-```python
+```bash
 export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
 ```

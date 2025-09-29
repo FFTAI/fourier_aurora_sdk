@@ -86,7 +86,6 @@ INPUTS:
 State name | Task name | Joystick mapping | DDS mapping | Description
 -----------|-----------|------------------|-------------|------------
 UserController_A | LowerBodyCpgRLTask UpperBodyStateManagerTask | RB+A | 3 | Straight Leg RL policy walking, receives external velocity commands(vx, vy, vyaw), supports external joint control commands for upper body joints(waist, arms, head and hands)
-<!-- UserController_B | LowerBodyWBCLowerTask UpperBodyStateManagerTask| LB+B | 4 | Agile RL policy walking, receives external velocity commands(vx, vy, vyaw) and stand pose adjustment including base height and pitch, supports external joint control commands for upper body joints(waist, arms, head and hands) -->
 
 ### LowerBodyCpgRLTask Specification
 
@@ -98,16 +97,6 @@ INPUTS:
   - Unit: m/s for vx and vy, radian/s for vyaw
   - Range: vx [-0.5, 0.75], vy [-0.5, 0.5], vyaw [-1.0, 1.0]
   - Reference: [Velocity commands](../aurora_dds_reference_EN.md#velocity-command)
-
-<!-- ### LowerBodyWBCLowerask Specification
-
-This task is used to control the lower body joints(hips, knees, and ankles) using policy, enabling the robot to walk. It is recommand to swtich to pd stand state first to ensure the robot is standing on a flat surface. Upon switching to LowerBodyWBCLowerask State, the robot will execute WBC Lower policy to control the lower body joints.
-
-INPUTS:
-
-- Velocity commands (vx, vy, vyaw).
-  - unit: m/s for vx and vy, radian/s for vyaw
-  - range: according to robot capability -->
 
 ### UpperBodyStateManagerTask Specification
 
