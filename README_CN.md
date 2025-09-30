@@ -13,15 +13,16 @@
 
 前提条件：
 
-- GR-2机器人(未来将支持其他Fourier机器人)
 - 执行器版本：
-    - 通讯固件版本0.3.12.31或以上
-    - 驱动固件版本0.2.10.30或以上
-    - 注意：执行器版本可通过**FSA助手**升级 -> [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) 
-    - Aurora基础环境
-    - **fourier_dds**版本1.1.0或以上
-    - **fourier_hardware**版本1.1.2或以上
-    - 注意：Aurora基础环境通过Docker镜像提供，**fourier_dds**和**fourier_hardware**可通过deb包安装升级
+  - 通信固件版本需 ≥ 0.3.12.31
+  - 驱动固件版本需 ≥ 0.2.10.30
+  - 注意：执行器版本可通过 **FSA Assistant** 升级。点击 [Linux 版 FSA Assistant](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) 下载最新版
+
+- 子模块：
+  - Aurora 基础环境
+  - **fourier_dds** 版本 ≥ 1.1.0
+  - **fourier_hardware** 版本 ≥ 1.1.2
+  - 注意：Aurora 基础环境已包含在 docker 镜像中，**fourier_dds** 和 **fourier_hardware** 可通过 deb 包安装和升级
 
 ## 安装
 
@@ -70,15 +71,15 @@ python3 sim/start_simulate_root.py
 - 网络通信正常(所有执行器IP可ping通)
 - 机器人处于中立悬挂状态
 
-### 启动Aurora
+### 启动 Aurora
 
-完成准备后，根据需要调整仓库中的配置文件`config/config.yaml`。请确保`RunType`字段正确设置为模拟器或真实机器人使用。
-
-在终端运行以下命令启动Aurora：
-
-```bash
-AuroraCore --config config/config.yaml
+在终端运行以下命令启动 Aurora：
 ```
+AuroraCore --name gr2 --type 0
+```
+
+其中，`--name` 指 Aurora 的机器人名称，可用名称包括：*gr1*、*gr2*、*gr3*。
+`--type` 指运行模式，*0* 为仿真模式，*1* 为实机模式。
 
 如果程序运行成功，终端将显示以下信息：
 
@@ -90,9 +91,7 @@ AuroraCore --config config/config.yaml
 
 ### 使用摇杆控制机器人
 
-现在可以使用摇杆控制机器人。请参考[摇杆教程](./doc/CN/joystick_tutorial_CN.md)了解摇杆使用方法。
-
-各状态和控制器的描述请参考[控制器参考](./doc/CN/robot_controller_reference_CN.md)。
+现在可以使用摇杆控制机器人。请参考[摇杆教程](./doc/CN/joystick_tutorial_CN.md)了解摇杆使用方法。。
 
 ## 问题反馈
 

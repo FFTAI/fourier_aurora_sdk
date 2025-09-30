@@ -9,23 +9,24 @@ If you are new to Aurora, please read the following documentation for basic unde
 
 For video introduction, please check the following link: [Video Introduction](https://pan.baidu.com/s/1Zcq6ZnGziW1BQBPGOnmG_A?pwd=upiv)
 
-## v1.2.0 Release 
+## v1.2.0 Release
 
 Support Robots:
+
 - Fourier GR-1
 - Fourier GR-2
 - Fourier GR-3
 
 Prerequisites:
-- Actuator version: 
-    - Communication firmware version 0.3.12.31 or above.
-    - Driver firmware version 0.2.10.30 or above.
-    - NOTE: Actuator version can be upgraded using **FSA Assistant**. Click [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) to download the latest version.
+- Actuator version:
+  - Communication firmware version 0.3.12.31 or above.
+  - Driver firmware version 0.2.10.30 or above.
+  - NOTE: Actuator version can be upgraded using **FSA Assistant**. Click [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) to download the latest version.
 - Submodule: 
-    - Aurora base environment.
-    - **fourier_dds** version 1.1.0 or above. 
-    - **fourier_hardware** version 1.1.2 or above.
-    - NOTE: aurora base environment is provided in the docker image. **fourier_dds** and **fourier_hardware** can be installed and upgraded using deb packages.
+  - Aurora base environment.
+  - **fourier_dds** version 1.1.0 or above. 
+  - **fourier_hardware** version 1.1.2 or above.
+  - NOTE: aurora base environment is provided in the docker image. **fourier_dds** and **fourier_hardware** can be installed and upgraded using deb packages.
 
 ## Installation
 
@@ -76,13 +77,15 @@ To control the real robot, please make sure that the following prerequisites are
 
 ### Starting Aurora
 
-After the preparation, adjust the configuration file `config/config.yaml` in this repository according to your needs. Please make sure `RunType` field is set correctly for simulation or real robot usage.
-
-To start Aurora, simply run the following command in the terminal:
+To start Aurora, run the following command in the terminal:
 
 ```bash
-AuroraCore --config config/config.yaml
+AuroraCore --name gr2 --type 0
 ```
+
+Here, `--name` refers to the robot name for Aurora. Avaliable robot names are: *gr1*, *gr2*, *gr3*.
+`--type` refers to run type for Aurora, *0* for run on simulator, *1* for run on real robot.
+
 The following message will appear in the terminal if the program is running successfully:
 
 ```bash
@@ -94,8 +97,6 @@ This message indicates that the self-check is passed(real robot) and the Aurora 
 ### Using joystick to Control the Robot
 
 Now you can use the joystick to control the robot. Please refer to the [Joystick Tutorial](./doc/EN/joystick_tutorial_EN.md) for joystick usage.
-
-Descriptions of the states and controllers can be found in [Controller Reference](./doc/EN/robot_controller_reference_EN.md).
 
 ## Issues
 
