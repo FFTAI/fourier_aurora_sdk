@@ -8,7 +8,7 @@ Aurora provides a set of controllers that can be used to control the robot's mot
 
 Aurora runs a FSM state machine and each state corresponds to certain tasks(controllers). You can switch between these states using the joystick or by sending commands through the DDS interface. Every task has its own inputs and outputs. You can use **joystick** or **DDS** to interact with the tasks.
 
-Descriptions of the states and controllers for each robot type can be found in [GR1 Controller Reference](./gr1/robot_controller_reference_EN.md), [GR2 Controller Reference](./gr2/robot_controller_reference_EN.md) and [N1 Controller Reference](./n1/robot_controller_reference_EN.md).
+Descriptions of the states and controllers for each robot type can be found in [GR-1 Controller Reference](./gr1/robot_controller_reference_EN.md), [GR-2 Controller Reference](./gr2/robot_controller_reference_EN.md) and [GR-3 Controller Reference](./gr3/robot_controller_reference_EN.md).
 
 ### Joystick Control
 
@@ -16,7 +16,7 @@ Joystick provides limited inputs to Aurora, including state change, velocity con
 
 ### DDS Control
 
-DDS (Data Distribution Service) is a communication protocol that allows Aurora to communicate with other programs or devices. DDS provides a flexible and efficient way to change Aurora's states. And it can be used to control Aurora's motion, as well as to get information from Aurora, such as its current state, joint angles, and sensor readings.
+DDS (Data Distribution Service) is a communication protocol that allows Aurora to communicate with other programs or devices. DDS provides a flexible and efficient way to change Aurora's states. And it can be used to control Aurora's motion, as well as to get information from Aurora, such as its current state, joint angles, and sensor readings. For detail on dds usage in Aurora, please refer to [aurora dds reference](./aurora_dds_reference_EN.md).
 
 #### Python DDS Interface
 

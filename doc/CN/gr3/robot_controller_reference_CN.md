@@ -1,8 +1,8 @@
-# GR-2 机器人控制器参考
+# GR-3 机器人控制器参考
 
 这是 fourier-aurora 和扩展包中提供的控制器参考。控制器在 FSM 状态机中以 **任务（Task）** 的形式提供。Aurora 运行一个 FSM 状态机，每个状态对应某些任务（控制器）。你可以使用手柄或通过 DDS 接口发送指令在这些状态之间切换。每个任务都有其输入和输出。
 
-Aurora 提供了一组可用于控制机器人运动的控制器。一些通用控制器在 `fourier-aurora` 包中提供，而其他控制器则根据机器人配置在扩展包中提供。对于 GR-2 机器人，请使用 `fourier-aurora-gr2`。
+Aurora 提供了一组可用于控制机器人运动的控制器。一些通用控制器在 `fourier-aurora` 包中提供，而其他控制器则根据机器人配置在扩展包中提供。对于 GR-3 机器人，请使用 `fourier-aurora-gr3`。
 
 关于 DDS 使用，请参阅 [DDS 接口参考](../aurora_dds_reference_CN.md)。
 
@@ -81,11 +81,11 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
   - 范围：-
   - 参考：[机器人电机配置指令](../aurora_dds_reference_CN.md#机器人电机配置指令)
 
-## GR-2 控制器
+## GR-3 控制器
 
 状态名 | 任务名 | 手柄映射 | DDS 映射 | 描述
 -------|---------|----------|----------|-----
-UserController_A | LowerBodyCpgRLTask UpperBodyStateManagerTask | RB+A | 3 | 直腿 RL 策略行走，接收外部速度指令 (vx, vy, vyaw)，支持上半身关节（腰部、手臂、头部和手）的外部关节控制指令
+UserController_A | LowerBodyWBCLowerTask UpperBodyStateManagerTask | RB+A | 3 | WBC RL 策略行走，接收外部速度指令 (vx, vy, vyaw)，支持上半身关节（腰部、手臂、头部和手）的外部关节控制指令
 
 ### LowerBodyCpgRLTask 任务规范
 
@@ -95,12 +95,27 @@ UserController_A | LowerBodyCpgRLTask UpperBodyStateManagerTask | RB+A | 3 | 直
 
 - 速度指令 (vx, vy, vyaw)。
   - 单位：vx 和 vy 为 m/s，vyaw 为弧度/秒
-  - 范围：vx [-0.5, 0.75], vy [-0.5, 0.5], vyaw [-1.0, 1.0]
+  - 范围：vx [-1.0, 1.0], vy [-1.0, 1.0], vyaw [-1.0, 1.0]
+  - 速度指令采用归一化的无量纲输入。速度指令将映射为：vx: [-1.0, 1.0], vy: [-0.4, 0.4], vyaw: [-0.6, 0.6]
   - 参考：[速度指令](../aurora_dds_reference_CN.md#速度指令)
+
+- 基座高度和俯仰指令（以相对初始姿态的增量形式表示）。
+  - 单位：高度为米 (meter)，俯仰为弧度 (radian)
+  - 范围 (gr3)：delta_z [-0.4, 0.04]，delta_pitch [-0.3, 0.5]
+  - 注意：仅在机器人处于站立状态时生效。
+  - 参考：[机器人站立位姿状态](../aurora_dds_reference_CN.md#机器人站立位姿状态)
+
+**输出:**
+
+- 基座高度和俯仰状态（以相对初始姿态的增量形式表示）。
+  - 单位：高度为米 (meter)，俯仰为弧度 (radian)
+  - 范围：delta_z [-0.4, 0.04]，delta_pitch [-0.3, 0.5]
+  - 注意：仅在机器人处于站立状态时生效。
+  - 参考：[机器人站立位姿状态](../aurora_dds_reference_CN.md#机器人站立位姿状态)
 
 ### UpperBodyStateManagerTask 任务规范
 
-此任务用于管理上半身关节（腰部、手臂和头部）。通常与下半身控制器配合使用。切换到 UpperBodyStateManagerTask 状态后，机器人将执行一个状态机来管理上半身关节。初始状态为 "default"。用户可以切换到其他状态以使手臂摆动，或接收上半身关节（腰部、手臂和头部）的外部关节控制指令。**现在建议使用 PdStand 来进行稳定的上半身控制。**
+此任务用于管理上半身关节（腰部、手臂和头部）。通常与下半身控制器配合使用。切换到 UpperBodyStateManagerTask 状态后，机器人将执行一个状态机来管理上半身关节。初始状态为 "default"。用户可以切换到其他状态以使手臂摆动，或接收上半身关节（腰部、手臂和头部）的外部关节控制指令。
 
 **输入：**
 

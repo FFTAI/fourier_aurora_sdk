@@ -8,7 +8,7 @@ Aurora提供了一系列可用于控制机器人运动的控制器。一些通�
 
 Aurora运行一个FSM状态机，每个状态对应特定的任务(控制器)。您可以通过摇杆或DDS接口发送命令在这些状态之间切换。每个任务都有自己的输入和输出。您可以使用**摇杆**或**DDS**与任务交互。
 
-状态和控制器的描述请参考[控制器参考](./robot_controller_reference_CN.md)。
+各机型的状态和控制器的描述请参考[GR-1机器人控制器参考](./gr1/robot_controller_reference_CN.md), [GR-2机器人控制器参考](./gr2/robot_controller_reference_CN.md)和[GR-3机器人控制器参考](./gr3/robot_controller_reference_CN.md)。
 
 ### 摇杆控制
 

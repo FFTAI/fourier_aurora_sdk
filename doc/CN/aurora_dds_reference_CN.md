@@ -5,11 +5,11 @@
 
 注意：在 Aurora 启动配置中，如果 SerialNumber 不是 "null"，则在所有主题（topic）名称前添加前缀 `RobotName/SerialNumber/`。
 
-## Aurora 公共发布者（Publisher）与订阅者（Subscriber）参考
+## Aurora 公共发布者与订阅者参考
 
-### 公共发布者（Public Publisher）
+### 公共发布者
 
-#### Aurora 状态（Aurora State）
+#### Aurora 状态
 
 **主题名称（Topic Name）：** `aurora_state`  
 **类型名称（Type Name）：** `fourier_msgs::msg::AuroraState`  
@@ -28,7 +28,7 @@ struct AuroraState {
 };
 ```
 
-#### 基础数据（Base Data）
+#### 基础数据
 
 **主题名称：** `base_data_pub`  
 **类型名称：** `fourier_msgs::msg::BaseData`  
@@ -53,7 +53,7 @@ struct BaseData {
 };
 ```
 
-#### 接触数据（Contact Data）
+#### 接触数据
 
 **主题名称：** `contact_data_pub`  
 **类型名称：** `fourier_msgs::msg::ContactData`  
@@ -70,7 +70,7 @@ struct ContactData {
 };
 ```
 
-#### 机器人关节组状态（Robot Control Group State）
+#### 机器人关节组状态
 
 **主题名称：** `robot_control_group_state`  
 **类型名称：** `fourier_msgs::msg::RobotControlGroupState`  
@@ -99,7 +99,7 @@ struct ControlGroupState {
 };
 ```
 
-#### 机器人笛卡尔（末端）状态（Robot Cartesian State）
+#### 机器人笛卡尔（末端）状态
 
 **主题名称：** `robot_cartesian_state`  
 **类型名称：** `fourier_msgs::msg::RobotCartesianState`  
@@ -126,7 +126,7 @@ struct CartesianState {
 };
 ```
 
-#### 机器人站立位姿状态（Robot Stand Pose State）
+#### 机器人站立位姿状态
 
 **主题名称：** `robot_stand_pose_state`  
 **类型名称：** `fourier_msgs::msg::RobotStandPoseState`  
@@ -145,9 +145,9 @@ struct RobotStandPoseState {     // RobotStand 状态
 };
 ```
 
-### 公共订阅者（Public Subscriber）
+### 公共订阅者
 
-#### 全身 FSM 状态切换指令（Whole Body FSM State Change Command）
+#### 全身FSM状态切换指令
 
 **主题名称：** `whole_body_fsm_state_change_cmd`  
 **类型名称：** `fourier_msgs::msg::WholeBodyFsmStateChangeCmd`  
@@ -163,7 +163,7 @@ struct WholeBodyFsmStateChangeCmd {
 };
 ```
 
-#### 上身 FSM 状态切换指令（Upper Body FSM State Change Command）
+#### 上身FSM状态切换指令
 
 **主题名称：** `upper_body_fsm_state_change_cmd`  
 **类型名称：** `fourier_msgs::msg::UpperBodyFsmStateChangeCmd`  
@@ -179,7 +179,7 @@ struct UpperBodyFsmStateChangeCmd {
 };
 ```
 
-#### 速度来源指令（Velocity Source Command）
+#### 速度来源指令
 
 **主题名称：** `velocity_source_cmd`  
 **类型名称：** `fourier_msgs::msg::VelocitySourceCmd`  
@@ -195,7 +195,7 @@ struct VelocitySourceCmd {
 };
 ```
 
-#### 速度指令（Velocity Command）
+#### 速度指令
 
 **主题名称：** `velocity_cmd`  
 **类型名称：** `fourier_msgs::msg::VelocityCmd`  
@@ -213,7 +213,7 @@ struct VelocityCmd {
 };
 ```
 
-#### 机器人控制组指令（Robot Control Group Command）
+#### 机器人控制组指令
 
 **主题名称：** `robot_control_group_cmd`  
 **类型名称：** `fourier_msgs::msg::RobotControlGroupCmd`  
@@ -240,7 +240,7 @@ struct RobotControlGroupCmd {
 };
 ```
 
-#### 机器人电机配置指令（Robot Motor Config Group Command）
+#### 机器人电机配置指令
 
 **主题名称：** `robot_motor_cfg_group_cmd`  
 **类型名称：** `fourier_msgs::msg::RobotMotorCfgGroupCmd`  
@@ -263,7 +263,7 @@ struct MotorCfgGroupCmd {
 };
 ```
 
-#### 机器人站立位姿指令（Robot Stand Pose Command）
+#### 机器人站立位姿指令
 
 **主题名称：** `robot_stand_pose_cmd`  
 **类型名称：** `fourier_msgs::msg::RobotStandPoseState`  

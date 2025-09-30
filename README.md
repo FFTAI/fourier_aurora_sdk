@@ -12,9 +12,9 @@ For video introduction, please check the following link: [Video Introduction](ht
 ## v1.2.0 Release 
 
 Support Robots:
-- Fourier GR1
-- Fourier GR2
-- Fourier N1
+- Fourier GR-1
+- Fourier GR-2
+- Fourier GR-3
 
 Prerequisites:
 - Actuator version: 

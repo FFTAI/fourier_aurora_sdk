@@ -1,10 +1,10 @@
-# GR2 Robot Specs
+# GR-2 参数
 
-## Joint Limits
+## 关节限位
 
-Joint Limits extracted from the original GR2 urdf file.
+根据GR-2正式版URDF文件提取出的关节限位。
 
-| Index | Joint Name                 | Group Name        | Upper Limit (rad) | Lower Limit (rad) | Velocity Limit (rad/s) | Torque Limit (Nm) |
+| 序号 | 序号关节名称                 | 控制组名称        | 位置上限 (rad) | 位置下限 (rad) | 速度上限 (rad/s) | 扭矩上线 (Nm) |
 |-------|----------------------------|-------------------|-------------------|-------------------|------------------------|-------------------|
 | 0     | left_hip_pitch_joint       | left_leg          | 2.618             | -2.618            | 6.4997                 | 366.05            |
 | 1     | left_hip_roll_joint        | left_leg          | 1.5708            | -0.59341          | 12.362                 | 95.472            |

@@ -1,8 +1,8 @@
-# GR1 Robot Specs
+# GR-1 Robot Specs
 
 ## Joint Limits
 
-Joint Limits extracted from the updated GR1 urdf file.
+Joint Limits extracted from the updated GR-1 urdf file.
 
 | Index | Joint Name                 | Group Name        | Upper Limit (rad) | Lower Limit (rad) | Velocity Limit (rad/s) | Torque Limit (Nm) |
 |-------|----------------------------|-------------------|-------------------|-------------------|------------------------|-------------------|

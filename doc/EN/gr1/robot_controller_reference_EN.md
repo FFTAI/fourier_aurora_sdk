@@ -1,4 +1,4 @@
-# GR2 Robot Controller Reference
+# GR-1 Robot Controller Reference
 
 This is the reference for controllers provided in the fourier-aurora and expansion packages. Controllers are provided as **Tasks** in FSM States. Aurora runs a FSM state machine and each state corresponds to certain tasks(controllers). You can switch between these states using the joystick or by sending commands through the DDS interface. Every task has its own inputs and outputs.
 
@@ -81,7 +81,7 @@ INPUTS:
   - Range: -
   - Reference: [Robot Motor Config Group Command](../aurora_dds_reference_EN.md#robot-motor-config-group-command)
 
-## GR-2 Controllers
+## GR-1 Controllers
 
 State name | Task name | Joystick mapping | DDS mapping | Description
 -----------|-----------|------------------|-------------|------------

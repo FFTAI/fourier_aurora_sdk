@@ -1,10 +1,10 @@
-# GR1 Robot Specs
+# GR-1 参数
 
-## Joint Limits
+## 关节限位
 
-Joint Limits extracted from the updated GR1 urdf file.
+根据GR-1正式版URDF文件提取出的关节限位。
 
-| Index | Joint Name                 | Group Name        | Upper Limit (rad) | Lower Limit (rad) | Velocity Limit (rad/s) | Torque Limit (Nm) |
+| 序号 | 序号关节名称                 | 控制组名称        | 位置上限 (rad) | 位置下限 (rad) | 速度上限 (rad/s) | 扭矩上线 (Nm) |
 |-------|----------------------------|-------------------|-------------------|-------------------|------------------------|-------------------|
 | 0     | left_hip_roll_joint        | left_leg          | 0.79              | -0.09             | 7.64                   | 84.18             |
 | 1     | left_hip_yaw_joint         | left_leg          | 0.70              | -0.70             | 9.80                   | 65.00             |

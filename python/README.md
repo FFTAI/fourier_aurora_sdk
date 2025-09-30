@@ -50,7 +50,7 @@ Avaliable for all robot types, goes through an example on receiving aurora publi
 
 #### demo_walk.py
 
-Avaliable for GR2, goes through an example on applying locomotion policy on robot using user command task.
+Avaliable for GR-2, goes through an example on applying locomotion policy on robot using user command task.
 
 ### Note
 

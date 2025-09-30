@@ -1,8 +1,8 @@
-# GR-2 机器人控制器参考
+# GR-1 机器人控制器参考
 
 这是 fourier-aurora 和扩展包中提供的控制器参考。控制器在 FSM 状态机中以 **任务（Task）** 的形式提供。Aurora 运行一个 FSM 状态机，每个状态对应某些任务（控制器）。你可以使用手柄或通过 DDS 接口发送指令在这些状态之间切换。每个任务都有其输入和输出。
 
-Aurora 提供了一组可用于控制机器人运动的控制器。一些通用控制器在 `fourier-aurora` 包中提供，而其他控制器则根据机器人配置在扩展包中提供。对于 GR-2 机器人，请使用 `fourier-aurora-gr2`。
+Aurora 提供了一组可用于控制机器人运动的控制器。一些通用控制器在 `fourier-aurora` 包中提供，而其他控制器则根据机器人配置在扩展包中提供。对于 GR-1 机器人，请使用 `fourier-aurora-gr1`。
 
 关于 DDS 使用，请参阅 [DDS 接口参考](../aurora_dds_reference_CN.md)。
 
@@ -31,7 +31,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
 
 - 基座高度、俯仰和偏航的相对增量指令（相对于初始姿态）。
   - 单位：高度为米，俯仰和偏航为弧度
-  - 范围（gr2）：delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
+  - 范围（gr2）：delta_z [-0.2, 0.02], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
   - 注意：仅在机器人处于站立状态时生效。
   - 参考：[机器人站立位姿指令](../aurora_dds_reference_CN.md#机器人站立位姿指令)
 
@@ -39,7 +39,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
 
 - 基座高度、俯仰和偏航的相对状态（相对于初始姿态）。
   - 单位：高度为米，俯仰和偏航为弧度
-  - 范围：delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
+  - 范围：delta_z [-0.2, 0.02], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
   - 注意：仅在机器人处于站立状态时生效。
   - 参考：[机器人站立位姿状态](../aurora_dds_reference_CN.md#机器人站立位姿状态)
 
@@ -81,7 +81,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
   - 范围：-
   - 参考：[机器人电机配置指令](../aurora_dds_reference_CN.md#机器人电机配置指令)
 
-## GR-2 控制器
+## GR-1 控制器
 
 状态名 | 任务名 | 手柄映射 | DDS 映射 | 描述
 -------|---------|----------|----------|-----
@@ -95,7 +95,7 @@ UserController_A | LowerBodyCpgRLTask UpperBodyStateManagerTask | RB+A | 3 | 直
 
 - 速度指令 (vx, vy, vyaw)。
   - 单位：vx 和 vy 为 m/s，vyaw 为弧度/秒
-  - 范围：vx [-0.5, 0.75], vy [-0.5, 0.5], vyaw [-1.0, 1.0]
+  - 范围：vx [-0.4, 0.5], vy [-0.3, 0.3], vyaw [-0.8, 0.8]
   - 参考：[速度指令](../aurora_dds_reference_CN.md#速度指令)
 
 ### UpperBodyStateManagerTask 任务规范
