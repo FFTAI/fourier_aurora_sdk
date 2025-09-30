@@ -1,42 +1,62 @@
 # fourier_aurora_client
 
-这是 **Fourier Aurora** *(高级统一机器人操作与资源架构)* 的Python客户端。它允许您与Aurora API交互，以获取数据和在Aurora平台上执行操作。
+这是 **Fourier Aurora** （*高级统一机器人操作与资源架构*）的 Python 客户端。  
+它允许你与 Aurora API 交互，以获取数据并在 Aurora 平台上执行操作。
 
-如果您是Aurora的新手，请阅读以下文档，了解系统的基本概念：
+如果你是第一次接触 Aurora，请先阅读以下文档以获得对系统的基本理解：
 
-- [Aurora介绍](./doc/CN/introduction_CN.md)
-- [开发者指南](./doc/CN/developer_guide_CN.md)
+- [Aurora 简介](../doc/CN/introduction_CN.md)
 
 ## 安装
 
-```python
+### 依赖项
+
+- Python >= 3.9
+
+对于 [demo_walk.py](../example/gr2/demo_walk.py) 示例，还需要一些额外依赖：
+
+- numpy >= 2.0.0
+- torch >= 2.8.0
+- pygame == 2.6.1
+- ischedule == 1.2.7
+
+### 安装方式
+
+```bash
+sudo apt install python3-pip
 pip install fourier-aurora-client
 ```
 
-## 使用客户端
+## 使用方法
 
-在成功运行Aurora之后，打开另一个终端，进入安装了fourier-aurora-client的Python环境。运行示例。
+### API
 
-```python
-cd examples
-python3 client_usage.py
-```
+关于 fourier aurora client 的 API 规范，请参阅 [API 文档](./docs/CN/API_document_CN.md)。
 
-运行示例后，终端显示Aurora与Aurora客户端的订阅和发布互相匹配，DDS通讯成功建立。
+### 示例
 
-![图1](./images/matched.png)
+在 [example](../example) 目录下，提供了一些客户端使用示例。
 
+#### demo_client_usage.py
 
+适用于所有机型，演示如何设置 Aurora 的状态和指令。
 
-更为详尽的使用教程以及接口文档请参考:
+#### demo_move_joints.py
 
-- [客户端使用教程](./docs/CN/client_usage_tutorial_CN.md)
-- [接口文档](./docs/CN/client_CN.md)
+适用于所有机型，演示如何设置上半身的关节角度。
 
+#### demo_get_states.py
 
-## 注意事项
-如果Aurora是在docker环境下运行，Aurora client是在宿主机下运行，请运行以下命令设置环境变量：
+适用于所有机型，演示如何接收 Aurora 发布的状态。
 
-```python
+#### demo_walk.py
+
+适用于 GR-2，演示如何在机器人上通过UserCmd任务应用行走策略。
+
+### 注意事项
+
+如果 Aurora 运行在 docker 容器中，而客户端在宿主机上运行，请设置以下环境变量：
+
+```bash
 export FASTDDS_BUILTIN_TRANSPORTS=UDPv4
 ```

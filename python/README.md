@@ -12,7 +12,7 @@ If you are new to Aurora, please read the following documentation for basic unde
 
 - Python >= 3.9
 
-For [demo_walk.py](../../../example/gr2/demo_walk.py) example, some extra dependencies are required:
+For [demo_walk.py](../example/gr2/demo_walk.py) example, some extra dependencies are required:
 
 - numpy >= 2.0.0
 - torch >= 2.8.0
@@ -30,11 +30,11 @@ pip install fourier-aurora-client
 
 ### API
 
-For API specification of fourier aurora client , please refer to [API Documentation](./docs/EN/API_document.md)
+For API specification of fourier aurora client , please refer to [API Documentation](./docs/EN/API_document_EN.md)
 
 ### Example
 
-Under [example](../../../example) section, some client usage example is provided.
+Under [example](../example) section, some client usage example is provided.
 
 #### demo_client_usage.py
 
