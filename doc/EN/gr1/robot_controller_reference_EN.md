@@ -6,6 +6,8 @@ Aurora provides a set of controllers that can be used to control the robot's mot
 
 For DDS reference, please refer to [DDS Interface Reference](../aurora_dds_reference_EN.md).
 
+For GR-1 joint limits, please refer to [GR-1 Specs](./robot_specs_EN.md).
+
 ## Universal Controllers
 
 State name | Task name | Joystick mapping | DDS mapping | Description

@@ -6,6 +6,8 @@ Aurora 提供了一组可用于控制机器人运动的控制器。一些通用�
 
 关于 DDS 使用，请参阅 [DDS 接口参考](../aurora_dds_reference_CN.md)。
 
+关于GR-1关节限制，请参阅 [GR-1 参数](./robot_specs_CN.md)。
+
 ## 通用控制器
 
 状态名 | 任务名 | 手柄映射 | DDS 映射 | 描述

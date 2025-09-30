@@ -18,6 +18,7 @@ Support Robots:
 - Fourier GR-3
 
 Prerequisites:
+
 - Actuator version:
   - Communication firmware version 0.3.12.31 or above.
   - Driver firmware version 0.2.10.30 or above.
