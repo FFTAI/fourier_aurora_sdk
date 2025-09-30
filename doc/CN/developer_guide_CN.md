@@ -22,10 +22,6 @@ DDS(数据分发服务)是一种通信协议，允许Aurora与其他程序或设
 
 Aurora提供了一个Python DDS客户端，允许您使用DDS与Aurora发送和接收数据。更多信息请参考`python`目录。
 
-#### C++ DDS接口
-
-对于C++开发者，目前Aurora中没有提供C++ DDS客户端。但是，您可以使用提供的C++ fourierdds接口编写发布者和订阅者来与Aurora交互。更多信息请参考`example/gr2/dds_comm_task`目录。
-
 ## 在Aurora中编写自定义控制器
 
 要在Aurora中编写自定义控制器，请参阅[任务教程](../../doc/CN/task_tutorial_CN.md)获取更多信息。

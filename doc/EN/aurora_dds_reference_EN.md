@@ -185,7 +185,7 @@ struct UpperBodyFsmStateChangeCmd {
 **Locate in:** `AuroraCmd.idl`  
 **Available task:** all tasks
 
-Receives commands to set the source of velocity commands for the robot, allowing dynamic switching between joystick, handheld, or navigation sources.
+Receives commands to set the source of velocity commands for the robot, allowing dynamic switching between joystick, handheld, or navigation sources. For DDS control, please set velocity source command to 2 (navigation).
 
 ```idl
 struct VelocitySourceCmd {
