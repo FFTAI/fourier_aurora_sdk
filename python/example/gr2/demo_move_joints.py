@@ -38,9 +38,8 @@ if __name__ == "__main__":
     # Here's and example on how to use AuroraClient to move the joints of a robot.
     cmd = input("Press Enter to start the joint position demo...") 
     print("switching to PdStand...")
-    client.set_fsm_state(6)
+    client.set_fsm_state(2)
     time.sleep(1.0)
-    client.set_upper_fsm_state(2)
 
     cmd = input("Press Enter to start left manipulator movement...") 
     left_manipulator_init_pose = client.get_group_state("left_manipulator")

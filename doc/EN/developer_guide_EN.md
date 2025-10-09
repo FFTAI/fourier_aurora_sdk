@@ -2,10 +2,6 @@
 
 This guide is intended for developers who want to use Fourier Aurora SDK for their own applications on Fourier robots. It provides information on how you can use the SDK based on your project's needs.
 
-## Using the Controllers Provided in Packages
-
-Aurora provides a set of controllers that can be used to control the robot's motion. Some universal controllers are provided in the `fourier-aurora` package, while others are provided in the expansion packages according to the robot configuration, such as `fourier-aurora-gr2` for GR-2 robot. 
-
 Aurora runs a FSM state machine and each state corresponds to certain tasks(controllers). You can switch between these states using the joystick or by sending commands through the DDS interface. Every task has its own inputs and outputs. You can use **joystick** or **DDS** to interact with the tasks.
 
 Descriptions of the states and controllers for each robot type can be found in [GR-1 Controller Reference](./gr1/robot_controller_reference_EN.md), [GR-2 Controller Reference](./gr2/robot_controller_reference_EN.md) and [GR-3 Controller Reference](./gr3/robot_controller_reference_EN.md).

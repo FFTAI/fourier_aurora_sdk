@@ -1,0 +1,7 @@
+Config:
+  RobotName: gr1 # gr1 / gr2 / gr3
+  RunType: 0 # 0 run simulator / 1 control real robot
+  UseJoyStick: true # use as default
+  DomainID: 123 # use as default
+  SerialNumber: "null" # use as default
+

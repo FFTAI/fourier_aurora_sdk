@@ -1,6 +1,6 @@
 xhost +local:root
 
-docker run -it --rm \
+docker run -it \
  -e DISPLAY=$DISPLAY \
  -v "$(pwd)":/workspace \
  -w /workspace \
@@ -10,5 +10,5 @@ docker run -it --rm \
  --net=host \
  --ipc=host \
  --cap-add=SYS_NICE \
- --name fourier_aurora_sdk \
- fourier_aurora_sdk:v1.1.0 bash
+ --name fourier_aurora_server \
+ fourier_aurora_sdk_gr2:v1.2.0 bash
