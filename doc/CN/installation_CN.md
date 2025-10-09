@@ -1,69 +1,74 @@
-## 安装指南
+## 服务安装
 
-Aurora基础环境通过Docker镜像提供。其他模块可以使用deb包进行安装和升级。
+Aurora 作为服务在机器人上运行，并提供了一个 docker 镜像以便于安装。请按照以下步骤在机器人胸部计算机上安装 Aurora。**您可以通过 SSH 访问机器人胸部计算机，或直接使用显示器和键盘。**
 
-### 下载Docker镜像
+### 安装 fourierassets
 
-Docker镜像可以通过点击[fourier_aurora_sdk_v1.1.0.zip](https://pan.baidu.com/s/1fhSD7SUIvE2bTWAkjOqlUA?pwd=wbmu)下载。
+*fourierassets* 是一个基于 S3 的资源管理工具。您可以通过在终端中运行以下命令来安装它：
 
-该Docker镜像包含：
-- **Aurora基础环境**
-- **fourier_dds v1.1.0**
-- **fourier_hardware v1.1.2**
-- **fourier-aurora v1.1.0**
-- **fourier-aurora-gr2 v1.1.0**
+```bash
+pip3 install fourierassets
+```
+**请确保您的 python 版本为 3.8 或更高。**
 
-请确保在下载镜像前已安装**Docker**。您可以通过在终端运行以下命令检查Docker是否安装：
+安装后，您可以通过运行以下命令来设置凭据：
+
+```bash
+fourierassets config set-credentials LTAI5tPoZbrPHCdXqnyaUyKB Re8LnYpXs4kazhQXD3GWR5QJ9IEQHZ --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
+```
+通过运行以下命令检查凭据是否设置正确：
+
+```bash
+fourierassets test
+```
+您应该会看到如下消息：
+
+```bash
+✓ Successfully connected to S3!
+```
+
+### 下载 Docker 镜像
+
+安装 *fourierassets* 后，您可以通过在终端中运行以下命令来下载 docker 镜像：
+
+1. 对于 Fourier GR-1P：
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.0.zip --cache-dir $your_download_directory
+```
+2. 对于 Fourier GR-2：
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.0.zip --cache-dir $your_download_directory
+```
+3. 对于 Fourier GR-3：
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.0.zip --cache-dir $your_download_directory
+```
+
+### 加载 Docker 镜像
+
+下载并提取 docker 镜像后，您可以通过在终端中运行以下命令来加载它（将 `fourier_aurora_sdk_gr1p:v1.2.0.tar` 替换为您下载的实际文件名）：
+
+```bash
+(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.0.tar
+```
+请确保在下载镜像之前已安装 **Docker**。您可以通过在终端中运行以下命令来检查 Docker 的安装情况：
 
 ```bash
 (sudo) docker --version
 ```
+如果未安装 Docker，请参考官方 Docker 安装指南：[获取 Docker](https://docs.docker.com/get-docker/)。
 
-### 加载Docker镜像
-
-下载并解压Docker镜像后，您可以通过在终端运行以下命令加载镜像：
-
-```bash
-(sudo) docker load -i fourier_aurora_sdk:v1.1.0.tar
-```
-
-请确保在运行此命令前已安装**Docker**。
-
-您可以使用以下命令检查Docker镜像是否加载成功：
+您可以使用以下命令检查 docker 镜像是否成功加载：
 
 ```bash
 (sudo) docker images
 ```
 
-### 检查Docker容器
+## 客户端安装
 
-加载Docker镜像后，您可以在**根目录**下运行以下命令启动容器：
-
-```bash
-bash docker_run.bash
-```
-
-这将从Docker镜像启动一个容器，您可以通过在终端运行以下命令检查模块安装情况：
+Aurora 客户端可以安装在机器人胸部计算机或任何其他设备上，以与运行在胸部计算机上的 Aurora 服务器进行通信。您可以通过在终端中运行以下命令轻松安装 Aurora 客户端：
 
 ```bash
-dpkg -l | grep fourier
+pip3 install fourier_aurora_client
 ```
-
-这将显示已安装的模块及其版本。示例输出：
-
-```bash
-root@df0484a:/workspace# dpkg -l | grep fourier
-ii  fourier-aurora                         1.1.0                                   amd64        A motion control system for fourier humanoid robots.
-ii  fourier-aurora-gr2                     1.1.0                                   amd64        An expansion package of fourier aurora for gr2 robot.
-ii  fourier_dds                            1.1.0-1                                 amd64        A software to control fourier robots .
-ii  fourier_hardware                       1.1.2-1                                 amd64        A software to control fourier robots .
-```
-
-## 提交更改(可选)
-
-根据`docker_run.bash`脚本，创建的容器将在退出后被删除。如果您想提交对容器的更改，可以在另一个终端运行以下命令：
-
-```bash
-(sudo) docker commit <container_id> <image_name>
-```
-`<container_id>`可以通过运行`docker ps`命令获取。`<image_name>`是您想给新镜像起的名称。为避免混淆，建议使用原始镜像名称`fourier_aurora_sdk:v1.1.0`。
+**请确保您的 python 版本为 3.9 或更高。**

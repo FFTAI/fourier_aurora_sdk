@@ -6,3 +6,10 @@
 
  - Refactored version definition to match the format of other SDKs.
 
+### Version v1.2.0
+
+- Added support for GR-1P and GR-3 robots.
+- Updated installation instructions and Docker images.
+- Updated python client examples and documentation.
+- Removed custom controllers, refer to developer guide for details.
+

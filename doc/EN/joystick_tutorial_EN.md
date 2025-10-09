@@ -41,7 +41,7 @@ In Aurora, each FSM state is mapped to a specific combination of bumpers and but
 | LT+RT     | SecurityProtection    | Safety state, stops all actuator      |
 | LB+A      | JointStand            | All actuators move to zero position   |
 | LB+B      | PdStand               | Robot stand on flat surface           |
-| RB+A      | UserController_A      | Reserved for user-defined task        |
+| RB+A      | UserController_A      | Reserved for user-defined task, default bounded by locomotion        |
 | RB+B      | UserController_B      | Reserved for user-defined task        |
 | RB+Y      | UserController_C      | Reserved for user-defined task        |
 | RB+X      | UserController_D      | Reserved for user-defined task        |
@@ -56,7 +56,7 @@ In the PdStand state, the directional buttons are used to control the robot's po
 
 #### UserController_A
 
-In the gr2 expansion package, a simple locomotion task is provided, which is bound by default to the *UserController_A* state. The task uses left and right stick to control the robot's movement. The left stick's vertical axis controls longitudinal (forward) movement, the left stick's horizontal axis controls lateral (sideways) movement, and the right stick's horizontal axis controls yaw (rotation) movement.
+A simple locomotion task is provided in all expansion packages, bound by default to the *UserController_A* state. The task uses left and right stick to control the robot's movement. The left stick's vertical axis controls longitudinal (forward) movement, the left stick's horizontal axis controls lateral (sideways) movement, and the right stick's horizontal axis controls yaw (rotation) movement.
 
 ## Joystick Layout Specification
 

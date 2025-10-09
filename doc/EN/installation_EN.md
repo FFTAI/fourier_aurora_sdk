@@ -1,67 +1,74 @@
-## Installation
+## Server Installation
 
-Aurora base environment is provided in the docker image. Other modules can be installed and upgraded using deb packages.
+Aurora is run as a server on the robot and provided in a docker image for easy installation. Please follow the steps below to install Aurora on the robot chest computer. **You can access the robot chest computer via SSH or directly use a monitor and keyboard.**
+
+### Installing fourierassets
+
+*fourierassets* is a S3 based asset management tool for fourier resources. You can install it by running the following command in your terminal:
+
+```bash
+pip3 install fourierassets
+```
+**Please make sure your python version is 3.8 or above.**
+
+After installing, you can set the credentials by running the following command:
+
+```bash
+fourierassets config set-credentials LTAI5tPoZbrPHCdXqnyaUyKB Re8LnYpXs4kazhQXD3GWR5QJ9IEQHZ --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
+```
+Check if the credentials are set correctly by running:
+
+```bash
+fourierassets test
+```
+You should see a message like this:
+
+```bash
+✓ Successfully connected to S3!
+```
 
 ### Downloading Docker Image
 
-The docker image can be downloaded clicking [fourier_aurora_sdk_v1.1.0.zip](https://pan.baidu.com/s/1fhSD7SUIvE2bTWAkjOqlUA?pwd=wbmu). 
+After installing *fourierassets*, you can download the docker image by running the following command in your terminal:
 
-This docker image contains:
-- **Aurora base environment**
-- **fourier_dds v1.1.0** 
-- **fourier_hardware v1.1.2**
-- **fourier-aurora v1.1.0**
-- **fourier-aurora-gr2 v1.1.0**
+1. For Fourier GR-1P:
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.0.zip --cache-dir $your_download_directory
+```
+2. For Fourier GR-2:
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.0.zip --cache-dir $your_download_directory
+```
+3. For Fourier GR-3:
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.0.zip --cache-dir $your_download_directory
+```
 
+### Loading Docker Image
+
+After downloading and extracting the docker image, you can load it by running the following command in your terminal (replace `fourier_aurora_sdk_gr1p:v1.2.0.tar` with the actual file name you downloaded):
+
+```bash
+(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.0.tar
+```
 Please make sure you have installed **Docker** before downloading the image. You can check the installation of Docker by running the following command in your terminal:
 
 ```bash
 (sudo) docker --version
 ```
+If Docker is not installed, please refer to the official Docker installation guide: [Get Docker](https://docs.docker.com/get-docker/).  
 
-### Loading Docker Image
-
-After downloading and extracting the docker image, you can load it by running the following command in your terminal:
-
-```bash
-(sudo) docker load -i fourier_aurora_sdk:v1.1.0.tar
-```
-
-Please make sure that you have installed **Docker** before running this command.
-
-you can use following command to check if the docker image is loaded successfully:
+You can use following command to check if the docker image is loaded successfully:
 
 ```bash
 (sudo) docker images
 ```
-### Checking Docker Container
 
-After loading the docker image, you can start the container by running the following command in your terminal under the **root directory** :
+## Client Installation
 
-```bash
-bash docker_run.bash
-```
-
-This will start a container from the docker image and you can check the installation of the modules by running the following command in your terminal:
+Aurora client can be installed on the robot chest computer or any other devices to communicate with Aurora server, which should be run on the chest computer. You can install Aurora client by simply running the following command in your terminal:
 
 ```bash
-dpkg -l | grep fourier
+pip3 install fourier_aurora_client
 ```
-
-This will show the installed modules and their versions. Example output:
-
-```bash
-root@df0484a:/workspace# dpkg -l | grep fourier
-ii  fourier-aurora                         1.1.0                                   amd64        A motion control system for fourier humanoid robots.
-ii  fourier-aurora-gr2                     1.1.0                                   amd64        An expansion package of fourier aurora for gr2 robot.
-ii  fourier_dds                            1.1.0-1                                 amd64        A software to control fourier robots .
-ii  fourier_hardware                       1.1.2-1                                 amd64        A software to control fourier robots .
-```
-## Committing Changes(Optional)
-
-According to the `docker_run.bash` script, the container created will be removed after exiting. If you want to commit changes to the container, you can run the following command in another terminal:
-
-```bash
-(sudo) docker commit <container_id> <image_name>
-```
-<container_id> can be obtained by running `docker ps` command. <image_name> is the name you want to give to the new image. It is recommended to use the original image name `fourier_aurora_sdk:v1.1.0` to avoid confusion.
+**Please make sure your python version is 3.9 or above.**
