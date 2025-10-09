@@ -1,13 +1,3 @@
-"""
-
-提示：
-
-这个demo要求连接摇杆, 用摇杆控制机器人走路速度。
-
-这个demo仅作为接口调用示例, 提供的策略并不保证机器人能稳定走路，上机运行时请务必做好安全防护措施。 
-
-"""
-
 import time 
 from fourier_aurora_client import AuroraClient
 import os
@@ -22,7 +12,7 @@ from ischedule import run_loop, schedule
 
 
 # 初始化client
-client = AuroraClient.get_instance(domain_id=199, robot_name="gr2t2v2", serial_number=None)
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr2t2v2", serial_number=None)
 time.sleep(1)
 
 policy_file_path = None
