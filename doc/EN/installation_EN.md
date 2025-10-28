@@ -14,8 +14,10 @@ pip3 install fourierassets
 After installing, you can set the credentials by running the following command:
 
 ```bash
-fourierassets config set-credentials LTAI5tPoZbrPHCdXqnyaUyKB Re8LnYpXs4kazhQXD3GWR5QJ9IEQHZ --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
+fourierassets config set-credentials $access_key $secrect_key --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
 ```
+For `$access_key` and `$secrect_key`, please send an email to <gr_support@fftai.com> to obtain the access key and secret key.
+
 Check if the credentials are set correctly by running:
 
 ```bash

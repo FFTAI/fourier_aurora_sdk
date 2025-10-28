@@ -14,8 +14,10 @@ pip3 install fourierassets
 安装后，您可以通过运行以下命令来设置凭据：
 
 ```bash
-fourierassets config set-credentials LTAI5tPoZbrPHCdXqnyaUyKB Re8LnYpXs4kazhQXD3GWR5QJ9IEQHZ --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
+fourierassets config set-credentials $access_key $secrect_key --endpoint-url https://oss-cn-wulanchabu.aliyuncs.com
 ```
+对于 `$access_key` 和 `$secrect_key`，请发送电子邮件至 <gr_support@fftai.com> 以获取访问密钥和秘密密钥。
+
 通过运行以下命令检查凭据是否设置正确：
 
 ```bash
