@@ -6,7 +6,7 @@ Aurora provides a set of controllers that can be used to control the robot's mot
 
 For DDS reference, please refer to [DDS Interface Reference](../aurora_dds_reference_EN.md).
 
-For GR-2 joint limits, please refer to [GR-3 Specs](./robot_specs_EN.md).
+For GR-3 joint limits, please refer to [GR-3 Specs](./robot_specs_EN.md).
 
 ## Universal Controllers
 

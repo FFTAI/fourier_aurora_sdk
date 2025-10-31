@@ -41,6 +41,7 @@ if __name__ == "__main__":
     client.set_velocity(0.0, 0.0, 0.0)
     time.sleep(1.0)
 
+    client.set_velocity_source(0)
     client.close()
     print("client usage demo completed successfully.")
 

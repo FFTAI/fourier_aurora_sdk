@@ -7,15 +7,14 @@ If you are new to Aurora, please read the following documentation for basic unde
 - [Aurora Introduction](./doc/EN/introduction_EN.md)
 - [Developer Guide](./doc/EN/developer_guide_EN.md)
 
-## v1.2.0 Release
+## v1.2.1 Release
 
 Support Robots:
 
 - GR-1P
 - GR-2
 - GR-3
-- Fourier-N1(supported in the near future)
-
+- Fourier-N1(new!)
 
 Prerequisites:
 

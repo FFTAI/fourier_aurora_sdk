@@ -21,12 +21,7 @@ For `$access_key` and `$secrect_key`, please send an email to <gr_support@fftai.
 Check if the credentials are set correctly by running:
 
 ```bash
-fourierassets test
-```
-You should see a message like this:
-
-```bash
-✓ Successfully connected to S3!
+fourierassets ls s3://fftai-opensource
 ```
 
 ### Downloading Docker Image
@@ -35,23 +30,27 @@ After installing *fourierassets*, you can download the docker image by running t
 
 1. For Fourier GR-1P:
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.3.zip --cache-dir $your_download_directory
 ```
 2. For Fourier GR-2:
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.1.zip --cache-dir $your_download_directory
 ```
 3. For Fourier GR-3:
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.1.zip --cache-dir $your_download_directory
+```
+4. For Fourier-N1:
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_fouriern1_v1.2.0.zip --cache-dir $your_download_directory
 ```
 
 ### Loading Docker Image
 
-After downloading and extracting the docker image, you can load it by running the following command in your terminal (replace `fourier_aurora_sdk_gr1p:v1.2.0.tar` with the actual file name you downloaded):
+After downloading and extracting the docker image, you can load it by running the following command in your terminal (replace `fourier_aurora_sdk_gr1p:v1.2.3.tar` with the actual file name you downloaded):
 
 ```bash
-(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.0.tar
+(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.3.tar
 ```
 Please make sure you have installed **Docker** before downloading the image. You can check the installation of Docker by running the following command in your terminal:
 
