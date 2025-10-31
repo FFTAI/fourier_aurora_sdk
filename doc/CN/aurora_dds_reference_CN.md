@@ -28,7 +28,7 @@ struct AuroraState {
 };
 ```
 
-#### 基础数据
+#### 基座数据
 
 **主题名称：** `base_data_pub`  
 **类型名称：** `fourier_msgs::msg::BaseData`  

@@ -22,11 +22,14 @@ obs_buf_stack = None
 
 
 def main():
-    # 切换到Use_cmd Task: 10
-    state = input("Please switch to FSM state 10 (User command task)\nPlease enter the desired state number: ")
-    while not state.isdigit() or int(state) > 11:
-        state = input("State number not available, please enter a valid state number: ")
-    client.set_fsm_state(int(state))
+    
+    # 切换到站立模式 PD stand (FSM state 2)
+    input("Please Press Enter to switch to FSM state 2 (PDstand)")
+    client.set_fsm_state(2)
+
+    # 机器人站稳后, 切换到用户命令任务模式 (FSM state 10)
+    input("After the robot is standing firmly on the ground, Please press Enter to switch to FSM state 10 (User command task) ")
+    client.set_fsm_state(10)
     time.sleep(0.5)
 
     # 初始化设置
@@ -52,8 +55,6 @@ def main():
         "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
     }
 
-
-####################################################################
     # 监听摇杆输入
     def joystick_listener():
         global joystick, axis_left, axis_right
@@ -79,8 +80,6 @@ def main():
 
     # 等待 1s (确保摇杆监听线程启动)
     time.sleep(1)
-
-#############################################################################
 
     # 设置电机参数
     client.set_motor_cfg(kp_config, kd_config)
@@ -175,7 +174,7 @@ def algorithm():
     # [lin_vel_x, lin_vel_y, ang_vel_yaw], unit: m/s, m/s, rad/s
 
     commands_safety_ratio = 0.9
-    command_linear_velocity_x_range = torch.tensor(numpy.array([[-0.30, 0.30]]), dtype=torch.float) \
+    command_linear_velocity_x_range = torch.tensor(numpy.array([[-0.2, 0.20]]), dtype=torch.float) \
                                             * commands_safety_ratio
     command_linear_velocity_y_range = torch.tensor(numpy.array([[-0.5, 0.5]]), dtype=torch.float) \
                                             * commands_safety_ratio
@@ -203,7 +202,7 @@ def algorithm():
             commands_norm[2] * numpy.abs(command_angular_velocity_yaw_range[0, 0].numpy())
         ])
      
-
+    print("commands:", commands)
     base_measured_quat = numpy.array([0.0, 0.0, 0.0, 1.0, ])
     base_measured_angular_velocity = numpy.array([0.0, 0.0, 0.0, ])
 

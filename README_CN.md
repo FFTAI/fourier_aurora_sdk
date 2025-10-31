@@ -7,14 +7,14 @@
 - [Aurora简介](./doc/CN/introduction_CN.md)
 - [开发者指南](./doc/CN/developer_guide_CN.md)
 
-## v1.2.0 版本
+## v1.2.1 版本
 
 支持的机器人：
 
 - GR-1P
 - GR-2
 - GR-3
-- Fourier-N1(即将支持)
+- Fourier-N1(new!)
 
 先决条件：
 - 执行器版本：

@@ -13,3 +13,11 @@
 - Updated python client examples and documentation.
 - Removed custom controllers, refer to developer guide for details.
 
+### Version v1.2.1
+
+- Added support for Fourier-N1 robot.
+- Updated GR-1P Docker images to v1.2.3.
+- Updated GR-2 Docker image to v1.2.1.
+- Updated GR-3 Docker image to v1.2.1.
+- Updated installation instructions and Docker images.
+- Updated python client examples and documentation.

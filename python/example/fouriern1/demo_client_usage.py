@@ -4,7 +4,7 @@ from fourier_aurora_client import AuroraClient
 if __name__ == "__main__":
 
     # Initialize client
-    client = AuroraClient.get_instance(domain_id=123, robot_name="gr1t2", serial_number=None)
+    client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)
     time.sleep(1)
     
     # Use set_fsm_state() to switch FSM state. For state mapping please refer to the robot controller reference doc.
@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     # Use set_stand_pose() to set stand pose.
     cmd = input("Press Enter to crouch...")
-    client.set_stand_pose(-0.2, 0.0, 0.0)
+    client.set_stand_pose(-0.15, 0.0, 0.0)
     time.sleep(2.0)
 
     cmd = input("Press Enter to stand up...")

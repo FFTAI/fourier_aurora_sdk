@@ -21,12 +21,7 @@ fourierassets config set-credentials $access_key $secrect_key --endpoint-url htt
 通过运行以下命令检查凭据是否设置正确：
 
 ```bash
-fourierassets test
-```
-您应该会看到如下消息：
-
-```bash
-✓ Successfully connected to S3!
+fourierassets ls s3://fftai-opensource
 ```
 
 ### 下载 Docker 镜像
@@ -35,23 +30,27 @@ fourierassets test
 
 1. 对于 Fourier GR-1P：
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr1p_v1.2.3.zip --cache-dir $your_download_directory
 ```
 2. 对于 Fourier GR-2：
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr2_v1.2.1.zip --cache-dir $your_download_directory
 ```
 3. 对于 Fourier GR-3：
 ```bash
-fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.0.zip --cache-dir $your_download_directory
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_gr3_v1.2.1.zip --cache-dir $your_download_directory
+```
+4. 对于 Fourier-N1：
+```bash
+fourierassets download -v s3://fftai-opensource/fourier_aurora_sdk_fouriern1_v1.2.0.zip --cache-dir $your_download_directory
 ```
 
 ### 加载 Docker 镜像
 
-下载并提取 docker 镜像后，您可以通过在终端中运行以下命令来加载它（将 `fourier_aurora_sdk_gr1p:v1.2.0.tar` 替换为您下载的实际文件名）：
+下载并提取 docker 镜像后，您可以通过在终端中运行以下命令来加载它（将 `fourier_aurora_sdk_gr1p:v1.2.3.tar` 替换为您下载的实际文件名）：
 
 ```bash
-(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.0.tar
+(sudo) docker load -i fourier_aurora_sdk_gr1p:v1.2.3.tar
 ```
 请确保在下载镜像之前已安装 **Docker**。您可以通过在终端中运行以下命令来检查 Docker 的安装情况：
 
