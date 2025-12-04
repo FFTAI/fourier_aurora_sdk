@@ -1,9 +1,14 @@
+# ============================================================
+# In this demo, a joystick is required to control the walking direction and velocity
+# ============================================================
+
 import time 
 from fourier_aurora_client import AuroraClient
 import os
 import numpy
 import torch
 import threading
+import sys
 
 
 import pygame
@@ -20,101 +25,12 @@ policy_model = None
 policy_action = None
 obs_buf_stack = None
 
-
-def main():
-    
-    # 切换到站立模式 PD stand (FSM state 2)
-    input("Please Press Enter to switch to FSM state 2 (PDstand)")
-    client.set_fsm_state(2)
-
-    # 机器人站稳后, 切换到用户命令任务模式 (FSM state 10)
-    input("After the robot is standing firmly on the ground, Please press Enter to switch to FSM state 10 (User command task) ")
-    client.set_fsm_state(10)
-    time.sleep(0.5)
-
-    # 初始化设置
-    global policy_file_path, policy_model, joystick, axis_left, axis_right, commands_filtered
-    joystick = None
-    axis_left = (0.0, 0.0)
-    axis_right = (0.0, 0.0)
-    commands_filtered = numpy.array([0.0, 0.0, 0.0])
-
-    kp_config = {
-        "left_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
-        "right_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
-        "waist": [90.0],
-        "left_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0],
-        "right_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0]
-    }
-
-    kd_config = {
-        "left_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
-        "right_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
-        "waist": [8.0],
-        "left_manipulator": [ 8.0, 2.5, 2.5, 2.5, 2.5],
-        "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
-    }
-
-    # 监听摇杆输入
-    def joystick_listener():
-        global joystick, axis_left, axis_right
-
-        while True:
-            pygame.event.get()
-
-            # 获取摇杆输入
-            axis_left = joystick.get_axis(0), joystick.get_axis(1)
-            axis_right = joystick.get_axis(3), 0
-
-            # 等待 0.02s, 以减少 CPU 占用
-            time.sleep(0.02)
-
-    pygame.init()
-    pygame.joystick.init()
-
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-
-    thread_joystick_listener = threading.Thread(target=joystick_listener)
-    thread_joystick_listener.start()
-
-    # 等待 1s (确保摇杆监听线程启动)
-    time.sleep(1)
-
-    # 设置电机参数
-    client.set_motor_cfg(kp_config, kd_config)
-    # Load Model
-    policy_file_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "policy_jit_walk.pt",
-    )
-    policy_model = torch.jit.load(policy_file_path, map_location=torch.device('cpu'))
-
-    # 设置定时任务
-    # 设置机器人算法频率
-    target_control_frequency = 50  # 机器人控制频率, 50Hz
-    target_control_period_in_s = 1.0 / target_control_frequency  # 机器人控制周期
-    schedule(algorithm, interval=target_control_period_in_s)
-
-    run_loop()
-
-
 def algorithm():
     global policy_model, policy_action, obs_buf_stack, commands_filtered
 
-    """
-    state:
-    - imu:
-      - quat (x, y, z, w)
-      - euler angle (rpy) [deg]
-      - angular velocity [deg/s]
-      - linear acceleration [m/s^2]
-    - joint (in urdf):
-      - position [deg]
-      - velocity [deg/s]
-      - torque [Nm]
-    """
-    # --------------------------------------------------
+   # ============================================================
+    # 1. Definition
+    # ============================================================
 
     robot_num_of_joints = 23
     policy_control_num_of_joints = 13  # left leg + right leg + waist
@@ -124,26 +40,6 @@ def algorithm():
         12,  # waist
     ])
 
-    # get states
-    imu_measured_quat = client.get_base_data('quat_xyzw')
-    imu_measured_angular_velocity = client.get_base_data('omega_B') 
-    group_names = ['left_leg', 'right_leg', 'waist']
-    joint_measured_position = []
-    joint_measured_velocity = []  
-    for name in group_names:
-        joint_measured_position.append(client.get_group_state(name, 'position'))
-        joint_measured_velocity.append(client.get_group_state(name, 'velocity'))
-
-
-    joint_measured_position = numpy.concatenate(joint_measured_position)
-    joint_measured_velocity = numpy.concatenate(joint_measured_velocity)
-
-
-    
-
-    # --------------------------------------------------
-
-    # constants
     default_joint_position = numpy.array([
         # left leg
         -0.2468, 0.0, 0.0, 0.5181, 0.0, -0.2408,
@@ -166,12 +62,27 @@ def algorithm():
         -3.1416
     ])
 
-    # --------------------------------------------------
 
-    # prepare input
+    # ============================================================
+    # 2. Obtain robot states
+    # ============================================================
 
-    # 指令速度: 
-    # [lin_vel_x, lin_vel_y, ang_vel_yaw], unit: m/s, m/s, rad/s
+    imu_measured_quat = client.get_base_data('quat_xyzw')
+    imu_measured_angular_velocity = client.get_base_data('omega_B') 
+    group_names = ['left_leg', 'right_leg', 'waist']
+    joint_measured_position = []
+    joint_measured_velocity = []  
+    for name in group_names:
+        joint_measured_position.append(client.get_group_state(name, 'position'))
+        joint_measured_velocity.append(client.get_group_state(name, 'velocity'))
+
+
+    joint_measured_position = numpy.concatenate(joint_measured_position)
+    joint_measured_velocity = numpy.concatenate(joint_measured_velocity)
+
+    # ============================================================
+    # 3. Construct velocity commands (from joystick) [lin_vel_x, lin_vel_y, ang_vel_yaw], unit: m/s, m/s, rad/s
+    # ============================================================
 
     commands_safety_ratio = 0.9
     command_linear_velocity_x_range = torch.tensor(numpy.array([[-0.2, 0.20]]), dtype=torch.float) \
@@ -203,6 +114,11 @@ def algorithm():
         ])
      
     print("commands:", commands)
+
+    # ============================================================
+    # 4. Construct observations (obs buffer)
+    # ============================================================
+
     base_measured_quat = numpy.array([0.0, 0.0, 0.0, 1.0, ])
     base_measured_angular_velocity = numpy.array([0.0, 0.0, 0.0, ])
 
@@ -223,37 +139,12 @@ def algorithm():
     if policy_action is None:
         policy_action = numpy.zeros(policy_control_num_of_joints)
 
-    # run algorithm
     torch_commands = torch.from_numpy(commands).float().unsqueeze(0)
     torch_base_measured_quat = torch.from_numpy(base_measured_quat).float().unsqueeze(0)
     torch_base_measured_angular_velocity = torch.from_numpy(base_measured_angular_velocity).float().unsqueeze(0)
     torch_joint_measured_position_for_policy = torch.from_numpy(joint_measured_position_for_policy).float().unsqueeze(0)
     torch_joint_measured_velocity_for_policy = torch.from_numpy(joint_measured_velocity_for_policy).float().unsqueeze(0)
     torch_default_joint_position = torch.from_numpy(default_joint_position).float().unsqueeze(0)
-
-    def torch_quat_rotate_inverse(q, v):
-        """
-        Rotate a vector (tensor) by the inverse of a quaternion (tensor).
-
-        :param q: A quaternion tensor in the form of [x, y, z, w] in shape of [N, 4].
-        :param v: A vector tensor in the form of [x, y, z] in shape of [N, 3].
-        :return: The rotated vector tensor in shape of [N, 3].
-        """
-        q_w = q[:, -1:]
-        q_vec = q[:, :3]
-
-        # Compute the dot product of q_vec and v
-        q_vec_dot_v = torch.bmm(q_vec.view(-1, 1, 3), v.view(-1, 3, 1)).squeeze(-1)
-
-        # Compute the cross product of q_vec and v
-        q_vec_cross_v = torch.cross(q_vec, v, dim=-1)
-
-        # Compute the rotated vector
-        a = v * (2.0 * q_w ** 2 - 1.0)
-        b = q_vec_cross_v * q_w * 2.0
-        c = q_vec * q_vec_dot_v * 2.0
-
-        return a - b + c
 
     torch_gravity_vector = torch.from_numpy(gravity_vector).float().unsqueeze(0)
     torch_base_project_gravity = torch_quat_rotate_inverse(torch_base_measured_quat, torch_gravity_vector)
@@ -281,6 +172,10 @@ def algorithm():
         obs_buf,
     ], dim=1).float()
 
+    # ============================================================
+    # 5. Generate action
+    # ============================================================
+
     torch_policy_action = policy_model(obs_buf_stack).detach()
 
     torch_policy_action = torch.clip(
@@ -289,7 +184,6 @@ def algorithm():
         max=torch.from_numpy(action_clip_max).float().unsqueeze(0),
     )
 
-    # 记录上一次的 action
     policy_action = torch_policy_action.numpy().squeeze(0)
 
     torch_joint_target_position_from_policy = torch_policy_action \
@@ -303,10 +197,132 @@ def algorithm():
         index = policy_control_index_of_joints[i]
         joint_target_position[index] = joint_target_position_from_policy[i]
 
+    # ============================================================
+    # 6. Set position command
+    # ============================================================
+
     whole_body_pos = {"whole_body": joint_target_position}
 
     client.set_joint_positions(whole_body_pos)
 
+
+def joystick_listener():
+    global joystick, axis_left, axis_right
+
+    while True:
+        pygame.event.get()
+
+        axis_left = joystick.get_axis(0), joystick.get_axis(1)
+        axis_right = joystick.get_axis(3), 0
+
+        time.sleep(0.02)
+
+def torch_quat_rotate_inverse(q, v):
+    """
+    Rotate a vector (tensor) by the inverse of a quaternion (tensor).
+
+    :param q: A quaternion tensor in the form of [x, y, z, w] in shape of [N, 4].
+    :param v: A vector tensor in the form of [x, y, z] in shape of [N, 3].
+    :return: The rotated vector tensor in shape of [N, 3].
+    """
+    q_w = q[:, -1:]
+    q_vec = q[:, :3]
+
+    # Compute the dot product of q_vec and v
+    q_vec_dot_v = torch.bmm(q_vec.view(-1, 1, 3), v.view(-1, 3, 1)).squeeze(-1)
+
+    # Compute the cross product of q_vec and v
+    q_vec_cross_v = torch.cross(q_vec, v, dim=-1)
+
+    # Compute the rotated vector
+    a = v * (2.0 * q_w ** 2 - 1.0)
+    b = q_vec_cross_v * q_w * 2.0
+    c = q_vec * q_vec_dot_v * 2.0
+
+    return a - b + c
+
+def main():
+
+    # ============================================================
+    # 1.  Global variable initialization
+    # ============================================================
+    global policy_file_path, policy_model, joystick, axis_left, axis_right, commands_filtered
+    joystick = None
+    axis_left = (0.0, 0.0)
+    axis_right = (0.0, 0.0)
+    commands_filtered = numpy.array([0.0, 0.0, 0.0])
+
+    # ============================================================
+    # 2. Initialize joystick and start listener thread
+    # ============================================================
+    pygame.init()
+    pygame.joystick.init()
+
+    joystick_count = pygame.joystick.get_count()
+    if joystick_count == 0:
+        # No joystick detected → exit the program
+        print("❌ ❌ Error: A joystick is required")
+        pygame.quit()
+        client.close()
+        sys.exit(1)
+    else:
+        print(f"✅ Detected {joystick_count} joystick(s")
+        joystick = pygame.joystick.Joystick(0)
+        joystick.init()
+
+    thread_joystick_listener = threading.Thread(target=joystick_listener)
+    thread_joystick_listener.start()
+    
+    # ============================================================
+    # 3. Switch FSM states
+    # ============================================================
+
+    # Switch to PD-Stand mode (FSM state 2)
+    input("Please Press Enter to switch to FSM state 2 (PDstand)")
+    client.set_fsm_state(2)
+
+    # After robot stabilizes, switch to user command task mode (FSM state 10)
+    input("After the robot is standing firmly on the ground, Please press Enter to switch to FSM state 10 (User command task) ")
+    client.set_fsm_state(10)
+    time.sleep(0.5)
+
+    # ============================================================
+    # 4. Motor parameter configuration
+    # ============================================================
+
+    kp_config = {
+        "left_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
+        "right_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
+        "waist": [90.0],
+        "left_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0],
+        "right_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0]
+    }
+
+    kd_config = {
+        "left_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
+        "right_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
+        "waist": [8.0],
+        "left_manipulator": [ 8.0, 2.5, 2.5, 2.5, 2.5],
+        "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
+    }
+
+    client.set_motor_cfg(kp_config, kd_config)
+
+    # ============================================================
+    # 5. Load policy model and start control loop
+    # ============================================================
+    policy_file_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "policy_jit_walk.pt",
+    )
+    policy_model = torch.jit.load(policy_file_path, map_location=torch.device('cpu'))
+
+    # Configure robot control frequency
+    target_control_frequency = 50  
+    target_control_period_in_s = 1.0 / target_control_frequency  
+    schedule(algorithm, interval=target_control_period_in_s)
+
+    run_loop()
 
 
 if __name__ == "__main__":
