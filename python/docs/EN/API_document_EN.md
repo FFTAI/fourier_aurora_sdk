@@ -62,7 +62,7 @@ Get the current state of the robot.
     - 0 - Default state
     - 1 - Joint stand
     - 2 - PD stand
-    - 3~8 - User controller A~F
+    - 3-8 - User controller A-F
     - 9 - Security protection
     - 10 - User command
     - 11 - Upper body user command
