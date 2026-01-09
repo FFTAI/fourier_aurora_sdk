@@ -19,7 +19,7 @@ def move_joints(client, init_pos, target_pos, frequency, duration):
             "left_hand": interpolate_position(init_pos["left_hand"], target_pos["left_hand"], step, total_steps),
             "right_hand": interpolate_position(init_pos["right_hand"], target_pos["right_hand"], step, total_steps),
         }
-        client.set_joint_positions(positions)
+        client.set_group_cmd(positions)
         time.sleep(1 / frequency)
 
 
@@ -42,12 +42,12 @@ if __name__ == "__main__":
     time.sleep(1.0)
 
     cmd = input("Press Enter to start left manipulator movement...") 
-    left_manipulator_init_pose = client.get_group_state("left_manipulator")
+    left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
     left_manipulator_target_pose = [-0.2, 0, 0, -1.2, 0, 0, 0]
 
     for i in range(200):
         left_manipulator_pose = interpolate_position(left_manipulator_init_pose, left_manipulator_target_pose, i, 200)
-        client.set_joint_positions({"left_manipulator": left_manipulator_pose})
+        client.set_group_cmd({"left_manipulator": left_manipulator_pose})
         time.sleep(0.01)
     
     cmd = input("Press Enter to start left hand movement...") 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     for i in range(100):
         left_hand_pose = interpolate_position(left_hand_init_pose, left_hand_target_pose, i, 100)
-        client.set_joint_positions({"left_hand": left_hand_pose})
+        client.set_group_cmd({"left_hand": left_hand_pose})
         time.sleep(0.01)
     
     # use the move joint function provided in this script to move multiple control groups at once
