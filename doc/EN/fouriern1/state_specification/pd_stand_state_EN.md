@@ -10,7 +10,7 @@ If stable level goes above 100 (for sim, above 10), the controller would switch 
 
 State name | Task name     | Joystick mapping | DDS mapping | Frequency
 -----------|---------------|------------------|-------------|-------------
-PdStand    | PdStandTask   | LB+A             | 2           | 500Hz
+PdStand    | PdStandTask   | LB+A             | 2           | 400Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -28,13 +28,13 @@ After the robot enter stance stage, use direction keys on the joystick to contro
 
 - press `up` or `down` direction key to control robot's height.
 - press `left` or `right` direction key to control robot's pitch angle.
-- Move the right joystick `left` or `right` to control robot's yaw angle.
+- Move the right rocker `left` or `right` to control robot's yaw angle.
 
 ### Reset button
 
 PdStand State provides a shortcut key to reset robot's state. Long press button `A` and the robot will  
 
-1. reset stand pose to default state.
+1. reset stand pose to default pose.
 2. Gradually move arms to default position.
 
 ## Client Control
@@ -48,7 +48,7 @@ No               | Yes                | Upper Body    | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter pdstand state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialzie aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(2)     # change to pdstand state
@@ -78,7 +78,7 @@ time.sleep(2.0)
 
 Once the robot enter stance stage, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`, `Left_Hand`, `Right_Hand`  
+**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`
 
 ```python
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")

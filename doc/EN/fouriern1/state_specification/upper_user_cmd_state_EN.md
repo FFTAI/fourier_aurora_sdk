@@ -1,12 +1,12 @@
-# UserCmd State Specification
+# Upper UserCmd State Specification
 
-Upon switching to **UserCmd State**, the user can send external joint position commands for all joints, and actuator config setup commands such as pd parameters. The robot will execute these commands and update its states accordingly.
+Upon switching to **Upper UserCmd State**, the user can send external joint position commands for upper body joints, and actuator config setup commands such as pd parameters. The robot will execute these commands and update its states accordingly. At the same time, lower body actuators will be set to zero torque mode.
 
 ## State specification
 
-State name | Task name     | Joystick mapping | DDS mapping | Frequency
------------|---------------|------------------|-------------|-------------
-UserCmd    | UserCmdTask   | No               | 10           | 400Hz
+State name       | Task name              | Joystick mapping | DDS mapping | Frequency
+-----------------|------------------------|------------------|-------------|-------------
+Upper UserCmd    | UpperBodyUserCmdTask   | No               | 10           | 400Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -30,14 +30,14 @@ After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to e
 client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
 time.sleep(1)
 
-client.set_fsm_state(10)     # change to usercmd state
+client.set_fsm_state(11)     # change to upper usercmd state
 ```
 
 ### Joint Control
 
 Joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Left_Leg`, `Right_Leg`, `Waist`, `Left_Manipulator`, `Right_Manipulator`,
+**Avaliable Control Groups:**  `Waist`, `Left_Manipulator`, `Right_Manipulator`
 
 ```python
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
@@ -55,19 +55,15 @@ for i in range(total_steps):
 
 Joint control is avaliable via `set_motor_cfg_pd` function. Currently, Aurora only supports pd control mode on all joints.
 
-**Avaliable Control Groups:** `Left_Leg`, `Right_Leg`, `Waist`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`
 
 ```python
 kp_config = {
-    "left_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
-    "right_leg": [180.0, 120.0, 90.0, 120.0, 45.0, 45.0],
     "waist": [90.0],
     "left_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0],
     "right_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0]
 }
 kd_config = {
-    "left_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
-    "right_leg": [10.0, 10.0, 8.0, 8.0, 2.5, 2.5],
     "waist": [8.0],
     "left_manipulator": [ 8.0, 2.5, 2.5, 2.5, 2.5],
     "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
