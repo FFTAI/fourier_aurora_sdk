@@ -8,7 +8,7 @@ Some controller comes with auto protection switch mechanism. When they finds the
 
 State name          | Task name              | Joystick mapping | DDS mapping | Frequency
 --------------------|------------------------|------------------|-------------|-------------
-Security Protection | SecurityProtectionTask | LT+RT            | 1           | 400Hz
+Security Protection | SecurityProtectionTask | LT+RT            | 9           | 400Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------

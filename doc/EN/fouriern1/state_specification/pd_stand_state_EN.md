@@ -92,7 +92,4 @@ for i in range(total_steps):
     time.sleep(0.01)
 ```
 
-
-
-
-
+For joint specifications, please refer to [robot_specs](../robot_specs_EN.md)

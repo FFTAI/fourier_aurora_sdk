@@ -1,16 +1,18 @@
 # CPG Walk State Specification
 
-**CPG Walk State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions. 
+**CPG Walk State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions.
 
 On the other side, upper body is managed by a state manager task, which allows the user to switch between different upper body controllers. Avaliable controllers are:
+
 - Default: no controller, mapped at upper body state 0.
 - UpperBodyActTask: arm swing task, mapped at upper body state 1.
 - UpperBodyTeleTask: joint control task, mapped at upper body state 2.
 
 ## State specification
+
 State name | Task name                                      | Joystick mapping | DDS mapping | Frequency
 -----------|------------------------------------------------|------------------|-------------|-------------
-CPG Walk   | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz
+CPG Walk   | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -24,14 +26,15 @@ After initailize *AuroraCore*, press bumper `RB` and button `A` at the same time
 
 ### Velocity Control
 
-Use the left and right rocker to apply velocity control on the robot. 
+Use the left and right rocker to apply velocity control on the robot.
+
 - left rocker vertical axis: move forward and backward
 - left rocker horizontal axis: move left and right
 - right rocker horizontal axis: turn left and right
 
 ### Arm Swing Switch
 
-The upper body state manager provides a shortcut key to turn on arm swing task. Press button `B` to turn on arm swing, and then press `X` to turn off arm swing. 
+The upper body state manager provides a shortcut key to turn on arm swing task. Click button `B` to turn on arm swing, and then click `X` to turn off arm swing.
 
 ## Client Control
 
@@ -52,9 +55,9 @@ client.set_fsm_state(3)     # change to cpg walk state
 
 ### Velocity Control
 
-Before applying velocity control through client, it is necessary to first switch velocity source in Aurora. Velocity source makes sure only one source can send velocity command at a time, ensure safety. Velocity source can be set with `set_velocity_source` function, where 0 refers to joystick control, and 2 refers to client control. 
+Before applying velocity control through client, it is necessary to first switch velocity source in Aurora. Velocity source makes sure only one source can send velocity command at a time, ensure safety. Velocity source can be set with `set_velocity_source` function, where 0 refers to joystick control, and 2 refers to client control.
 
-Once the velocity source is set to 2, velocity control is avaliable via `set_velocity` function. 
+Once the velocity source is set to 2, velocity control is avaliable via `set_velocity` function.
 
 **Velocity Range:** `vx`: [-0.5, 0.5], `vy`L [-0.5, 0.5], `vyaw`: [-1.0, 1.0]
 
@@ -103,7 +106,4 @@ for i in range(total_steps):
     time.sleep(0.01)
 ```
 
-
-
-
-
+For joint specifications, please refer to [robot_specs](../robot_specs_EN.md)

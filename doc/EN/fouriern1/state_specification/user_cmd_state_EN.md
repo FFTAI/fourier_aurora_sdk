@@ -6,7 +6,7 @@ Upon switching to **UserCmd State**, the user can send external joint position c
 
 State name | Task name     | Joystick mapping | DDS mapping | Frequency
 -----------|---------------|------------------|-------------|-------------
-UserCmd    | UserCmdTask   | No               | 10           | 400Hz
+UserCmd    | UserCmdTask   | No               | 10          | 400Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -75,3 +75,5 @@ kd_config = {
 
 client.set_motor_cfg_pd(kp_config, kd_config)
 ```
+
+For joint specifications, please refer to [robot_specs](../robot_specs_EN.md)
