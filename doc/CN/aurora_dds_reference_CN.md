@@ -266,19 +266,18 @@ struct MotorCfgGroupCmd {
 #### 机器人站立位姿指令
 
 **主题名称：** `robot_stand_pose_cmd`  
-**类型名称：** `fourier_msgs::msg::RobotStandPoseState`  
+**类型名称：** `fourier_msgs::msg::RobotStandPoseCmd`  
 **定义位置：** `AuroraCmd.idl`  
 **可用任务：** LowerBodyWBCLower, PdStand（在 stance 阶段）
 
 接收用于调整机器人站立时基座高度与朝向（俯仰与偏航）相对于初始位姿的指令。
 
 ```idl
-struct RobotStandPoseState {     // RobotStand 状态 
+struct RobotStandPoseCmd {     // RobotStand 状态 
     std_msgs::msg::Header header;
     double delta_z;             // z 轴高度变化
     double delta_pitch;         // 俯仰变化值
     double delta_yaw;           // 偏航变化值
-    uint8 stable_level;         
 };
 ```
 

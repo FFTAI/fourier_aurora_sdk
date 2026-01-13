@@ -265,18 +265,17 @@ struct MotorCfgGroupCmd {
 #### Robot Stand Pose Command
 
 **Topic Name:** `robot_stand_pose_cmd`  
-**Type Name:** `fourier_msgs::msg::RobotStandPoseState`  
+**Type Name:** `fourier_msgs::msg::RobotStandPoseCmd`  
 **Locate in:** `AuroraCmd.idl`  
 **Available task:** LowerBodyWBCLower, PdStand (in stance stage)
 
 Receives commands to adjust the robot's base height and orientation (pitch and yaw) relative to its initial pose.
 
 ```idl
-struct RobotStandPoseState {     // RobotStand state 
+struct RobotStandPoseCmd {     // RobotStand state 
     std_msgs::msg::Header header;
     double delta_z;             //  z axis height
     double delta_pitch;         // pitch value 
     double delta_yaw;           // yaw value
-    uint8 stable_level;         
 };
 ```
