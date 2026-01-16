@@ -33,7 +33,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
 
 - 基座高度、俯仰和偏航的相对增量指令（相对于初始姿态）。
   - 单位：高度为米，俯仰和偏航为弧度
-  - 范围（gr2）：delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
+  - 范围：delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
   - 注意：仅在机器人处于站立状态时生效。
   - 参考：[机器人站立位姿指令](../aurora_dds_reference_CN.md#机器人站立位姿指令)
 
@@ -89,7 +89,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
 -------|---------|----------|----------|-----
 UserController_A | LowerBodyWBCLowerTask UpperBodyStateManagerTask | RB+A | 3 | WBC RL 策略行走，接收外部速度指令 (vx, vy, vyaw)，支持上半身关节（腰部、手臂、头部和手）的外部关节控制指令
 
-### LowerBodyCpgRLTask 任务规范
+### LowerBodyWBCLowerTask 任务规范
 
 此任务用于通过策略控制下半身关节（髋、膝和踝），使机器人能够行走。建议先切换到 PdStand 状态以确保机器人站在平面上。切换到 LowerBodyCpgRLTask 后，机器人将执行 CPG 策略来控制下半身关节。
 
@@ -103,9 +103,9 @@ UserController_A | LowerBodyWBCLowerTask UpperBodyStateManagerTask | RB+A | 3 | 
 
 - 基座高度和俯仰指令（以相对初始姿态的增量形式表示）。
   - 单位：高度为米 (meter)，俯仰为弧度 (radian)
-  - 范围 (gr3)：delta_z [-0.4, 0.04]，delta_pitch [-0.3, 0.5]
+  - 范围：delta_z [-0.4, 0.04]，delta_pitch [-0.3, 0.5]
   - 注意：仅在机器人处于站立状态时生效。
-  - 参考：[机器人站立位姿状态](../aurora_dds_reference_CN.md#机器人站立位姿状态)
+  - 参考：[机器人站立位姿指令](../aurora_dds_reference_CN.md#机器人站立位姿指令)
 
 **输出:**
 
