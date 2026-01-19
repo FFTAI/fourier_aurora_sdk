@@ -99,7 +99,7 @@ INPUTS:
   - Unit: no unit, scaled inside algorithm
   - Range: vx [-1.0, 1.0], vy [-1.0, 1.0], vyaw [-1.0, 1.0]
   - Note: velocity command takes normalized non-dimensional input. velocity command will be mapped to vx: [-1.0, 1.0], vy: [-0.4, 0.4], vyaw: [-0.6, 0.6]
-  - Reference: [Velocity commands](../aurora_dds_reference_EN.md#velocity-command)
+  - Reference: [Velocity Command](../aurora_dds_reference_EN.md#velocity-command)
 
 - Base height and pitch commands in delta format(relative to init pose).
   - Unit: meter for height, radian for pitch

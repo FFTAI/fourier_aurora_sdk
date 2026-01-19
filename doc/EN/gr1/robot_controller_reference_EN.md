@@ -98,7 +98,7 @@ INPUTS:
 - Velocity commands (vx, vy, vyaw).
   - Unit: m/s for vx and vy, radian/s for vyaw
   - Range: vx [-0.4, 0.5], vy [-0.3, 0.3], vyaw [-0.8, 0.8]
-  - Reference: [Velocity commands](../aurora_dds_reference_EN.md#velocity-command)
+  - Reference: [Velocity Command](../aurora_dds_reference_EN.md#velocity-command)
 
 ### UpperBodyStateManagerTask Specification
 
