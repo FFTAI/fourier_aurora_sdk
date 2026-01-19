@@ -33,7 +33,7 @@ INPUTS:
 
 - Base height, pitch and yaw commands in delta format(relative to init pose).
   - Unit: meter for height, radian for pitch and yaw
-  - Range(gr2): delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
+  - Range: delta_z [-0.2, 0.025], delta_pitch [-0.3, 0.45], delta_yaw [-0.5, 0.5]
   - Note: only take effect when robot is in stance state.
   - Reference: [Robot Stand Pose Command](../aurora_dds_reference_EN.md#robot-stand-pose-command)
 
@@ -99,7 +99,7 @@ INPUTS:
   - Unit: no unit, scaled inside algorithm
   - Range: vx [-1.0, 1.0], vy [-1.0, 1.0], vyaw [-1.0, 1.0]
   - Note: velocity command takes normalized non-dimensional input. velocity command will be mapped to vx: [-1.0, 1.0], vy: [-0.4, 0.4], vyaw: [-0.6, 0.6]
-  - Reference: [Velocity commands](../aurora_dds_reference_EN.md#velocity-command)
+  - Reference: [Velocity Command](../aurora_dds_reference_EN.md#velocity-command)
 
 - Base height and pitch commands in delta format(relative to init pose).
   - Unit: meter for height, radian for pitch

@@ -33,7 +33,7 @@ UpperBodyUserCmd | UpperBodyUserCmdTask | - | 11 | 执行上半身关节（腰�
 
 - 基座高度、俯仰和偏航的相对增量指令（相对于初始姿态）。
   - 单位：高度为米，俯仰和偏航为弧度
-  - 范围（gr2）：delta_z [-0.15, 0.01], delta_pitch [-0.2, 0.5], delta_yaw [-0.5, 0.5]
+  - 范围：delta_z [-0.15, 0.01], delta_pitch [-0.2, 0.5], delta_yaw [-0.5, 0.5]
   - 注意：仅在机器人处于站立状态时生效。
   - 参考：[机器人站立位姿指令](../aurora_dds_reference_CN.md#机器人站立位姿指令)
 
