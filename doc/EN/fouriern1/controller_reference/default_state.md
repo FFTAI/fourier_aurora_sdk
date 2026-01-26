@@ -1,4 +1,4 @@
-# Default State Specification
+# Default State Reference
 
 **Default state** is entry state of Aurora, where no controller is running. 
 
@@ -29,7 +29,7 @@ No               | No                 | No            | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter default state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(0)     # change to default state

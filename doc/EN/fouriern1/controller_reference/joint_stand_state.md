@@ -1,4 +1,4 @@
-# Joint Stand State Specification
+# Joint Stand State Reference
 
 **Joint Stand State** slowly moves all joints to its zero position. This state is usually for checking if all actuators are working fine and all joint's zero positions are accurate. 
 
@@ -29,7 +29,7 @@ No               | No                 | No            | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter joint stand state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(1)     # change to joint stand state

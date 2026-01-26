@@ -1,4 +1,4 @@
-# PdStand State Specification
+# PdStand State Reference
 
 **PdStand State** runs a pdstand controller that make the robot stand on a flat surface for further control. There are two stage in pdstand controller, *hanging stage* and *stance stage*. The stage change is determined by inner stable level estimator, where the user can acquire via client.
 
@@ -48,7 +48,7 @@ No               | Yes                | Upper Body    | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter pdstand state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(2)     # change to pdstand state

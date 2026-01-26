@@ -1,4 +1,4 @@
-# UserCmd State Specification
+# UserCmd State Reference
 
 Upon switching to **UserCmd State**, the user can send external joint position commands for all joints, and actuator config setup commands such as pd parameters. The robot will execute these commands and update its states accordingly.
 
@@ -27,7 +27,7 @@ No               | No                 | Whole Body    | Whole Body
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter usercmd state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(10)     # change to usercmd state

@@ -1,4 +1,4 @@
-# Security Protection State Specification
+# Security Protection State Reference
 
 **Security Protection State** is prepared for scenerios where robot goes off control. When entering security protection state, the controller will first set all actuators to damping mode for 2 seconds, then set all actuators to zero torque mode. The user could still read joint's states in zero torque mode.
 
@@ -31,7 +31,7 @@ No               | No                 | No            | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter security protection state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(9)     # change to security protection state
