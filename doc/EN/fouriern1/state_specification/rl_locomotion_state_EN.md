@@ -1,6 +1,6 @@
-# CPG Walk State Specification
+# RL Locomotion State Specification
 
-**CPG Walk State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions.
+**RL Locomotion State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions.
 
 On the other side, upper body is managed by a state manager task, which allows the user to switch between different upper body controllers. Avaliable controllers are:
 
@@ -12,7 +12,7 @@ On the other side, upper body is managed by a state manager task, which allows t
 
 State name | Task name                                      | Joystick mapping | DDS mapping | Frequency
 -----------|------------------------------------------------|------------------|-------------|-------------
-CPG Walk   | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
+RL Locomotion  | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -20,7 +20,7 @@ No                    | Yes                    | No
 
 ## Joystick Control
 
-### Enter CPG Walk State
+### Enter RL Locomotion State
 
 After initailize *AuroraCore*, press bumper `RB` and button `A` at the same time to enter pdstand state.
 
@@ -42,7 +42,7 @@ Velocity control | Stand pose control | Joint control | Joint parameter control
 -----------------|--------------------|---------------|-------------------
 Yes              | No                 | Upper Body    | No
 
-### Enter CPG Walk State
+### Enter RL Locomotion State
 
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter pdstand state.
 
@@ -50,7 +50,7 @@ After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to e
 client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", serial_number=None)   # initialize aurora client
 time.sleep(1)
 
-client.set_fsm_state(3)     # change to cpg walk state
+client.set_fsm_state(3)     # change to RL locomotion state
 ```
 
 ### Velocity Control
@@ -86,7 +86,7 @@ client.set_upper_fsm_state(1)   # turn on arm swing
 
 ### Joint Control
 
-To apply joint control in cpg walk state, it is necessaey to change upper body state to 2. 
+To apply joint control in RL locomotion state, it is necessaey to change upper body state to 2. 
 
 Once upper state is changed to 2, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
