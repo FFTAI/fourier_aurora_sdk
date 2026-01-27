@@ -29,12 +29,14 @@ The state specification for each state is formatted as the same structure. Here'
 - **Avaliable for standing**: This section indicates if the controllers in that state is able to stand on its own.
 - **Auto Protection Switch**: Some controller comes with auto protection switch mechanism. When they finds themselves beyond the controllable range, they will automatically switch to security protection state. This section indicates whether controllers in that state comes with the auto protection switch mechanism.
 
-## Aurora State Interface
+## State Switch Interface
 
-Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can user aurora python client to switch between these states.
+Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can user aurora python client to switch between these states and acquire current running state.
 
 ```python
-client.set_fsm_state(state: int)
+client.set_fsm_state(2)     # switch to pdstand state
+
+state = client.get_fsm_state()   # get dds mapping value for current state
 ```
 
 ## Control Unit
