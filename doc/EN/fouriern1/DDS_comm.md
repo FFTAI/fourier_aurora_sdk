@@ -6,7 +6,7 @@ The OMG Data Distribution Service (DDS) is a middleware protocol and API standar
 
 In a distributed system, middleware is the software layer that lies between the operating system and applications. It enables the various components of a system to more easily communicate and share data. It simplifies the development of distributed systems by letting software developers focus on the specific purpose of their applications rather than the mechanics of passing information between applications and systems.
 
-![aurora_dataflow](../image/DDS_data_centricity.jpg)
+![aurora_dataflow](../../image/DDS_data_centricity.jpg)
 
 (source: https://www.dds-foundation.org)
 
@@ -18,8 +18,7 @@ For installation of fourier aurora client, please refer to quick start section (
 
 ### Client Usage
 
-Before starting fourier aurora client, please make sure **Aurora** is started in a 
-To initialze fourier aurora client, use *get_instance* function. At the end of the code, please use *close* funtion to apply clean up.
+Before using fourier aurora client, please make sure **Aurora** is started. To initialze fourier aurora client, use `get_instance` function. At the end of the code, please use `close` funtion to apply clean up.
 
 ```python
 from fourier_aurora_client import AuroraClient

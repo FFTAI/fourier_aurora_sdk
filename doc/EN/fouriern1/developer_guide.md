@@ -31,7 +31,7 @@ The state specification for each state is formatted as the same structure. Here'
 
 ## State Switch Interface
 
-Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can user aurora python client to switch between these states and acquire current running state.
+Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can use fourier aurora client to switch between these states and acquire current running state.
 
 ```python
 client.set_fsm_state(2)     # switch to pdstand state

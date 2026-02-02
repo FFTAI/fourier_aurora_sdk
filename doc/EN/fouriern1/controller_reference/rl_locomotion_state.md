@@ -63,17 +63,18 @@ Once the velocity source is set to 2, velocity control is avaliable via `set_vel
 
 ```python
 client.set_velocity_source(2)   # set velocity source to client control
+time.sleep(0.5)
 
-client.set_velocity(0.5, 0.0, 0.0)  # make robot move forward at 0.5 m/s
+client.set_velocity(0.3, 0.0, 0.0, 5.0)  # make robot move forward at 0.5 m/s for 5 seconds
 time.sleep(5.0)
 
-client.set_velocity(0.0, 0.5, 0.0)  # make robot move left at 0.5 m/s
+client.set_velocity(0.0, 0.3, 0.0, 5.0)  # make robot move left at 0.3 m/s for 5 seconds
 time.sleep(5.0)
 
-client.set_velocity(0.0, 0.0, 1.0)  # make robot turn left at 1.0 rad/s
+client.set_velocity(0.0, 0.0, 0.5, 5.0)  # make robot turn left at 1.0 rad/s for 5 seconds
 time.sleep(5.0)
 
-client.set_velocity(0.0, 0.0, 0.0)  # make robot stop
+client.set_velocity(0.0, 0.0, 0.0, 1.0)  # make robot stop 
 ```
 
 ### Arm Swing
