@@ -1,29 +1,39 @@
-# Fourier Aurora 客户端 API 文档
+# Fourier Aurora Client API 文档
 
 ## 函数列表
 
-- [get_instance](#get_instance)
-- [close](#close)
-- [get_fsm_state](#get_fsm_state)
-- [get_fsm_name](#get_fsm_name)
-- [get_upper_fsm_state](#get_upper_fsm_state)
-- [get_upper_fsm_name](#get_upper_fsm_name)
-- [get_velocity_source](#get_velocity_source)
-- [get_velocity_source_name](#get_velocity_source_name)
-- [get_stand_pose](#get_stand_pose)
-- [get_group_state](#get_group_state)
-- [get_cartesian_state](#get_cartesian_state)
-- [get_base_data](#get_base_data)
-- [get_contact_data](#get_contact_data)
-- [set_fsm_state](#set_fsm_state)
-- [set_upper_fsm_state](#set_upper_fsm_state)
-- [set_velocity_source](#set_velocity_source)
-- [set_velocity](#set_velocity)
-- [set_stand_pose](#set_stand_pose)
-- [set_group_cmd](#set_group_cmd)
-- [set_motor_cfg_pd](#set_motor_cfg_pd)
+- AuroraClient
+  - [get_instance](#get_instance)
+  - [close](#close)
+  - [get_fsm_state](#get_fsm_state)
+  - [get_fsm_name](#get_fsm_name)
+  - [get_upper_fsm_state](#get_upper_fsm_state)
+  - [get_upper_fsm_name](#get_upper_fsm_name)
+  - [get_velocity_source](#get_velocity_source)
+  - [get_velocity_source_name](#get_velocity_source_name)
+  - [get_stand_pose](#get_stand_pose)
+  - [get_group_state](#get_group_state)
+  - [get_cartesian_state](#get_cartesian_state)
+  - [get_base_data](#get_base_data)
+  - [get_contact_data](#get_contact_data)
+  - [get_group_motion_state](#get_group_motion_state)
+  - [wait_groups_motion_complete](#wait_groups_motion_complete)
+  - [set_fsm_state](#set_fsm_state)
+  - [set_upper_fsm_state](#set_upper_fsm_state)
+  - [set_velocity_source](#set_velocity_source)
+  - [set_velocity](#set_velocity)
+  - [set_stand_pose](#set_stand_pose)
+  - [set_group_cmd](#set_group_cmd)
+  - [set_motor_cfg_pd](#set_motor_cfg_pd)
+  - [set_move_command](#set_move_command)
 
-## 用户接口
+- MoveCommandManager
+  - [init](#init)
+  - [joint_move_command](#joint_move_command)
+  - [cartesian_move_command](#cartesian_move_command)
+  - [get_move_command](#get_move_command)
+
+## AuroraClient 用户接口
 
 ### get_instance
 
@@ -51,7 +61,7 @@ AuroraClient.close()
 
 关闭 AuroraClient 实例。
 
-## Getter 函数
+## AuroraClient Getter 函数
 
 ### get_fsm_state
 
@@ -219,7 +229,35 @@ AuroraClient.get_contact_data(key: str) -> list[float]
 - 返回值
   - list[float]：所请求的接触数据。
 
-## Setter 函数
+### get_group_motion_state
+
+```python
+AuroraClient.get_group_motion_state(group_name: str) -> int
+```
+
+获取控制组的运动状态。
+
+- 参数
+  - group_name (str)：控制组的名称。
+- 返回值
+  - int：控制组的运动状态。
+
+### wait_groups_motion_complete
+
+```python
+AuroraClient.wait_groups_motion_complete(group_names: list[str], print_interval: float = 0.3) -> bool
+```
+
+持续检查并阻塞程序，直到指定控制组的运动完成。
+
+- 参数
+  - group_names (*list[str]*)：需要检查的控制组名称列表。
+  - print_interval (*int, 可选*)：信息打印的时间间隔，默认为 0.3 秒。
+
+- 返回值
+  - bool：所有控制组是否完成移动指令。
+
+## AuroraClient Setter 函数
 
 ### set_fsm_state
 
@@ -315,9 +353,9 @@ AuroraClient.set_group_cmd(position_cmd: Dict[str, list[float]], velocity_cmd: O
 设置机器人的关节位置。
 
 - 参数
-  - position_dict (*Dict[str, list[float]]*)：以关节名称为键、关节位置为值的字典。
-  - velocity_dict (*Dict[str, list[float]], 可选*)：以关节名称为键、关节速度为值的字典。
-  - torque_dict (*Dict[str, list[float]], 可选*)：以关节名称为键、关节力矩为值的字典。
+  - position_cmd (*Dict[str, list[float]]*)：以控制组名称为键、关节位置为值的字典。
+  - velocity_cmd (*Dict[str, list[float]], 可选*)：以控制组名称为键、关节速度为值的字典。
+  - torque_cmd (*Dict[str, list[float]], 可选*)：以控制组名称为键、关节力矩为值的字典。
 
 ### set_motor_cfg_pd
 
@@ -334,3 +372,72 @@ AuroraClient.set_motor_cfg_pd(self, kp_config: Dict[str, list[float]], kd_config
 - 注意
   - kp_config 和 kd_config 中的键应与机器人电机配置中的控制组名称匹配。
   - kp_config 和 kd_config 中的值应为表示控制组中每个关节增益的浮点数列表。
+
+### set_move_command
+
+```python
+AuroraClient.set_move_command(move_command: MotionControlCmd.MoveCommand)
+```
+
+设置机器人的移动指令。
+
+- 参数
+  - move_command (MotionControlCmd.MoveCommand)：移动指令消息。
+
+## MoveCommandManager 函数
+
+### init
+
+```python
+MoveCommandManager(config_path: Optional[Union[str, Path]] = None, robot_name: Optional[str] = None) -> MoveCommandManager
+```
+
+初始化移动指令管理器
+
+- 参数
+  - config_path (*Union[str, Path], 可选*)：机器人配置目录
+  - robot_name (*str, 可选*)：机器人类型名称（例如 gr2、gr3），默认为 gr3。
+
+- 返回值
+  - MoveCommandManager：MoveCommandManager 类的一个实例。
+
+### joint_move_command
+
+```python
+joint_move_command(self, move_type: Union[int, MoveType], group_name: str, group_pos: list[float], group_vel: Optional[int] = None, expect_vel: int = 1000)
+```
+
+为单个控制组创建关节级移动指令。
+
+- 参数
+  - move_type (*int*)：移动类型。对于此函数，仅 0（MOVE_ABS_JOINT）可用。
+  - group_name (*str*)：控制组的名称。
+  - group_pos (*list(float)*)：控制组的目标关节位置。
+  - group_vel (*list(float), 可选*)：控制组的目标关节速度。
+  - expect_vel (*int, 可选*)：期望的移动速度，以最大速度的千分之一表示。
+
+### cartesian_move_command
+
+```python
+cartesian_move_command(self, move_type: Union[int, MoveType], group_name: str, group_pos: list[float], group_vel: Optional[int] = None, expect_vel: int = 1000)
+```
+
+为单个控制组创建笛卡尔坐标系移动指令。
+
+- 参数
+  - move_type (*Union[int, MoveType]*)：移动类型。对于此函数，仅 1（MOVE_JOINT）和 2（MOVE_LINE）可用。
+  - group_name (*str*)：控制组的名称。
+  - group_pos (*list(float)*)：控制组的目标笛卡尔位置。
+  - group_vel (*list(float), 可选*)：控制组的目标笛卡尔速度。
+  - expect_vel (*int, 可选*)：期望的移动速度，以最大速度的千分之一表示。
+
+### get_move_command
+
+```python
+get_move_command() -> MotionControlCmd.MoveCommand
+```
+
+获取已配置的 MoveCommand 消息。
+
+- 返回值
+  - MotionControlCmd.MoveCommand：已配置的 MoveCommand 消息。
