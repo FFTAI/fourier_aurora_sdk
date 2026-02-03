@@ -10,6 +10,8 @@ For developer that want to get current stand pose status, it is avaliable throug
 
 **Avaliable tasks for stand pose adjustment:** [PdStand State](controller_reference/pd_stand_state.md)
 
+**Example:**
+
 ```python
 client.set_fsm_state(2)     # switch to pdstand state that allows stand pose adjustment
 time.sleep(1.0)

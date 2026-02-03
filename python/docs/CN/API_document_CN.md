@@ -14,6 +14,7 @@
   - [get_stand_pose](#get_stand_pose)
   - [get_group_state](#get_group_state)
   - [get_cartesian_state](#get_cartesian_state)
+  - [get_group_motor_cfg](#get_group_motor_cfg)
   - [get_base_data](#get_base_data)
   - [get_contact_data](#get_contact_data)
   - [get_group_motion_state](#get_group_motion_state)
@@ -188,6 +189,25 @@ AuroraClient.get_cartesian_state(group_name: str, key: str = 'pose') -> list[flo
 
 - 返回值
   - list[float]：指定控制组所请求的笛卡尔状态数据。
+
+### get_group_motor_cfg
+
+```python
+get_group_motor_cfg(group_name: str, key: str = 'pd_kp') -> list[float]
+```
+
+获取指定机器人控制组的电机配置。
+
+- 参数
+  - group_name (*str*)：机器人控制组的名称。
+  - key (*str, 可选*)：需要从控制组状态中获取的键。有效值：
+    - 'pd_kp' - PD 控制模式的电机比例增益
+    - 'pd_kd' - PD 控制模式的电机微分增益
+    - 'pos_kp' - 位置控制模式的电机比例增益
+    - 'pos_ki' - 位置控制模式的电机积分增益
+    - 'pos_kd' - 位置控制模式的电机微分增益
+- 返回值
+  - list[float]：指定控制组所请求的状态数据。
 
 ### get_base_data
 

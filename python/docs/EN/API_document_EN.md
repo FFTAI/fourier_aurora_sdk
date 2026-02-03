@@ -14,6 +14,7 @@
   - [get_stand_pose](#get_stand_pose)
   - [get_group_state](#get_group_state)
   - [get_cartesian_state](#get_cartesian_state)
+  - [get_group_motor_cfg](#get_group_motor_cfg)
   - [get_base_data](#get_base_data)
   - [get_contact_data](#get_contact_data)
   - [get_group_motion_state](#get_group_motion_state)
@@ -188,6 +189,25 @@ Get the cartesian state of a specific robot group.
 
 - Returns:
   - list[float]: The requested state cartesian for the specified group.
+
+### get_group_motor_cfg
+
+```python
+get_group_motor_cfg(group_name: str, key: str = 'pd_kp') -> list[float]
+```
+
+Get the state of a specific robot control group.
+
+- Args:
+  - group_name (*str*): The name of the robot control group.
+  - key (*str, optional*): The key to retrieve from the group state. Avaliable values are:
+    - 'pd_kp' - motor proportional gain for pd control mode
+    - 'pd_kd' - motor derivative gain for pd control mode
+    - 'pos_kp' - motor proportional gain for pos control mode
+    - 'pos_ki' - motor intrgral gain for pos control mode
+    - 'pos_kd' - motor derivative gain for pos control mode
+- Returns:
+  - list[float]: The requested state data for the specified group.
 
 ### get_base_data
 
