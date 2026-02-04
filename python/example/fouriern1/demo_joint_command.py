@@ -2,7 +2,7 @@ from fourier_aurora_client import AuroraClient
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123)
+client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
 
 print("Initializing robot for joint control...")
 
@@ -25,7 +25,7 @@ kd_config = {
     'waist': [4.0]
 }
 client.set_motor_cfg_pd(kp_config=kp_config, kd_config=kd_config)
-time.sleep(0.2)
+time.sleep(1.0)
 
 # Read back the configuration
 actual_kp = client.get_group_motor_cfg('left_manipulator', 'pd_kp')

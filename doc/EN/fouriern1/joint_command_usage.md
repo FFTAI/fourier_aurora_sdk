@@ -45,11 +45,11 @@ left_manipulator_pos = [0, 0, 0, 0.5, 0]
 
 # Control left manipulator - move to specific joint positions
 position_cmd = {
-    'left_arm': left_manipulator_pos
+    'left_manipulator': left_manipulator_pos
 }
 
 client.set_group_cmd(position_cmd=position_cmd)
-print("Left arm position command sent")
+print("Left manipulator position command sent")
 ```
 
 **Example - Multi-Group Interpolate Control:**
@@ -114,7 +114,8 @@ kp_config = {'left_manipulator': left_manipulator_kp}
 kd_config = {'left_manipulator': left_manipulator_kd}
 
 client.set_motor_cfg_pd(kp_config=kp_config, kd_config=kd_config)
-print("Left arm PD gains configured for compliant control")
+print("Left manipulator PD gains configured for compliant control")
+time.sleep(1.0)
 
 # Read back the configuration
 actual_kp = client.get_group_motor_cfg('left_manipulator', 'pd_kp')
@@ -135,15 +136,17 @@ from fourier_aurora_client import AuroraClient
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123)
+client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
 
 print("Initializing robot for joint control...")
 
 # Step 1: Set FSM state to User Command State
+cmd = input("Press Enter to set FSM to User Command State (state 10)...")
 client.set_fsm_state(10)
 time.sleep(0.5)
 
 # Step 2: Configure motor gains
+cmd = input("Press Enter to configure motor PD gains...")
 print("Configuring motor PD gains...")
 kp_config = {
     'left_manipulator': [50.0] * 5,
@@ -156,9 +159,19 @@ kd_config = {
     'waist': [4.0]
 }
 client.set_motor_cfg_pd(kp_config=kp_config, kd_config=kd_config)
-time.sleep(0.2)
+time.sleep(1.0)
+
+# Read back the configuration
+actual_kp = client.get_group_motor_cfg('left_manipulator', 'pd_kp')
+actual_kd = client.get_group_motor_cfg('left_manipulator', 'pd_kd')
+
+print(f"Configured Kp: {kp_config['left_manipulator']}")
+print(f"Actual Kp: {actual_kp}")
+print(f"Configured Kd: {kd_config['left_manipulator']}")
+print(f"Actual Kd: {actual_kd}")
 
 # Step 3: Get current positions
+cmd = input("Press Enter to  move to target joint positions...")
 print("Reading current positions...")
 current_pos = {
     'left_manipulator': client.get_group_state('left_manipulator', key='position'),
@@ -169,14 +182,12 @@ print(f"  Left manipulator: {[f'{p:.3f}' for p in current_pos['left_manipulator'
 print(f"  Right manipulator: {[f'{p:.3f}' for p in current_pos['right_manipulator']]}")
 print(f"  Waist: {[f'{p:.3f}' for p in current_pos['waist']]}")
 
-# Step 4: Define target positions
 target_pos = {
-    'left_manipulator': [0.0, 0.0, 0.0, 1.2, 0.0],
-    'right_manipulator': [0.0, 0.0, 0.0, 1.2, 0.0],
+    'left_manipulator': [0.0, 0.0, 0.0, 0.5, 0.0],
+    'right_manipulator': [0.0, 0.0, 0.0, 0.5, 0.0],
     'waist': [0.5]
 }
 
-# Step 5: Move to target position with interpolation
 print("\nMoving to target position...")
 total_steps = 200
 dt = 0.01
@@ -197,7 +208,8 @@ for step in range(total_steps + 1):
 print("Target position reached")
 time.sleep(1.0)
 
-# Step 6: Return to zero position with interpolation
+# Step 4: Return to zero position with interpolation
+cmd = input("Press Enter to return to zero position...")
 print("\nReturning to zero position...")
 zero_pos = {
     'left_manipulator': [0.0] * 5,
@@ -228,7 +240,6 @@ for step in range(total_steps + 1):
 print("Zero position reached")
 time.sleep(0.5)
 
-# Step 7: Monitor final state
 print("\nFinal robot state:")
 final_left = client.get_group_state('left_manipulator', 'position')
 final_right = client.get_group_state('right_manipulator', 'position')

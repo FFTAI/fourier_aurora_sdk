@@ -1,6 +1,6 @@
 # Robot Status Usage
 
-This document explains how to acquire various robot status information using the AuroraClient API. The robot provides real-time state data including base motion data, contact information, joint states, and Cartesian states for different control groups. All robot status listed in this document is avalible throughout the runtime.
+This document explains how to acquire various robot status information using the AuroraClient API. The robot provides real-time state data including base motion data, contact information, joint states, and Cartesian states for different control groups. All robot status listed in this document is avalible throughout the runtime. All status update runs at 500Hz except motor configuration.
 
 ## Base Data
 
@@ -132,7 +132,7 @@ if len(left_manipulator_wrench) >= 6:
 
 ### get_group_motor_cfg
 
-The `get_group_motor_cfg()` function retrieves the motor configuration parameters for a specific control group. This includes PID gains for different control modes.
+The `get_group_motor_cfg()` function retrieves the motor configuration parameters for a specific control group. This includes PID gains for different control modes. Motor configuration data updates at a rate of 1 hz.
 
 Note: Currently Aurora only provides PD control modes in opensource version. Therefore, only `pd_kp` and `pd_kd` is valid for this function.
 
