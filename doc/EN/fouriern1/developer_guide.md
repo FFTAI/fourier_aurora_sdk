@@ -10,13 +10,13 @@ Aurora provide various controllers natively, each controller is run by a task. T
 
 State name          | Joystick mapping | DDS mapping | Link
 --------------------|------------------|-------------|-------------
-Default             | LB+RB            | 0           | [Default State](state_specification/default_state_EN.md)
-Security Protection | LT+RT            | 9           | [Security Protection State](state_specification/security_protection_state_EN.md)
-Joint Stand         | LB+A             | 1           | [Joint Stand State](state_specification/joint_stand_state_EN.md)
-PdStand             | LB+A             | 2           | [PdStand State](state_specification/pd_stand_state_EN.md)
-RL Locomotion       | RB+A             | 3           | [RL Locomotion State](state_specification/rl_locomotion_state_EN.md)
-UserCmd             | No               | 10          | [UserCmd State](state_specification/user_cmd_state_EN.md)
-Upper UserCmd       | No               | 11          | [Upper UserCmd State](state_specification/upper_user_cmd_state_EN.md)
+Default             | LB+RB            | 0           | [Default State](controller_reference/default_state.md)
+Security Protection | LT+RT            | 9           | [Security Protection State](controller_reference/security_protection_state.md)
+Joint Stand         | LB+A             | 1           | [Joint Stand State](controller_reference/joint_stand_state.md)
+PdStand             | LB+A             | 2           | [PdStand State](controller_reference/pd_stand_state.md)
+RL Locomotion       | RB+A             | 3           | [RL Locomotion State](controller_reference/rl_locomotion_state.md)
+UserCmd             | No               | 10          | [UserCmd State](controller_reference/user_cmd_state.md)
+Upper UserCmd       | No               | 11          | [Upper UserCmd State](controller_reference/upper_user_cmd_state.md)
 
 The state specification for each state is formatted as the same structure. Here's explanation on terms in state specification.
 
@@ -38,11 +38,3 @@ client.set_fsm_state(2)     # switch to pdstand state
 
 state = client.get_fsm_state()   # get dds mapping value for current state
 ```
-
-## Control Unit
-
-Aurora does not support direct control on actuators, all joint controls are aligned with the urdf model. For parallel mechanism, the calculation is done within Aurora, and only joint level state and command will be avaliable. To achive actuator level control, please refer to *fourier_actuator_sdk*.
-
-**control group** is a group of connected controllable joints, and is an important concept in Aurora. For fourier n1, the control groups are: `Left_Leg`, `Right_Leg`, `Waist`, `Left_Manipulator`, `Right_Manipulator`. The minimum control unit in Aurora is control group, meaning the user have to send the command for a complete control group each time.
-
-For detailed specification on joints and control groups, please refer to [robot_specs](robot_specs_EN.md)

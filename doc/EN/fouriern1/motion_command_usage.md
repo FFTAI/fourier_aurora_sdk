@@ -39,7 +39,7 @@ For the rl locomotion controller, the velocity command can be set through `set_v
 
 Before applying velocity control through client, it is necessary to first switch velocity source in Aurora. Velocity source makes sure only one source can send velocity command at a time, ensure safety. Velocity source can be set with `set_velocity_source` function, where 0 refers to joystick control, and 2 refers to client control.
 
-**Avaliable tasks for stand pose adjustment:** [RL Locomotion State](state_specification/rl_locomotion_state_EN.md)
+**Avaliable tasks for stand pose adjustment:** [RL Locomotion State](controller_reference/rl_locomotion_state.md)
 
 ```python
 client.set_fsm_state(3)         # switch to rl locomotion state that allows velocity control
