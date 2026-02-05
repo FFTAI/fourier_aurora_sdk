@@ -29,12 +29,50 @@ The state specification for each state is formatted as the same structure. Here'
 - **Avaliable for standing**: This section indicates if the controllers in that state is able to stand on its own.
 - **Auto Protection Switch**: Some controller comes with auto protection switch mechanism. When they finds themselves beyond the controllable range, they will automatically switch to security protection state. This section indicates whether controllers in that state comes with the auto protection switch mechanism.
 
-## State Switch Interface
+## Fourier Aurora Client
 
-Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can use fourier aurora client to switch between these states and acquire current running state.
+**Fourier Aurora Client** is the Python client for Aurora. It allows you to interact with the Aurora API to retrieve data and perform actions on the Aurora platform through DDS middleware. Aurora client can be installed on the robot chest computer or any other devices to communicate with Aurora server.
+
+For installation of fourier aurora client, please refer to quick start section (needs link).
+
+### Client Usage
+
+Before using fourier aurora client, please make sure **Aurora** is started. To initialze fourier aurora client, use `get_instance` function. The *domain_id* and *robot_name* arguments are mandatory for connection with Aurora. For fouriern1, the *domain_id* is set to 123 by default, and *robot_name* should be "fouriern1". The *namespace* and *is_ros_compatible* options are reserved for future use.
+
+At the end of the code, please use `close` funtion to apply clean up on the client.
+
+```python
+from fourier_aurora_client import AuroraClient
+
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", namespace=None, is_ros_compatible=False)
+
+# execution contents here ...
+
+client.close()
+```
+
+### State Switch Interface
+
+Each controller state in Aurora is mapped by a *DDS mapping value*, which can be found in the table above. Developers can use `set_fsm_state` function in fourier aurora client to switch between these states and acquire current running state.
 
 ```python
 client.set_fsm_state(2)     # switch to pdstand state
 
 state = client.get_fsm_state()   # get dds mapping value for current state
+```
+
+For Rl locomotion state, its upper body controller is managed by a upper body state manager. It can be switched through `set_upper_fsm_state` function.
+
+```python
+client.set_upper_fsm_state(1)     # switch to upper act state (arm swing)
+
+state = client.get_upper_fsm_state()   # get dds mapping value for current upper state
+```
+
+Aurora use a velocity source value to ensure only one device controls the robot's velocity. Before sending velocity commands, switch the velocity source so using `set_velocity_source`
+
+```python
+client.set_velocity_source(2)   # switch to client control
+
+client.get_velocity_source()    # get current velocity source
 ```

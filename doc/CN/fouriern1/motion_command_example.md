@@ -37,7 +37,7 @@ print(client.get_stand_pose())          # 打印当前站姿
 
 ### set_velocity_source
 
-在发送速度命令之前，切换速度源，以便只有一个设备控制机器人。使用 `set_velocity_source()`，其中 `0` 表示手柄控制，`2` 表示客户端控制。
+Aurora 使用速度源值来确保只有一个设备控制机器人的速度。在发送速度命令之前，使用 `set_velocity_source` 切换速度源，其中 `0` 表示手柄控制，`2` 表示客户端控制。
 
 ### set_velocity
 

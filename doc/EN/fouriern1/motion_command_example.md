@@ -35,7 +35,7 @@ print(client.get_stand_pose())          # print current stand pose
 
 ### set_velocity_source
 
-Before sending velocity commands, switch the velocity source so only one device controls the robot. Use `set_velocity_source()` where `0` refers to joystick control and `2` refers to client control.
+Aurora use a velocity source value to ensure only one device controls the robot's velocity. Before sending velocity commands, switch the velocity source so using `set_velocity_source()`, where `0` refers to joystick control and `2` refers to client control.
 
 ### set_velocity
 
