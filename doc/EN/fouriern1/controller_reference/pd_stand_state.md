@@ -1,6 +1,6 @@
 # PdStand State Reference
 
-**PdStand State** runs a pdstand controller that make the robot stand on a flat surface for further control. There are two stage in pdstand controller, *hanging stage* and *stance stage*. The stage change is determined by inner stable level estimator, where the user can acquire via client.
+**PdStand State** runs a WBC standing controller that make the robot stand on a flat surface for further control. There are two stage in pdstand controller, *hanging stage* and *stance stage*. The stage change is determined by inner stable level estimator, where the user can acquire via client.
 
 If stable level goes below 100 (for sim, below 10), the controller would switch to *hanging stage*. In *hanging stage*, all joints will slowly move back to default position, and no stand pose or joint control is avaliable.
 
@@ -10,7 +10,7 @@ If stable level goes above 100 (for sim, above 10), the controller would switch 
 
 State name | Task name     | Joystick mapping | DDS mapping | Frequency
 -----------|---------------|------------------|-------------|-------------
-PdStand    | PdStandTask   | LB+A             | 2           | 400Hz
+PdStand    | PdStandTask   | LB+B             | 2           | 400Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
@@ -20,7 +20,7 @@ Yes                   | Yes                    | No
 
 ### Enter PdStand State
 
-After initailize *AuroraCore*, press bumper `LB` and button `A` at the same time to enter pdstand state.
+After initailize *AuroraCore*, press bumper `LB` and button `B` at the same time to enter pdstand state.
 
 ### Stand Pose Control
 

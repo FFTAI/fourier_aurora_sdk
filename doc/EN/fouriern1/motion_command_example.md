@@ -1,4 +1,4 @@
-# Motion Command Usage
+# Motion Command Example
 
 This document explains how to send high-level motion commands to control the robot using the AuroraClient API. Motion commands include stand pose adjustment and velocity control, and each command is only available in specific controller states.
 

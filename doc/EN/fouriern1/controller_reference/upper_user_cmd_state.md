@@ -20,11 +20,11 @@ No joystick control is avaliable for this state.
 
 Velocity control | Stand pose control | Joint control | Joint parameter control
 -----------------|--------------------|---------------|-------------------
-No               | No                 | Whole Body    | Whole Body
+No               | No                 | Upper Body    | Upper Body
 
 ### Enter UserCmd State
 
-After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter usercmd state.
+After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter upper usercmd state.
 
 ```python
 client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client

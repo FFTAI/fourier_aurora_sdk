@@ -1,4 +1,4 @@
-# Joint Command Usage
+# Joint Command Example
 
 This document explains how to send joint-level commands to control the robot using the AuroraClient API. Aurora provides direct joint position, velocity, and torque control through control groups, as well as motor configuration adjustment capabilities. All commands must be sent through properly defined control groups to ensure coordinated motion.
 
@@ -41,7 +41,7 @@ For detail on actuator's control loop, please refer to *fourier_actuator_sdk*.
 **Example - Direct Position Control:**
 
 ```python
-left_manipulator_pos = [0, 0, 0, 0.5, 0]
+left_manipulator_pos = [0, 0, 0, 0.2, 0]
 
 # Control left manipulator - move to specific joint positions
 position_cmd = {
@@ -77,6 +77,7 @@ for step in range(total_step):
         pos_cmd[control_group] = group_pos_cmd
 
     client.set_group_cmd(position_cmd=pos_cmd)
+    time.sleep(dt)
 print("Multiple control groups commanded to target position")
 ```
 

@@ -1,4 +1,4 @@
-# Robot Status Usage
+# Robot Status Example
 
 This document explains how to acquire various robot status information using the AuroraClient API. The robot provides real-time state data including base motion data, contact information, joint states, and Cartesian states for different control groups. All robot status listed in this document is avalible throughout the runtime. All status update runs at 500Hz except motor configuration.
 

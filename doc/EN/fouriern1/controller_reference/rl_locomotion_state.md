@@ -1,6 +1,6 @@
 # RL Locomotion State Reference
 
-**RL Locomotion State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions.
+**RL locomotion State** allows the robot to move with lower body while switch between arm swing and joint control in upper body. The lower body will execute a reinforcement learning based controller which allows velocity control in three directions.
 
 On the other side, upper body is managed by a state manager task, which allows the user to switch between different upper body controllers. Avaliable controllers are:
 
@@ -22,7 +22,7 @@ No                    | Yes                    | No
 
 ### Enter RL Locomotion State
 
-After initailize *AuroraCore*, press bumper `RB` and button `A` at the same time to enter pdstand state.
+After initailize *AuroraCore*, press bumper `RB` and button `A` at the same time to enter RL locomotion state.
 
 ### Velocity Control
 
@@ -44,7 +44,7 @@ Yes              | No                 | Upper Body    | No
 
 ### Enter RL Locomotion State
 
-After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter pdstand state.
+After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter RL locomotion state.
 
 ```python
 client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
