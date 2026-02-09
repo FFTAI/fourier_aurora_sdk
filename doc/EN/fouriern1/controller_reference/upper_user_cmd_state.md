@@ -37,7 +37,7 @@ client.set_fsm_state(11)     # change to upper usercmd state
 
 Joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:**  `Waist`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:**  `waist`, `left_manipulator`, `right_manipulator`
 
 ```python
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
@@ -55,7 +55,7 @@ for i in range(total_steps):
 
 Joint control is avaliable via `set_motor_cfg_pd` function. Currently, Aurora only supports pd control mode on all joints.
 
-**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `waist`, `left_manipulator`, `right_manipulator`
 
 ```python
 kp_config = {

@@ -59,7 +59,7 @@ print("Left manipulator position command sent")
 target_pos = {
     "left_manipulator_target" = [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
     "right_manipulator_target" = [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
-    "waist_target" = [0.5]
+    "waist_target" = [0.5, 0.0, 0.0]
 }
 
 init_pos = {
@@ -108,8 +108,8 @@ controller    | left_leg | right_leg | head | waist | left_manipulator | right_m
 ```python
 # Configure left manipulator with moderate gains for compliant control
 # Values are per-joint in the control group
-left_manipulator_kp = [250.0, 150.0, 100.0, 100.0, 30, 30, 30]
-left_manipulator_kd = [10, 10, 0.5, 0.5, 0.5, 0.5, 0.5]
+left_manipulator_kp = [400, 200, 200, 200, 50, 50, 50]
+left_manipulator_kd = [20, 10, 10, 10, 2.5, 2.5, 2.5]
 
 kp_config = {'left_manipulator': left_manipulator_kp}
 kd_config = {'left_manipulator': left_manipulator_kd}

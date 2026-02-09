@@ -13,6 +13,7 @@ Move commands are available in specific controller states and provide three type
 Unlike direct joint control, move commands automatically handle trajectory interpolation, velocity profiling, and motion completion detection, making them ideal for coordinated multi-group movements.
 
 **Available controller states for move commands:**
+
 - [RL Locomotion State](controller_reference/rl_locomotion_state.md) with Upper FSM State set to Move Command (state 4)
 
 ## MoveCommandManager

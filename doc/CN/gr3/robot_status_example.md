@@ -156,7 +156,7 @@ from fourier_aurora_client import AuroraClient
 import time
 
 # 初始化客户端
-client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
+client = AuroraClient.get_instance(domain_id=123, robot_name='gr3')
 
 print("正在启动机器人状态监控...")
 print("按 Ctrl+C 停止\n")

@@ -29,7 +29,7 @@ Default    | （无任务） | LB+RB            | 0           | -
 启动 *AuroraCore* 后，使用 aurora 客户端的 `set_fsm_state` 函数进入默认状态。
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # 初始化 aurora 客户端
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr3")   # 初始化 aurora 客户端
 time.sleep(1)
 
 client.set_fsm_state(0)     # 切换到初始状态

@@ -32,6 +32,13 @@ RL Locomotion  | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A          
 - 左摇杆水平轴：向左和向右移动
 - 右摇杆水平轴：向左和向右转
 
+### 站姿控制
+
+使用手柄上的方向键来控制机器人的站姿。
+
+- 按 `上` 或 `下` 方向键来控制机器人的高度。
+- 按 `左` 或 `右` 方向键来控制机器人的俯仰角。
+
 ### 摆臂切换
 
 上身状态管理器提供快捷键来打开摆臂任务。单击按钮 `B` 打开摆臂，然后单击 `X` 关闭摆臂。
@@ -47,7 +54,7 @@ RL Locomotion  | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A          
 启动 *AuroraCore* 后，使用 aurora 客户端的 `set_fsm_state` 函数进入RL行走状态。
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # 初始化 aurora 客户端
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr3")   # 初始化 aurora 客户端
 time.sleep(1)
 
 client.set_fsm_state(3)     # 切换到RL行走状态
@@ -59,7 +66,7 @@ client.set_fsm_state(3)     # 切换到RL行走状态
 
 先将速度源设置为 2，之后通过 `set_velocity` 函数进行速度控制。
 
-**速度范围：** `vx`: [-0.5, 0.5], `vy`: [-0.5, 0.5], `vyaw`: [-1.0, 1.0]
+**速度范围：** `vx`: [-1.0, 1.0], `vy`: [-0.3, 0.3], `vyaw`: [-0.6, 0.6]
 
 ```python
 client.set_velocity_source(2)   # 将速度源设置为客户端控制
@@ -77,6 +84,23 @@ time.sleep(5.0)
 client.set_velocity(0.0, 0.0, 0.0, 1.0)  # 使机器人停止
 ```
 
+### 站姿控制
+
+可通过 `set_stand_pose` 函数进行站姿控制。
+
+**站姿范围：** `delta_z`: [0.04, -0.48], `delta_pitch`: [-0.3, 0.5]
+
+```python
+client.set_stand_pose(-0.1, 0.0, 0.0)   # 下蹲 0.1 米
+time.sleep(2.0)
+
+client.set_stand_pose(0.0, 0.2, 0.0)    # 前倾 0.2 弧度
+time.sleep(2.0)
+
+client.set_stand_pose(0.0, 0.0, 0.0)    # 返回默认姿势
+time.sleep(2.0)
+```
+
 ### 摆臂
 
 要打开摆臂任务，将上身状态更改为 1。
@@ -91,13 +115,13 @@ client.set_upper_fsm_state(1)   # 打开摆臂
 
 一旦上身状态更改为 2，可通过 `set_group_cmd` 函数进行关节控制。由于位置命令立即生效，建议在上身关节命令中使用插值以避免命令急剧变化。
 
-**可用控制组：** `waist`、`left_manipulator`、`right_manipulator`
+**可用控制组：** `waist`、`head`、`left_manipulator`、`right_manipulator`
 
 ```python
 client.set_upper_fsm_state(2)   # 打开关节控制
 
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
-left_manipulator_target_pose = [-1.2, 0, 0, 1.2, 0]
+left_manipulator_target_pose = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
 total_steps = 200
 
 for i in range(total_steps):

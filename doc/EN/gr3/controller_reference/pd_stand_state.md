@@ -78,7 +78,7 @@ time.sleep(2.0)
 
 Once the robot enter stance stage, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Waist`, `Head`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `waist`, `head`, `left_manipulator`, `right_manipulator`
 
 ```python
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")

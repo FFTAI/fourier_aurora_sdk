@@ -86,7 +86,7 @@ client.set_velocity(0.0, 0.0, 0.0, 1.0)  # make robot stop
 
 ### Stand Pose Control
 
-Once the robot enter stance stage, stand pose control is avaliable via `set_stand_pose` function.
+Stand pose control is avaliable via `set_stand_pose` function.
 
 **Stand Pose Range:** `delta_z`: [0.04, -0.48], `delta_pitch`: [-0.3, 0.5]
 
@@ -115,7 +115,7 @@ To apply joint control in RL locomotion state, it is necessaey to change upper b
 
 Once upper state is changed to 2, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Waist`, `Head`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `waist`, `head`, `left_manipulator`, `right_manipulator`
 
 ```python
 client.set_upper_fsm_state(2)   # turn on joint control

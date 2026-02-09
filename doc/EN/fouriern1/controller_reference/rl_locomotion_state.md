@@ -91,7 +91,7 @@ To apply joint control in RL locomotion state, it is necessaey to change upper b
 
 Once upper state is changed to 2, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `waist`, `left_manipulator`, `right_manipulator`
 
 ```python
 client.set_upper_fsm_state(2)   # turn on joint control

@@ -27,7 +27,7 @@ Upper UserCmd    | UpperBodyUserCmdTask   | 无               | 10          | 40
 启动 *AuroraCore* 后，使用 aurora 客户端的 `set_fsm_state` 函数进入上身用户指令状态。
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # 初始化 aurora 客户端
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr3")   # 初始化 aurora 客户端
 time.sleep(1)
 
 client.set_fsm_state(11)     # 切换到上身用户指令状态
@@ -37,11 +37,11 @@ client.set_fsm_state(11)     # 切换到上身用户指令状态
 
 可通过 `set_group_cmd` 函数进行关节控制。由于位置命令立即生效，建议在上身关节命令中使用插值以避免命令急剧变化。
 
-**可用控制组：**  `waist`、`left_manipulator`、`right_manipulator`
+**可用控制组：**  `waist`、`head`、`left_manipulator`、`right_manipulator`
 
 ```python
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
-left_manipulator_target_pose = [-1.2, 0, 0, 1.2, 0]
+left_manipulator_target_pose = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
 total_steps = 200
 
 for i in range(total_steps):
@@ -55,18 +55,20 @@ for i in range(total_steps):
 
 可通过 `set_motor_cfg_pd` 函数进行关节控制。目前，Aurora 仅支持所有关节的 pd 控制模式。
 
-**可用控制组：** `waist`、`left_manipulator`、`right_manipulator`
+**可用控制组：** `waist`、`head`、`left_manipulator`、`right_manipulator`
 
 ```python
 kp_config = {
-    "waist": [90.0],
-    "left_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0],
-    "right_manipulator": [90.0, 45.0, 45.0, 45.0, 45.0]
+    "waist": [200, 300, 200], 
+    "head": [100, 100],
+    "left_manipulator": [400, 200, 200, 200, 50, 50, 50],
+    "right_manipulator": [400, 200, 200, 200, 50, 50, 50],
 }
 kd_config = {
-    "waist": [8.0],
-    "left_manipulator": [ 8.0, 2.5, 2.5, 2.5, 2.5],
-    "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
+    "waist": [10, 15, 10],
+    "head": [10, 10],
+    "left_manipulator": [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    "right_manipulator": [20, 10, 10, 10, 2.5, 2.5, 2.5],
 }
 
 client.set_motor_cfg_pd(kp_config, kd_config)
