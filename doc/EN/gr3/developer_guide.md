@@ -37,14 +37,14 @@ For installation of fourier aurora client, please refer to quick start section (
 
 ### Client Usage
 
-Before using fourier aurora client, please make sure **Aurora** is started. To initialze fourier aurora client, use `get_instance` function. The *domain_id* and *robot_name* arguments are mandatory for connection with Aurora. For Fourier-N1, the *domain_id* is set to 123 by default, and *robot_name* should be "fouriern1". The *namespace* and *is_ros_compatible* options are reserved for future use.
+Before using fourier aurora client, please make sure **Aurora** is started. To initialze fourier aurora client, use `get_instance` function. The *domain_id* and *robot_name* arguments are mandatory for connection with Aurora. For GR-3, the *domain_id* is set to 123 by default, and *robot_name* should be "gr3". The *namespace* and *is_ros_compatible* options are reserved for future use.
 
 At the end of the code, please use `close` funtion to apply clean up on the client.
 
 ```python
 from fourier_aurora_client import AuroraClient
 
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1", namespace=None, is_ros_compatible=False)
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr3", namespace=None, is_ros_compatible=False)
 
 # execution contents here ...
 

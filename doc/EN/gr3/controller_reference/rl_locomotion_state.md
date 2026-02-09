@@ -32,6 +32,13 @@ Use the left and right rocker to apply velocity control on the robot.
 - left rocker horizontal axis: move left and right
 - right rocker horizontal axis: turn left and right
 
+### Stand Pose Control
+
+After the robot enter stance stage, use direction keys on the joystick to control robot's stand pose.
+
+- press `up` or `down` direction key to control robot's height.
+- press `left` or `right` direction key to control robot's pitch angle.
+
 ### Arm Swing Switch
 
 The upper body state manager provides a shortcut key to turn on arm swing task. Click button `B` to turn on arm swing, and then click `X` to turn off arm swing.
@@ -47,7 +54,7 @@ Yes              | No                 | Upper Body    | No
 After initailize *AuroraCore*, use aurora client's `set_fsm_state` function to enter RL locomotion state.
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")   # initialize aurora client
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr3")   # initialize aurora client
 time.sleep(1)
 
 client.set_fsm_state(3)     # change to RL locomotion state
@@ -59,7 +66,7 @@ Before applying velocity control through client, it is necessary to first switch
 
 Once the velocity source is set to 2, velocity control is avaliable via `set_velocity` function.
 
-**Velocity Range:** `vx`: [-0.5, 0.5], `vy`: [-0.5, 0.5], `vyaw`: [-1.0, 1.0]
+**Velocity Range:** `vx`: [-1.0, 1.0], `vy`: [-0.3, 0.3], `vyaw`: [-0.6, 0.6]
 
 ```python
 client.set_velocity_source(2)   # set velocity source to client control
@@ -77,6 +84,23 @@ time.sleep(5.0)
 client.set_velocity(0.0, 0.0, 0.0, 1.0)  # make robot stop 
 ```
 
+### Stand Pose Control
+
+Once the robot enter stance stage, stand pose control is avaliable via `set_stand_pose` function.
+
+**Stand Pose Range:** `delta_z`: [0.04, -0.48], `delta_pitch`: [-0.3, 0.5]
+
+```python
+client.set_stand_pose(-0.1, 0.0, 0.0)   # crouch 0.1 meter
+time.sleep(2.0)
+
+client.set_stand_pose(0.0, 0.2, 0.0)    # lean forward 0.2 radian
+time.sleep(2.0)
+
+client.set_stand_pose(0.0, 0.0, 0.0)    # back to default pose
+time.sleep(2.0)
+```
+
 ### Arm Swing
 
 To turn on arm swing task, change upper body state to 1.
@@ -91,13 +115,13 @@ To apply joint control in RL locomotion state, it is necessaey to change upper b
 
 Once upper state is changed to 2, joint control is avaliable via `set_group_cmd` function. Since the position command take effects immediately, it is suggested to use interpolation in upper body joint command to avoid sharp command change.
 
-**Avaliable Control Groups:** `Waist`, `Left_Manipulator`, `Right_Manipulator`
+**Avaliable Control Groups:** `Waist`, `Head`, `Left_Manipulator`, `Right_Manipulator`
 
 ```python
 client.set_upper_fsm_state(2)   # turn on joint control
 
 left_manipulator_init_pose = client.get_group_state("left_manipulator", key="position")
-left_manipulator_target_pose = [-1.2, 0, 0, 1.2, 0]
+left_manipulator_target_pose = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
 total_steps = 200
 
 for i in range(total_steps):

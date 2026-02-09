@@ -2,7 +2,7 @@ from fourier_aurora_client import AuroraClient
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
+client = AuroraClient.get_instance(domain_id=123, robot_name='gr3')
 
 print("Initializing motion control demo...")
 

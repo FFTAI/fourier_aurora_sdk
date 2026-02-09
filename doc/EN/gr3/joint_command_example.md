@@ -6,7 +6,7 @@ This document explains how to send joint-level commands to control the robot usi
 
 Aurora does not support direct control on actuators; all joint controls are aligned with the URDF model. For parallel mechanisms, the calculation is done within Aurora, and only joint-level state and command will be available. To achieve actuator-level control, please refer to *fourier_actuator_sdk*.
 
-**Control group** is a group of connected controllable joints, and is an important concept in Aurora. For Fourier-N1, the control groups are: `left_leg`, `right_leg`, `waist`, `left_manipulator`, `right_manipulator`. The minimum control unit in Aurora is a control group, meaning the developer must send the command for a complete control group each time.
+**Control group** is a group of connected controllable joints, and is an important concept in Aurora. For GR-3, the control groups are: `left_leg`, `right_leg`, `waist`, `head`, `left_manipulator`, `right_manipulator`. The minimum control unit in Aurora is a control group, meaning the developer must send the command for a complete control group each time.
 
 **Important Notes:**
 
@@ -23,12 +23,12 @@ For detailed specifications on joints and control groups, please refer to [robot
 
 The `set_group_cmd()` function sends position, velocity, and torque commands to one or multiple control groups. Position command is mandatory for each command, whereas velocity and torque command are default as 0. Each controllers in Aurora allows different sets of control groups to receive external command, as listed in the table below. Controller not listed cannot receive any group command.
 
-controller    | left_leg | right_leg | waist | left_manipulator | right_manipulator
---------------|----------|-----------|-------|------------------|-------------
-[PdStand State](controller_reference/pd_stand_state.md) | ❌ | ❌ | ✅ | ✅ | ✅
-[RL Locomotion State](controller_reference/rl_locomotion_state.md) | ❌ | ❌ | ✅ | ✅ | ✅
-[UserCmd State](controller_reference/user_cmd_state.md) | ✅ | ✅ | ✅ | ✅ | ✅
-[Upper UserCmd State](controller_reference/upper_user_cmd_state.md) | ❌ | ❌ | ✅ | ✅ | ✅
+controller    | left_leg | right_leg | head | waist | left_manipulator | right_manipulator
+--------------|----------|-----------|------|-------|------------------|-------------
+[PdStand State](controller_reference/pd_stand_state.md) | ❌ | ❌ | ✅ | ✅ | ✅ | ✅
+[RL Locomotion State](controller_reference/rl_locomotion_state.md) | ❌ | ❌ | ✅ | ✅ | ✅ | ✅
+[UserCmd State](controller_reference/user_cmd_state.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅
+[Upper UserCmd State](controller_reference/upper_user_cmd_state.md) | ❌ | ❌ | ✅ | ✅ | ✅ | ✅
 
 Aurora runs PD control mode by default. Its torque output can be computed with:
 
@@ -41,7 +41,7 @@ For detail on actuator's control loop, please refer to *fourier_actuator_sdk*.
 **Example - Direct Position Control:**
 
 ```python
-left_manipulator_pos = [0, 0, 0, 0.2, 0]
+left_manipulator_pos = [0.0, 0.0, 0.0, -0.2, 0.0, 0.0, 0.0]
 
 # Control left manipulator - move to specific joint positions
 position_cmd = {
@@ -57,8 +57,8 @@ print("Left manipulator position command sent")
 ```python
 # Control multiple groups simultaneously with an interpolate motion
 target_pos = {
-    "left_manipulator_target" = [0.0, 0.0, 0.0, 0.5, 0.0],
-    "right_manipulator_target" = [0.0, 0.0, 0.0, 0.5, 0.0],
+    "left_manipulator_target" = [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
+    "right_manipulator_target" = [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
     "waist_target" = [0.5]
 }
 
@@ -96,20 +96,20 @@ The `set_motor_cfg_pd()` function configures the PD (Proportional-Derivative) co
 **Default Configuration:**
 Aurora uses pre-tuned default gains for each control group. Each controller comes with a pretuned motor configuration. Some controller allows external motor config setup in order for developer usage. The avaliability for setting motor config in each controller is listed in the table below.
 
-controller    | left_leg | right_leg | waist | left_manipulator | right_manipulator
---------------|----------|-----------|-------|------------------|-------------
-[PdStand State](controller_reference/pd_stand_state.md) | ❌ | ❌ | ❌ | ❌ | ❌
-[RL Locomotion State](controller_reference/rl_locomotion_state.md) | ❌ | ❌ | ❌ | ❌ | ❌
-[UserCmd State](controller_reference/user_cmd_state.md) | ✅ | ✅ | ✅ | ✅ | ✅
-[Upper UserCmd State](controller_reference/upper_user_cmd_state.md) | ❌ | ❌ | ✅ | ✅ | ✅
+controller    | left_leg | right_leg | head | waist | left_manipulator | right_manipulator
+--------------|----------|-----------|------|-------|------------------|-------------
+[PdStand State](controller_reference/pd_stand_state.md) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌
+[RL Locomotion State](controller_reference/rl_locomotion_state.md) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌
+[UserCmd State](controller_reference/user_cmd_state.md) | ✅ | ✅ | ✅ | ✅ | ✅ | ✅
+[Upper UserCmd State](controller_reference/upper_user_cmd_state.md) | ❌ | ❌ | ✅ | ✅ | ✅ | ✅
 
 **Example - Setting Custom PD Gains:**
 
 ```python
 # Configure left manipulator with moderate gains for compliant control
 # Values are per-joint in the control group
-left_manipulator_kp = [50.0] * 5
-left_manipulator_kd = [5.0] * 5
+left_manipulator_kp = [250.0, 150.0, 100.0, 100.0, 30, 30, 30]
+left_manipulator_kd = [10, 10, 0.5, 0.5, 0.5, 0.5, 0.5]
 
 kp_config = {'left_manipulator': left_manipulator_kp}
 kd_config = {'left_manipulator': left_manipulator_kd}
@@ -137,7 +137,7 @@ from fourier_aurora_client import AuroraClient
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
+client = AuroraClient.get_instance(domain_id=123, robot_name='gr3')
 
 print("Initializing robot for joint control...")
 
@@ -150,14 +150,16 @@ time.sleep(0.5)
 cmd = input("Press Enter to configure motor PD gains...")
 print("Configuring motor PD gains...")
 kp_config = {
-    'left_manipulator': [50.0] * 5,
-    'right_manipulator': [50.0] * 5,
-    'waist': [40.0]
+    'left_manipulator': [400, 200, 200, 200, 50, 50, 50],
+    'right_manipulator': [400, 200, 200, 200, 50, 50, 50],
+    "waist": [200, 300, 200], 
+    "head": [100, 100],
 }
 kd_config = {
-    'left_manipulator': [5.0] * 5,
-    'right_manipulator': [5.0] * 5,
-    'waist': [4.0]
+    'left_manipulator': [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    'right_manipulator': [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    "waist": [10, 15, 10],
+    "head": [10, 10],
 }
 client.set_motor_cfg_pd(kp_config=kp_config, kd_config=kd_config)
 time.sleep(1.0)
@@ -184,9 +186,9 @@ print(f"  Right manipulator: {[f'{p:.3f}' for p in current_pos['right_manipulato
 print(f"  Waist: {[f'{p:.3f}' for p in current_pos['waist']]}")
 
 target_pos = {
-    'left_manipulator': [0.0, 0.0, 0.0, 0.5, 0.0],
-    'right_manipulator': [0.0, 0.0, 0.0, 0.5, 0.0],
-    'waist': [0.5]
+    'left_manipulator': [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
+    'right_manipulator': [0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0],
+    'waist': [0.5, 0.0, 0.0]
 }
 
 print("\nMoving to target position...")
@@ -213,9 +215,9 @@ time.sleep(1.0)
 cmd = input("Press Enter to return to zero position...")
 print("\nReturning to zero position...")
 zero_pos = {
-    'left_manipulator': [0.0] * 5,
-    'right_manipulator': [0.0] * 5,
-    'waist': [0.0]
+    'left_manipulator': [0.0] * 7,
+    'right_manipulator': [0.0] * 7,
+    'waist': [0.0] * 3
 }
 
 # Get current position (should be at target)
