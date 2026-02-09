@@ -8,6 +8,8 @@ Aurora runs a FSM state machine and each state corresponds to certain tasks(cont
 
 Aurora provide various controllers natively, each controller is run by a task. The controllers cannot be called directly. Instead, they are wrapped in seperate states, which make sures the controllers won't overlap.
 
+![aurora_state_switch](../../image/aurora_state_switch.png)
+
 State name          | Joystick mapping | DDS mapping | Link
 --------------------|------------------|-------------|-------------
 Default             | LB+RB            | 0           | [Default State](controller_reference/default_state.md)
