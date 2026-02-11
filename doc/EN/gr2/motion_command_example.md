@@ -6,7 +6,7 @@ This document explains how to send high-level motion commands to control the rob
 
 The `set_stand_pose()` function adjusts the robot standing pose in the PD stand controller. For `PdStand` state, stand pose adjustment is only available in the stance stage. The `get_stand_pose()` function reads the current stand pose (z, pitch, yaw) so you can verify the adjustment.
 
-**Avaliable tasks for stand pose adjustment:** [PdStand State](controller_reference/pd_stand_state.md), [RL Locomotion State](controller_reference/rl_locomotion_state.md)
+**Avaliable tasks for stand pose adjustment:** [PdStand State](controller_reference/pd_stand_state.md)
 
 **Example - Adjust Stand Pose:**
 

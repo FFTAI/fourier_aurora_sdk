@@ -27,7 +27,7 @@ UserCmd    | UserCmdTask   | 无               | 10          | 400Hz
 启动 *AuroraCore* 后，使用 aurora 客户端的 `set_fsm_state` 函数进入用户指令状态。
 
 ```python
-client = AuroraClient.get_instance(domain_id=123, robot_name="gr3")   # 初始化 aurora 客户端
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr2")   # 初始化 aurora 客户端
 time.sleep(1)
 
 client.set_fsm_state(10)     # 切换到用户指令状态
@@ -59,20 +59,20 @@ for i in range(total_steps):
 
 ```python
 kp_config = {
-    "left_leg": [400, 200, 200, 400, 200, 26],
-    "right_leg": [400, 200, 200, 400, 200, 26],
-    "waist": [200, 300, 200], 
+    "left_leg": [200, 150, 150, 400, 150, 80],
+    "right_leg": [200, 150, 150, 400, 150, 80],
+    "waist": [200], 
     "head": [100, 100],
-    "left_manipulator": [400, 200, 200, 200, 50, 50, 50],
-    "right_manipulator": [400, 200, 200, 200, 50, 50, 50],
+    "left_manipulator": [300, 300, 100, 100, 50, 50, 50],
+    "right_manipulator": [300, 300, 100, 100, 50, 50, 50],
 }
 kd_config = {
-    "left_leg": [20, 20, 20, 20, 20, 2.6],
-    "right_leg": [20, 20, 20, 20, 20, 2.6],
-    "waist": [10, 15, 10],
-    "head": [10, 10]
-    "left_manipulator": [20, 10, 10, 10, 2.5, 2.5, 2.5],
-    "right_manipulator": [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    "left_leg": [20.0, 15.0, 15.0, 30.0, 15.0, 8.0],
+    "right_leg": [20.0, 15.0, 15.0, 30.0, 15.0, 8.0],
+    "waist": [10],
+    "head": [10, 10],
+    "left_manipulator": [10, 10, 5, 5, 5, 5, 5],
+    "right_manipulator": [10, 10, 5, 5, 5, 5, 5],
 }
 
 client.set_motor_cfg_pd(kp_config, kd_config)
