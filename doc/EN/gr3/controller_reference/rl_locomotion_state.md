@@ -12,7 +12,7 @@ On the other side, upper body is managed by a state manager task, which allows t
 
 State name | Task name                                      | Joystick mapping | DDS mapping | Frequency
 -----------|------------------------------------------------|------------------|-------------|-------------
-RL Locomotion  | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
+RL Locomotion  | LowerBodyWbcrlTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------

@@ -12,7 +12,7 @@
 
 状态名称 | 任务名称                                      | 手柄映射 | DDS 映射 | 频率
 -----------|------------------------------------------------|------------------|-------------|-------------
-RL Locomotion  | LowerBodyCpgTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
+RL Locomotion  | LowerBodyWbcrlTask / UpperBodyStateManagerTask   | RB+A             | 3           | 50Hz / 500Hz
 
 可用于悬挂 | 可用于站立 | 自动保护切换
 ----------------------|------------------------|----------------
