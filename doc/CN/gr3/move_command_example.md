@@ -195,7 +195,7 @@ from fourier_aurora_client import MoveCommandManager
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=136, robot_name='gr3')
+client = AuroraClient.get_instance(domain_id=123, robot_name='gr3')
 move_command_manager = MoveCommandManager(robot_name='gr3')
 occupied_groups = ["waist", "head", "left_manipulator", "right_manipulator"]
 print_interval = 0.3

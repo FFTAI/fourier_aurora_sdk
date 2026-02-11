@@ -3,8 +3,8 @@ from fourier_aurora_client import MoveCommandManager
 import time
 
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123, robot_name='gr3')
-move_command_manager = MoveCommandManager(robot_name='gr3')
+client = AuroraClient.get_instance(domain_id=123, robot_name='gr2')
+move_command_manager = MoveCommandManager(robot_name='gr2')
 occupied_groups = ["waist", "head", "left_manipulator", "right_manipulator"]
 print_interval = 0.3
 print("Initializing robot for joint control...")
@@ -19,8 +19,8 @@ client.set_upper_fsm_state(4)
 cmd = input("Press Enter to send move abs joint command...")
 print("Sending move abs joint command...")
 
-left_manipulator_target_pos =  [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
-right_manipulator_target_pos = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
+left_manipulator_target_pos =  [0.0, 0.2, 0.0, -0.8, 0.0, 0.0, 0.0]
+right_manipulator_target_pos = [0.0, -0.2, 0.0, -0.8, 0.0, 0.0, 0.0]
 
 move_command_manager.joint_move_command(
     move_type=0,
@@ -49,8 +49,8 @@ print(f"right_manipulator_pose: {client.get_cartesian_state('right_manipulator',
 #Step 3: Set Move Joint Command
 cmd = input("Press Enter to send move joint command...")
 print("Sending move joint command...")
-left_arm_pre_pose =  [0.3,  0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
-right_arm_pre_pose = [0.3, -0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
+left_arm_pre_pose =  [0.25,  0.25, 0.1, 0.0, -0.7071, 0.0, 0.7071]
+right_arm_pre_pose = [0.25, -0.25, 0.1, 0.0, -0.7071, 0.0, 0.7071]
 
 move_command_manager.cartesian_move_command(
     move_type=1,
@@ -77,8 +77,8 @@ print(f"right_manipulator_pose: {client.get_cartesian_state('right_manipulator',
 #Step 4: Set Move Joint Command
 cmd = input("Press Enter to send move line command...")
 print("Sending move line command...")
-left_arm_pre_pose =  [0.3,  0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
-right_arm_pre_pose = [0.3, -0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
+left_arm_pre_pose =  [0.25,  0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
+right_arm_pre_pose = [0.25, -0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
 
 move_command_manager.cartesian_move_command(
     move_type=2,
