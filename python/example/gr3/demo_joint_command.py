@@ -15,14 +15,16 @@ time.sleep(0.5)
 cmd = input("Press Enter to configure motor PD gains...")
 print("Configuring motor PD gains...")
 kp_config = {
-    'left_manipulator': [250.0, 150.0, 100.0, 100.0, 30, 30, 30],
-    'right_manipulator': [250.0, 150.0, 100.0, 100.0, 30, 30, 30],
-    'waist': [100, 300, 200]
+    'left_manipulator': [400, 200, 200, 200, 50, 50, 50],
+    'right_manipulator': [400, 200, 200, 200, 50, 50, 50],
+    "waist": [200, 300, 200], 
+    "head": [100, 100],
 }
 kd_config = {
-    'left_manipulator': [10, 10, 0.5, 0.5, 0.5, 0.5, 0.5],
-    'right_manipulator': [10, 10, 0.5, 0.5, 0.5, 0.5, 0.5],
-    'waist': [8, 12, 8]
+    'left_manipulator': [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    'right_manipulator': [20, 10, 10, 10, 2.5, 2.5, 2.5],
+    "waist": [10, 15, 10],
+    "head": [10, 10],
 }
 client.set_motor_cfg_pd(kp_config=kp_config, kd_config=kd_config)
 time.sleep(1.0)

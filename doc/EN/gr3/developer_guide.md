@@ -78,3 +78,13 @@ client.set_velocity_source(2)   # switch to client control
 
 client.get_velocity_source()    # get current velocity source
 ```
+
+### Control Interface
+
+The control interfaces provided by the Fourier Aurora Client are mainly divided into two categories: robot control information acquisition interfaces and control command sending interfaces.
+
+The robot control information acquisition interfaces are used to read the robot's current operating status and control-related data, including but not limited to key motion information such as joint angles and base velocity. These interfaces can be used under **all operating states** of the robot for status monitoring, control feedback acquisition, and support for upper-level algorithm decision-making. We provide a complete example program for obtaining robot information. Users can refer to the [Robot Information Acquisition Example](./robot_status_example.md).
+
+The control command sending interfaces are used to send control commands to the robot, enabling direct control of the robot's motion behavior. It should be noted that the available control command interfaces differ depending on the robot's operating state. Before sending control commands, users should ensure the robot is in a state compatible with the command type. For specific interface descriptions and usage constraints, please refer to the [State and Task Overview](#state-and-task-overview) corresponding to each operating state.
+
+For a complete description of all interfaces provided by the Fourier Aurora Client, please see the [API Documentation](../../../python/docs/EN/API_document_EN.md).

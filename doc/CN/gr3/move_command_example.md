@@ -194,26 +194,24 @@ from fourier_aurora_client import AuroraClient
 from fourier_aurora_client import MoveCommandManager
 import time
 
-# 初始化客户端和移动指令管理器
+# Initialize client
 client = AuroraClient.get_instance(domain_id=136, robot_name='gr3')
 move_command_manager = MoveCommandManager(robot_name='gr3')
 occupied_groups = ["waist", "head", "left_manipulator", "right_manipulator"]
 print_interval = 0.3
+print("Initializing robot for joint control...")
 
-print("正在初始化机器人进行移动指令控制...")
-
-# 步骤 1：设置 FSM 状态
-cmd = input("按 Enter 键设置 FSM 为 RL locomotion 和 Move Command 状态...")
-client.set_fsm_state(3)  # RL Locomotion State
+# Step 1: Set FSM state to RL locomotion State
+cmd = input("Press Enter to set FSM to RL locomotion (state 3)...")
+client.set_fsm_state(3)
 time.sleep(0.5)
-client.set_upper_fsm_state(4)  # Move Command State
-print("FSM 状态已配置")
+client.set_upper_fsm_state(4)
 
-# 步骤 2：使用绝对关节指令移动到初始位置
-cmd = input("按 Enter 键发送绝对关节移动指令...")
-print("正在发送绝对关节移动指令...")
+# Step 2: Set Move Abs Joint Command
+cmd = input("Press Enter to send move abs joint command...")
+print("Sending move abs joint command...")
 
-left_manipulator_target_pos = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
+left_manipulator_target_pos =  [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
 right_manipulator_target_pos = [0.0, 0.0, 0.0, -1.2, 0.0, 0.0, 0.0]
 
 move_command_manager.joint_move_command(
@@ -235,16 +233,15 @@ time.sleep(0.2)
 client.wait_groups_motion_complete(occupied_groups, print_interval=print_interval)
 time.sleep(0.5)
 
-print(f"左侧机械臂位置: {client.get_group_state('left_manipulator', 'position')}")
-print(f"右侧机械臂位置: {client.get_group_state('right_manipulator', 'position')}")
-print(f"左侧机械臂位姿: {client.get_cartesian_state('left_manipulator', 'pose')}")
-print(f"右侧机械臂位姿: {client.get_cartesian_state('right_manipulator', 'pose')}")
+print(f"left_manipulator_position: {client.get_group_state('left_manipulator', 'position')}")
+print(f"right_manipulator_position: {client.get_group_state('right_manipulator', 'position')}")
+print(f"left_manipulator_pose: {client.get_cartesian_state('left_manipulator', 'pose')}")
+print(f"right_manipulator_pose: {client.get_cartesian_state('right_manipulator', 'pose')}")
 
-# 步骤 3：使用关节空间插值移动到目标位姿
-cmd = input("按 Enter 键发送关节移动指令（笛卡尔空间，关节插值）...")
-print("正在发送关节移动指令...")
-
-left_arm_pre_pose = [0.3, 0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
+#Step 3: Set Move Joint Command
+cmd = input("Press Enter to send move joint command...")
+print("Sending move joint command...")
+left_arm_pre_pose =  [0.3,  0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
 right_arm_pre_pose = [0.3, -0.25, 0.2, 0.0, -0.7071, 0.0, 0.7071]
 
 move_command_manager.cartesian_move_command(
@@ -266,26 +263,25 @@ time.sleep(0.2)
 client.wait_groups_motion_complete(occupied_groups, print_interval=print_interval)
 time.sleep(0.5)
 
-print(f"左侧机械臂位姿: {client.get_cartesian_state('left_manipulator', 'pose')}")
-print(f"右侧机械臂位姿: {client.get_cartesian_state('right_manipulator', 'pose')}")
+print(f"left_manipulator_pose: {client.get_cartesian_state('left_manipulator', 'pose')}")
+print(f"right_manipulator_pose: {client.get_cartesian_state('right_manipulator', 'pose')}")
 
-# 步骤 4：使用笛卡尔线性运动移动到最终位姿
-cmd = input("按 Enter 键发送线性移动指令（笛卡尔线性运动）...")
-print("正在发送线性移动指令...")
-
-left_arm_final_pose = [0.3, 0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
-right_arm_final_pose = [0.3, -0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
+#Step 4: Set Move Joint Command
+cmd = input("Press Enter to send move line command...")
+print("Sending move line command...")
+left_arm_pre_pose =  [0.3,  0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
+right_arm_pre_pose = [0.3, -0.25, 0.3, 0.0, -0.7071, 0.0, 0.7071]
 
 move_command_manager.cartesian_move_command(
     move_type=2,
     group_name="left_manipulator",
-    group_pos=left_arm_final_pose,
+    group_pos=left_arm_pre_pose,
     expect_vel=300
 )
 move_command_manager.cartesian_move_command(
     move_type=2,
     group_name="right_manipulator",
-    group_pos=right_arm_final_pose,
+    group_pos=right_arm_pre_pose,
     expect_vel=300
 )
 
@@ -295,10 +291,9 @@ time.sleep(0.2)
 client.wait_groups_motion_complete(occupied_groups, print_interval=print_interval)
 time.sleep(0.5)
 
-print(f"左侧机械臂位姿: {client.get_cartesian_state('left_manipulator', 'pose')}")
-print(f"右侧机械臂位姿: {client.get_cartesian_state('right_manipulator', 'pose')}")
+print(f"left_manipulator_pose: {client.get_cartesian_state('left_manipulator', 'pose')}")
+print(f"right_manipulator_pose: {client.get_cartesian_state('right_manipulator', 'pose')}")
 
-print("\n移动指令演示完成")
 client.close()
 ```
 

@@ -78,4 +78,4 @@ kd_config = {
 client.set_motor_cfg_pd(kp_config, kd_config)
 ```
 
-For joint specifications, please refer to [robot_specs](../robot_specs_EN.md)
+For joint specifications, please refer to [robot_specs](../robot_specs.md)

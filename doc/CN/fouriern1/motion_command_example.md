@@ -79,53 +79,53 @@ client.set_velocity(0.0, 0.0, 0.0, 1.0)  # 使机器人停止
 from fourier_aurora_client import AuroraClient
 import time
 
-# 初始化客户端
-client = AuroraClient.get_instance(domain_id=123)
+# Initialize client
+client = AuroraClient.get_instance(domain_id=123, robot_name='fouriern1')
 
-print("正在初始化运动控制演示...")
+print("Initializing motion control demo...")
 
-# 步骤 1: 将 FSM 状态设置为用户命令状态
-cmd = input("按 Enter 将 FSM 设置为 PdStand 状态（状态 2）...")
+# Step 1: Set FSM state to User Command State
+cmd = input("Press Enter to set FSM to PdStand State (state 2)...")
 client.set_fsm_state(2)
 time.sleep(1.0)
 
-# 步骤 2: PD 站姿调整
-cmd = input("按 Enter 开始下蹲和站立...")
-print("将站姿调整到比默认姿势低 0.10 米")
+# Step 2: PD stand pose adjustment
+cmd = input("Press enter to start crouching and stand up...")
+print("Adjusting stand pose to 0.10 meter lower to default pose")
 client.set_stand_pose(-0.10, 0.0, 0.0)
 time.sleep(2.0)
-print(f"当前站姿: {client.get_stand_pose()}")
+print(f"Current Stand pose: {client.get_stand_pose()}")
 
-print("将站姿调整回默认姿势")
+print("Adjusting stand pose back to default pose")
 client.set_stand_pose(0.0, 0.0, 0.0)
 time.sleep(2.0)
 
-# 步骤 3: 将 FSM 状态设置为 Rl Locomotion 状态
-cmd = input("按 Enter 将 FSM 设置为 Rl Locomotion 状态（状态 3）...")
+# Step 3: Set FSM state to Rl Locomotion State
+cmd = input("Press Enter to set FSM to Rl Locomotion State (state 3)...")
 client.set_fsm_state(3)
 client.set_velocity_source(2)
 time.sleep(0.5)
 
-# 步骤 3: 设置速度命令
-cmd = input("按 Enter 设置速度命令...")
-print("正在发送速度命令...")
-print("以 0.2 m/s 向前移动")
+# Step 3: Set Velocity Command
+cmd = input("Press Enter to set velocity command...")
+print("Sending velocity commands...")
+print("Moving forward at 0.2 m/s")
 client.set_velocity(0.2, 0.0, 0.0, 5.0)
-time.sleep(3.0)
+time.sleep(5.0)
 
-print("以 0.2 m/s 向左移动")
+print("Moving left at 0.2 m/s")
 client.set_velocity(0.0, 0.2, 0.0, 5.0)
-time.sleep(3.0)
+time.sleep(5.0)
 
-print("以 0.4 rad/s 逆时针旋转")
+print("Rotating anti-clockwise at 0.4 rad/s")
 client.set_velocity(0.0, 0.0, 0.4, 5.0)
-time.sleep(3.0)
+time.sleep(5.0)
 
-print("停止")
+print("Stopping")
 client.set_velocity(0.0, 0.0, 0.0, 1.0)
 time.sleep(1.0)
 
-print("运动命令演示完成")
+print("Motion command demonstration complete")
 client.close()
 ```
 
