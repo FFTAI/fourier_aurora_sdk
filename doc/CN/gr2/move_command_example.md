@@ -83,7 +83,7 @@ client.wait_groups_motion_complete(occupied_groups, print_interval=0.3)
 - **MOVE_JOINT (类型 1)**：使用关节空间插值将末端执行器移动到目标位姿
 - **MOVE_LINE (类型 2)**：在笛卡尔空间中沿直线路径将末端执行器移动到目标位姿
 
-目标位姿指定为 [x, y, z, qx, qy, qz, qw]，其中 (x, y, z) 是位置（单位：米），(qx, qy, qz, qw) 是四元数表示的方向。
+目标位姿指定为 [x, y, z, qx, qy, qz, qw]，其中 (x, y, z) 是位置（单位：米），(qx, qy, qz, qw) 是四元数表示的方向。所有笛卡尔指令均在机器人基座坐标系中表达，坐标系原点位于机器人基座。
 
 **参数：**
 

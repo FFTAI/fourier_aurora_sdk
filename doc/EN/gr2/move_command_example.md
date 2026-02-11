@@ -83,7 +83,7 @@ The `cartesian_move_command()` function creates cartesian-space move commands. I
 - **MOVE_JOINT (type 1)**: Moves end-effector to target pose using joint-space interpolation
 - **MOVE_LINE (type 2)**: Moves end-effector to target pose following a straight line in cartesian space
 
-The target pose is specified as [x, y, z, qx, qy, qz, qw], where (x, y, z) is position in meters and (qx, qy, qz, qw) is orientation as a quaternion.
+The target pose is specified as [x, y, z, qx, qy, qz, qw], where (x, y, z) is position in meters and (qx, qy, qz, qw) is orientation as a quaternion. All Cartesian commands are expressed in the robot’s base coordinate frame, centered at the robot base.
 
 **Parameters:**
 
