@@ -16,7 +16,7 @@ RL Locomotion  | LowerBodyWbcrlTask / UpperBodyStateManagerTask   | RB+A        
 
 Avaliable for hanging | Avaliable for standing | Auto Protection Switch
 ----------------------|------------------------|----------------
-No                    | Yes                    | No
+No                    | Yes                    | Yes
 
 ## Joystick Control
 

@@ -16,7 +16,7 @@ RL Locomotion  | LowerBodyWbcrlTask / UpperBodyStateManagerTask   | RB+A        
 
 可用于悬挂 | 可用于站立 | 自动保护切换
 ----------------------|------------------------|----------------
-否                    | 是                    | 否
+否                    | 是                    | 是
 
 ## 手柄控制
 
