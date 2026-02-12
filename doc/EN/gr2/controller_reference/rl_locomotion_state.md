@@ -108,3 +108,9 @@ for i in range(total_steps):
 ```
 
 For joint specifications, please refer to [robot_specs](../robot_specs.md)
+
+### Manipulator Move Command
+
+Move commands provide high-level motion planning for both joint-level and cartesian-level movements with trajectory interpolation, velocity control, and motion completion tracking. Unlike direct joint control, move commands automatically handle trajectory interpolation, velocity profiling, and motion completion detection, making them ideal for coordinated multi-group movements.
+
+For detailed info and example on manipulator move command, please refer to [Manipulator Move Command Example](../move_command_example.md)

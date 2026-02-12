@@ -1,6 +1,6 @@
-# 移动指令示例
+# 手臂移动指令示例
 
-本文档介绍如何使用 AuroraClient API 和 MoveCommandManager 发送移动指令来控制机器人。移动指令为关节级和笛卡尔级运动提供高级运动规划，包括轨迹插值、速度控制和运动完成跟踪。
+本文档介绍如何使用 AuroraClient API 和 MoveCommandManager 发送移动指令来控制机器人的上肢控制组。移动指令为关节级和笛卡尔级运动提供高级运动规划，包括轨迹插值、速度控制和运动完成跟踪。
 
 ## 移动指令概述
 
@@ -34,6 +34,8 @@ move_command_manager = MoveCommandManager(robot_name='gr3')
 ### joint_move_command
 
 `joint_move_command()` 函数创建带轨迹规划的绝对关节位置移动指令。这对于以受控速度将关节移动到特定位置非常有用。
+
+**可用控制组：** `Waist`、`Head`、`Left_Manipulator`、`Right_Manipulator`
 
 **参数：**
 
@@ -84,6 +86,8 @@ client.wait_groups_motion_complete(occupied_groups, print_interval=0.3)
 - **MOVE_LINE (类型 2)**：在笛卡尔空间中沿直线路径将末端执行器移动到目标位姿
 
 目标位姿指定为 [x, y, z, qx, qy, qz, qw]，其中 (x, y, z) 是位置（单位：米），(qx, qy, qz, qw) 是四元数表示的方向。所有笛卡尔指令均在机器人基座坐标系中表达，坐标系原点位于机器人基座。
+
+**可用控制组：** `Left_Manipulator`、`Right_Manipulator`
 
 **参数：**
 

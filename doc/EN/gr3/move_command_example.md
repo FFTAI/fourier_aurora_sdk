@@ -1,6 +1,6 @@
-# Move Command Example
+# Manipulator Move Command Example
 
-This document explains how to send move commands to control the robot using the AuroraClient API and MoveCommandManager. Move commands provide high-level motion planning for both joint-level and cartesian-level movements with trajectory interpolation, velocity control, and motion completion tracking.
+This document explains how to send move commands to control the robot's upper control group using the AuroraClient API and MoveCommandManager. Move commands provide high-level motion planning for both joint-level and cartesian-level movements with trajectory interpolation, velocity control, and motion completion tracking.
 
 ## Move Command Overview
 
@@ -34,6 +34,8 @@ move_command_manager = MoveCommandManager(robot_name='gr3')
 ### joint_move_command
 
 The `joint_move_command()` function creates an absolute joint position move command with trajectory planning. This is useful for moving joints to specific positions with controlled velocity.
+
+**Avaliable Control Groups:** `waist`, `head`, `left_manipulator`, `right_manipulator`
 
 **Parameters:**
 
@@ -84,6 +86,8 @@ The `cartesian_move_command()` function creates cartesian-space move commands. I
 - **MOVE_LINE (type 2)**: Moves end-effector to target pose following a straight line in cartesian space
 
 The target pose is specified as [x, y, z, qx, qy, qz, qw], where (x, y, z) is position in meters and (qx, qy, qz, qw) is orientation as a quaternion. All Cartesian commands are expressed in the robot’s base coordinate frame, centered at the robot base.
+
+**Avaliable Control Groups:** `left_manipulator`, `right_manipulator`
 
 **Parameters:**
 
