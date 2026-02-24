@@ -21,3 +21,11 @@
 - Updated GR-3 Docker image to v1.2.1.
 - Updated installation instructions and Docker images.
 - Updated python client examples and documentation.
+
+### Version v1.3.0
+
+- Updated Fourier-N1 Docker image to v1.3.0.
+- Updated GR-2 Docker image to v1.3.0.
+- Updated GR-3 Docker image to v1.3.0.
+- Python client updated to v0.1.8.
+- Migrate documentation to fourier document center.

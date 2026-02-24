@@ -1,7 +1,7 @@
 Config:
-  RobotName: gr1 # gr1 / gr2 / gr3
-  RunType: 0 # 0 run simulator / 1 control real robot
-  UseJoyStick: true # use as default
-  DomainID: 123 # use as default
-  SerialNumber: "null" # use as default
+  RobotName: gr2        # gr1 / gr2 / gr3 / fouriern1
+  HardwareType: null    # null for gr2 and fouriern1; v211, v222 or v224 for gr3
+  RunType: 0            # 0 run simulator / 1 control real robot
+  UseJoyStick: true     # use as default
+  DomainID: 123         # use as default
 
