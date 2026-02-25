@@ -9,21 +9,18 @@ import numpy
 import torch
 import threading
 import sys
-
-
 import pygame
 from ischedule import run_loop, schedule
 
-
-
 # Initialize client
-client = AuroraClient.get_instance(domain_id=123, robot_name="Fourier_N1", serial_number=None)
+client = AuroraClient.get_instance(domain_id=123, robot_name="fouriern1")
 time.sleep(1)
 
 policy_file_path = None
 policy_model = None
 policy_action = None
 obs_buf_stack = None
+stop_event = threading.Event()
 
 def algorithm():
     global policy_model, policy_action, obs_buf_stack, commands_filtered
@@ -209,13 +206,25 @@ def algorithm():
 def joystick_listener():
     global joystick, axis_left, axis_right
 
-    while True:
+    while not stop_event.is_set():
         pygame.event.get()
 
         axis_left = joystick.get_axis(0), joystick.get_axis(1)
         axis_right = joystick.get_axis(3), 0
 
         time.sleep(0.02)
+
+
+def shutdown(thread_joystick_listener):
+    stop_event.set()
+    if thread_joystick_listener is not None:
+        thread_joystick_listener.join(timeout=1.0)
+    try:
+        client.set_fsm_state(2)
+    except Exception:
+        pass
+    pygame.quit()
+    client.close()
 
 def torch_quat_rotate_inverse(q, v):
     """
@@ -266,7 +275,7 @@ def main():
         client.close()
         sys.exit(1)
     else:
-        print(f"✅ Detected {joystick_count} joystick(s")
+        print(f"✅ Detected {joystick_count} joystick(s)")
         joystick = pygame.joystick.Joystick(0)
         joystick.init()
 
@@ -306,7 +315,7 @@ def main():
         "right_manipulator": [8.0, 2.5, 2.5, 2.5, 2.5]
     }
 
-    client.set_motor_cfg(kp_config, kd_config)
+    client.set_motor_cfg_pd(kp_config, kd_config)
 
     # ============================================================
     # 5. Load policy model and start control loop
@@ -322,7 +331,12 @@ def main():
     target_control_period_in_s = 1.0 / target_control_frequency  
     schedule(algorithm, interval=target_control_period_in_s)
 
-    run_loop()
+    try:
+        run_loop()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        shutdown(thread_joystick_listener)
 
 
 if __name__ == "__main__":
