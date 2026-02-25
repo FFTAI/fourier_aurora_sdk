@@ -9,20 +9,21 @@ import numpy
 import torch
 import threading
 import sys
-
 import pygame
 from ischedule import run_loop, schedule
 
 
 
 # Initialize a client 
-client = AuroraClient.get_instance(domain_id=123, robot_name="gr2t2v2", serial_number=None)
+client = AuroraClient.get_instance(domain_id=123, robot_name="gr2")
 time.sleep(1)
 
 policy_file_path = None
 policy_model = None
 policy_action = None
 obs_buf_stack = None
+stop_event = threading.Event()
+
 
 def algorithm():
     global policy_model, policy_action, obs_buf_stack, commands_filtered
@@ -107,6 +108,8 @@ def algorithm():
     command_angular_velocity_yaw_range = torch.tensor(numpy.array([[-1.50, 1.50]]), dtype=torch.float) \
                                                 * commands_safety_ratio
 
+    commands = numpy.array([0.0, 0.0, 0.0, ])
+
     commands_norm = \
         numpy.array([
             -1 * axis_left[1],
@@ -182,7 +185,6 @@ def algorithm():
         torch_commands,
         torch_base_measured_angular_velocity,
         torch_base_project_gravity,
-
         torch_measured_position_offset_for_policy,
         torch_joint_measured_velocity_for_policy * 0.1,
         torch_action,
@@ -234,7 +236,7 @@ def algorithm():
 def joystick_listener():
     global joystick, axis_left, axis_right
 
-    while True:
+    while not stop_event.is_set():
         pygame.event.get()
 
         axis_left = joystick.get_axis(0), joystick.get_axis(1)
@@ -242,6 +244,16 @@ def joystick_listener():
 
         time.sleep(0.02)
 
+def shutdown(thread_joystick_listener):
+    stop_event.set()
+    if thread_joystick_listener is not None:
+        thread_joystick_listener.join(timeout=1.0)
+    try:
+        client.set_fsm_state(2)
+    except Exception:
+        pass
+    pygame.quit()
+    client.close()
 
 def torch_quat_rotate_inverse(q, v):
     """
@@ -336,7 +348,7 @@ def main():
         "left_manipulator": [10, 10, 5, 5, 2.5, 2.5, 2.5],
         "right_manipulator": [10, 10, 5, 5, 2.5, 2.5, 2.5]
     }
-    client.set_motor_cfg(kp_config, kd_config)
+    client.set_motor_cfg_pd(kp_config, kd_config)
 
 
     # ============================================================
@@ -353,8 +365,13 @@ def main():
     target_control_period_in_s = 1.0 / target_control_frequency  # Control loop period
     schedule(algorithm, interval=target_control_period_in_s)
 
-    run_loop()
-
+    try:
+        run_loop()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        shutdown(thread_joystick_listener)
+        
 if __name__ == "__main__":
     main()
     
