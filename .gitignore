@@ -1,5 +1,7 @@
-**/build/
+**/build*/
 **/.vscode/
 **/logs/
 /autogenerate/
 __pycache__/
+*.so
+dist/
