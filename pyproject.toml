@@ -1,0 +1,14 @@
+[build-system]
+requires = ["scikit-build-core>=0.9", "pybind11>=2.10"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "fourier-aurora-client"
+version = "0.1.0"
+description = "Aurora C++ SDK with Python bindings"
+requires-python = ">=3.8"
+
+[tool.scikit-build]
+cmake.version = ">=3.16"
+wheel.packages = ["python/fourier_aurora_client"]
+build.targets = ["_fourier_aurora_sdk"]
