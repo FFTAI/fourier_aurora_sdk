@@ -1,67 +1,148 @@
 # Fourier Aurora SDK
 
-This is the SDK repository for **Fourier Aurora** *(Advanced Unified Robot Operation and Resource Architecture)*.
+This repository contains the refactored Aurora SDK:
 
-If you are new to Aurora, please refer to the fourier document center to learn about the system:
+- C++ SDK under `include/fourier_aurora_sdk` and `src/`
+- Python SDK package `fourier_aurora_client` backed by pybind11
+- `fourierdds` transport for Aurora DDS topics and services
 
-- [Fourier Document Center](https://support.fftai.com)
+The public SDK API uses SDK-owned types. Generated DDS message types and raw `fourierdds` entities are internal implementation details.
 
-## v1.3.0 Release
+## Dependencies
 
-Support Robots:
+Stage 1 uses internal system packages. Install these before building:
 
-- GR-1P
-- GR-2
-- GR-3
-- Fourier-N1
+- `fourierdds`
+- generated `fourier_dds_msgs`
+- FastDDS/FastCDR packages matching the installed message libraries
+- pybind11, when building Python bindings
 
-Prerequisites:
+The validated internal build environment is:
 
-- Actuator version:
-  - Communication firmware version 0.3.12.31 or above.
-  - Driver firmware version 0.2.10.30 or above.
-  - NOTE: Actuator version can be upgraded using **FSA Assistant**. Click [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) to download the latest version.
- 
+```bash
+docker.fftaicorp.com/base/aurora_medium:latest
+```
+
+## Build
+
+C++ only:
+
+```bash
+cmake -S . -B build -DFOURIER_AURORA_SDK_BUILD_PYTHON=OFF
+cmake --build build -j4
+ctest --test-dir build --output-on-failure
+```
+
+C++ plus Python bindings, with DDS transport enabled:
+
+```bash
+cmake -S . -B build \
+  -DCMAKE_PREFIX_PATH=/opt/fftai \
+  -DFOURIER_AURORA_SDK_BUILD_PYTHON=ON \
+  -DFOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT=ON
+cmake --build build -j4
+ctest --test-dir build --output-on-failure
+```
+
+Build a C++ SDK Debian package:
+
+```bash
+bash scripts/build_deb.sh
+sudo dpkg -i build_deb/fourier-aurora-sdk_*.deb
+```
+
+The Debian package installs under:
+
+```text
+/opt/fftai/fourier_aurora_sdk
+```
+
+It also installs:
+
+- `/etc/ld.so.conf.d/fourier_aurora_sdk.conf` for runtime library lookup
+
+Compile and run the installed C++ smoke test directly with `g++`:
+
+```bash
+bash scripts/test_installed_cpp_sdk.sh
+```
+
+Build the Python wheel:
+
+```bash
+python3 -m build --wheel
+pip install dist/fourier_aurora_client-*.whl
+```
+
+The Python wheel bundles the Aurora C++ SDK shared library next to the pybind module,
+so installing the C++ SDK Debian package is not required for Python use. Stage 1 still
+requires the native DDS stack to be installed on the system:
+
+- generated `fourier_dds_msgs` libraries under `/opt/fftai/fourier_dds_msgs/lib`
+- FastDDS/FastCDR libraries under `/usr/local/lib`
+- `fourierdds` headers/libraries available at build time
+
+The wheel is built with the DDS transport enabled and only builds the Python module
+target, not the C++ examples.
+
+Installed C++ usage examples are copied to:
+
+```text
+/opt/fftai/fourier_aurora_sdk/share/doc/fourier_aurora_sdk/examples/cpp/usage
+```
+
+When built with `FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT=ON`, the example binaries are installed to:
+
+```text
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples
+```
+
+They accept optional `[domain_id] [user_id]` arguments:
+
+```bash
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/get_info
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_state
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_motion
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_arm_swing
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/state_client
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/motion_client
+/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/control_group_client
+```
+
+Python usage examples are under:
+
+```text
+examples/python/usage
+```
+
+They mirror the minimal C++ usage examples:
+
+```bash
+python3 examples/python/usage/get_info.py 88 test
+python3 examples/python/usage/set_state.py 88 test
+python3 examples/python/usage/set_motion.py 88 test
+python3 examples/python/usage/set_arm_swing.py 88 test
+```
+
 ## Repository Structure
 
-```
-fourier_aurora_sdk/
-├── config/               # Configuration files
-│   └── config.yaml      # Main configuration file
-├── python/              # Python SDK
-│   ├── example/        # Example scripts for each robot model
-│   │   ├── fouriern1/  # Fourier-N1 examples
-│   │   ├── gr1p/       # GR-1P examples
-│   │   ├── gr2/        # GR-2 examples
-│   │   └── gr3/        # GR-3 examples
-│   └── docs/           # API documentation
-│       ├── CN/         # Chinese API docs
-│       └── EN/         # English API docs
-├── sim/                 # Simulation tools
-│   └── mujoco/         # MuJoCo simulator integration
-├── docker_run.bash      # Docker run script
-├── LICENSE              # Apache 2.0 License
-├── README.md            # This file
-├── README_CN.md         # Chinese README
-├── CHANGELOG            # Version history
-└── VERSION              # Current version
+```text
+cmake/                        CMake package config template
+examples/                     Installed C++ smoke and usage examples
+include/                      Public C++ SDK headers
+src/                          C++ SDK implementation
+python/bindings/              pybind11 bindings
+python/fourier_aurora_client/ Python compatibility package
+tests/                        Unit tests
+docs/                         SDK architecture and dependency notes
+scripts/                      Wheel build entry points
 ```
 
-## Installation
+## Notes
 
-### Aurora
-
-please refer to [Fourier Document Center](https://support.fftai.com).
-
-## Fourier Aurora Client
-
-```
-pip install fourier_aurora_client==0.1.8
-```
-
-## Issues
-
-Please report any issues or bugs! We will do our best to fix them.
+- `AuroraClient` is a singleton. Call `close()` before creating a new instance with different options.
+- Python keeps selected legacy snake_case methods, but `get_motion_state()` compatibility dict is intentionally removed. Use `getMotionState()`.
+- `error_codes_pub` is exposed in C++ first; Python helper shape is deferred.
 
 ## License
 
