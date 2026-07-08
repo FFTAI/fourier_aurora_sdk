@@ -1,0 +1,17 @@
+revisions:
+  aurora:
+    branch: feature/aurora_config
+    commit: 64cbd264608a1dfd09d82c8cfa4aee99947af5f7
+  aurorapy:
+    branch: feature/aurora_config
+    commit: 1f011a00c3cf48a73a204cff420de5920019c7dd
+  fourierdds:
+    branch: develop
+    commit: d687a085b584af9aaef3f82b60e439f3c2e1eb34
+    minimum_required_for_sdk: d687a085b584af9aaef3f82b60e439f3c2e1eb34
+  fourierddsmsgs:
+    branch: feature/aurora_config
+    commit: 18a24585984e04be401cf1acc0151d5b5e95b2cd
+  fourier_aurora_sdk:
+    branch: main
+    base_commit: 7b1b98b5ad28f0d18dc2a02d2c3f2aa8b496222b

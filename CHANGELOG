@@ -1,31 +1,7 @@
-### Version v1.0.0.0
+### Version 0.1.0
 
-- Initial release.
-
-### Version v1.1.0
-
- - Refactored version definition to match the format of other SDKs.
-
-### Version v1.2.0
-
-- Added support for GR-1P and GR-3 robots.
-- Updated installation instructions and Docker images.
-- Updated python client examples and documentation.
-- Removed custom controllers, refer to developer guide for details.
-
-### Version v1.2.1
-
-- Added support for Fourier-N1 robot.
-- Updated GR-1P Docker images to v1.2.3.
-- Updated GR-2 Docker image to v1.2.1.
-- Updated GR-3 Docker image to v1.2.1.
-- Updated installation instructions and Docker images.
-- Updated python client examples and documentation.
-
-### Version v1.3.0
-
-- Updated Fourier-N1 Docker image to v1.3.0.
-- Updated GR-2 Docker image to v1.3.0.
-- Updated GR-3 Docker image to v1.3.0.
-- Python client updated to v0.1.8.
-- Migrate documentation to fourier document center.
+- Refactored the SDK around a canonical C++ implementation.
+- Added Python bindings through pybind11 under the existing `fourier_aurora_client` import.
+- Added `fourierdds` transport for current Aurora upper-level topics and FSM service.
+- Added SDK-owned public state and command types.
+- Added singleton lifecycle handling, mock transport tests, and source revision pinning.
