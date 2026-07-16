@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(fourier_aurora_sdk VERSION 0.1.0 LANGUAGES CXX)
+project(fourier_aurora_sdk VERSION 2.0.0 LANGUAGES CXX)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "/opt/fftai/fourier_aurora_sdk" CACHE PATH
@@ -7,16 +7,25 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 
 option(FOURIER_AURORA_SDK_BUILD_PYTHON "Build Python bindings" ON)
+set(FOURIER_AURORA_SDK_BUILD_TESTS_DEFAULT OFF)
 if(SKBUILD)
-    set(FOURIER_AURORA_SDK_BUILD_TESTS_DEFAULT OFF)
     set(FOURIER_AURORA_SDK_BUILD_EXAMPLES_DEFAULT OFF)
 else()
-    set(FOURIER_AURORA_SDK_BUILD_TESTS_DEFAULT ON)
     set(FOURIER_AURORA_SDK_BUILD_EXAMPLES_DEFAULT ON)
 endif()
 option(FOURIER_AURORA_SDK_BUILD_TESTS "Build tests" ${FOURIER_AURORA_SDK_BUILD_TESTS_DEFAULT})
 option(FOURIER_AURORA_SDK_BUILD_EXAMPLES "Build C++ examples" ${FOURIER_AURORA_SDK_BUILD_EXAMPLES_DEFAULT})
 option(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT "Build the fourierdds transport" ON)
+set(FOURIER_AURORA_SDK_PACKAGE_COMMIT "" CACHE STRING
+    "Optional Git commit embedded in package artifact versions")
+if(FOURIER_AURORA_SDK_PACKAGE_COMMIT)
+    string(LENGTH "${FOURIER_AURORA_SDK_PACKAGE_COMMIT}" _sdk_commit_length)
+    if(NOT FOURIER_AURORA_SDK_PACKAGE_COMMIT MATCHES "^[0-9a-fA-F]+$" OR
+       NOT _sdk_commit_length EQUAL 8)
+        message(FATAL_ERROR
+            "FOURIER_AURORA_SDK_PACKAGE_COMMIT must be an eight-character Git commit")
+    endif()
+endif()
 set(FOURIER_AURORA_SDK_PYTHON_PACKAGE_DIR "fourier_aurora_client" CACHE STRING
     "Python package destination used by wheel builds")
 set(FOURIERDDS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../fourierdds" CACHE PATH
@@ -34,7 +43,7 @@ add_library(fourier_aurora_sdk SHARED
 set_target_properties(fourier_aurora_sdk PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     VERSION ${PROJECT_VERSION}
-    SOVERSION 0
+    SOVERSION 2
     INSTALL_RPATH "$ORIGIN;/opt/fftai/fourier_dds_msgs/lib;/usr/local/lib"
 )
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -174,6 +183,11 @@ if(NOT SKBUILD)
     set(CPACK_PACKAGE_VENDOR "Fourier Intelligence")
     set(CPACK_PACKAGE_CONTACT "support@fftai.com")
     set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+    if(FOURIER_AURORA_SDK_PACKAGE_COMMIT)
+        string(TOLOWER "${FOURIER_AURORA_SDK_PACKAGE_COMMIT}" _sdk_package_commit)
+        set(CPACK_DEBIAN_PACKAGE_VERSION
+            "${PROJECT_VERSION}+g${_sdk_package_commit}")
+    endif()
     set(CPACK_GENERATOR "DEB")
     set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Fourier Intelligence")
     set(CPACK_DEBIAN_PACKAGE_SECTION "devel")

@@ -1,4 +1,4 @@
-### Version 0.1.0
+### Version 2.0.0 (unreleased)
 
 - Refactored the SDK around a canonical C++ implementation.
 - Added Python bindings through pybind11 under the existing `fourier_aurora_client` import.

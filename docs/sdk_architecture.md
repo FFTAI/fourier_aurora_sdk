@@ -1,11 +1,23 @@
 # Aurora SDK Architecture
 
-The SDK uses a canonical C++ client under `fourier::aurora_sdk` and exposes Python through pybind11.
+The SDK uses a canonical C++ client under `fourier::aurora_sdk` and exposes
+Python through pybind11.
 
-Public APIs use SDK-owned structs only. Generated DDS message types and `fourierdds` entities are implementation details inside the transport layer.
+Public high-level client APIs use SDK-owned structs. Generated DDS message
+types are supplied by the separately managed message module and do not appear
+in high-level client signatures.
 
-Stage 1 uses a singleton client. `close()` tears down callbacks, transport endpoints, cached state, and singleton ownership so a later `getInstance()` can create a new client.
+Stage 1 supports one robot per process through a stable process-wide singleton.
+Parameterless `getInstance()` initializes or returns the client without
+starting transport. Configuration can be changed while the client is
+`Stopped`; `start()` creates the configured endpoints, and synchronous `stop()`
+tears down transport while preserving the client for later reconfiguration and
+restart. Multi-robot control belongs to separate processes or another
+orchestration layer.
 
-The C++ callback extension points run inline on the DDS callback thread after SDK cache update. Python does not expose these callback hooks in stage 1.
+The C++ callback extension points run inline on the DDS callback thread after
+SDK cache update. Python does not expose these callback hooks in stage 1.
 
-DDS transport is intentionally single-backend (`fourierdds`). A mock transport exists for unit tests and does not represent a public backend abstraction.
+FourierDDS is the only stage-one backend and its concrete transport facade is
+public. Backend selection, `ITransport`, mock injection, and singleton test
+factories remain private test or implementation facilities.
