@@ -28,7 +28,10 @@ Python mirrors this hierarchy exactly. `AuroraSdkError` derives from Python
 `RuntimeError`, and each specific SDK exception derives only from
 `AuroraSdkError`.
 
-Exceptions raised by user callbacks are caught and logged at the asynchronous
-callback boundary because there is no synchronous caller to receive them. They
-do not stop the client or prevent later callback delivery. Scope-bound callback
-bookkeeping guarantees that synchronous `stop()` cannot hang after an exception.
+Exceptions raised by C++ user callbacks are caught and logged at the
+asynchronous callback boundary because there is no synchronous caller to
+receive them. They do not stop the client or prevent later callback delivery.
+Scope-bound callback bookkeeping guarantees that synchronous `stop()` cannot
+hang after an exception. Python callback registration is not exposed in stage
+one because transport-thread delivery would add GIL and interpreter-lifecycle
+risk without a required Python use case.

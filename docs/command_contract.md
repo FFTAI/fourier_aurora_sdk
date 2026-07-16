@@ -53,9 +53,15 @@ remain discoverable through `AuroraState.available_states` and may vary with
 the robot configuration.
 
 FSM ID `3` is the GR3 Walk state, not a cross-robot default. Robot-specific
-examples live under `examples/<robot-type>/`; current examples are under
-`examples/gr3/`. Applications must not reuse robot-specific IDs for another
-robot type without checking that robot's capability documentation.
+recipes live under `examples/<robot-type>/{cpp,python}`; current recipes are
+under `examples/gr3/`. Each recipe is standalone and belongs to one robot type,
+even when another robot currently uses identical source. Applications must not
+reuse robot-specific IDs for another robot type without checking that robot's
+capability documentation.
+
+Robot-independent C++ diagnostic tools live directly under `examples/client/`.
+They may share internal CLI helpers and accept explicit connection and operation
+arguments; they are distinct from short, hardcoded robot recipes.
 
 `requestFsmState(id)` only confirms that Aurora accepted the transition
 request. The transition itself is asynchronous. Applications can use

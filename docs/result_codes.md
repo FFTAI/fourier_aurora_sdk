@@ -27,7 +27,9 @@ operation unsafe is fatal.
 | `200-299` | Aurora service replies |
 
 Codes outside these ranges are reserved. The SDK passes Aurora result values
-and messages through unchanged.
+and messages through unchanged. During the Aurora migration, legacy FSM
+failure codes `1` and `2` are the only accepted temporary exception; they are
+not client codes and are not remapped.
 
 ## Client Codes
 
@@ -48,4 +50,8 @@ and messages through unchanged.
 
 Aurora owns codes `200-299`. The current Aurora FSM service must be migrated
 from legacy values `1` and `2` and must populate its response message before
-the public SDK release.
+the public SDK release. Until that migration lands, the SDK returns those two
+legacy values and their messages exactly. A negative wire result is malformed
+and returns client code `107`. Any other nonnegative out-of-range Aurora value
+is also returned unchanged, but it blocks release verification pending
+compatibility review rather than being silently remapped.

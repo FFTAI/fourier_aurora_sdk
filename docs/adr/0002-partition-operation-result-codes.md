@@ -9,3 +9,8 @@ SDK operations use decimal `uint32_t` result codes with `0` for success,
 and messages pass through unchanged. This keeps logs and integrations readable
 while preventing client and robot failures from assigning the same public code;
 the published registry becomes a compatibility contract.
+
+Until Aurora completes its result-code migration, legacy FSM failure replies
+`1` and `2` are passed through unchanged as a documented compatibility
+exception. The SDK does not remap them into either owned range. They remain a
+public-release dependency, not permanent registry allocations.

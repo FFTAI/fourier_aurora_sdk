@@ -21,3 +21,12 @@ SDK cache update. Python does not expose these callback hooks in stage 1.
 FourierDDS is the only stage-one backend and its concrete transport facade is
 public. Backend selection, `ITransport`, mock injection, and singleton test
 factories remain private test or implementation facilities.
+
+Internally, a private adapter implements `ITransport` and owns the public
+`FourierDdsTransport` facade by composition. This lets the client and tests use
+one private transport contract without exposing inheritance or duplicating the
+production FourierDDS implementation.
+
+C++ callback handler aliases remain public in the SDK-owned `callbacks.hpp` so
+the public client and transport facade do not depend on the private transport
+interface. Python callback registration is not part of stage one.

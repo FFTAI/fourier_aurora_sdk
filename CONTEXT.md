@@ -37,6 +37,19 @@ originate inside the client or from an Aurora reply and is distinct from
 asynchronous robot fault telemetry.
 _Avoid_: ErrorCodes, exception
 
+**Client diagnostic tool**:
+A robot-independent command-line program for inspecting or exercising Aurora
+SDK client interfaces. It accepts robot-dependent identifiers or values as
+runtime input rather than encoding a robot workflow.
+_Avoid_: Robot example, Python example
+
+**Robot recipe**:
+A short, self-contained illustration of one concrete workflow for a named robot
+type. One workflow may contain multiple ordered operations when they serve one
+clear user goal. A recipe belongs to one robot type even when another robot
+currently uses identical behavior.
+_Avoid_: Generic client, shared example framework
+
 **Base frame**:
 The body-fixed robot frame whose positive x axis points forward, positive y
 points left, and positive z points upward.
