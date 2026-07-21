@@ -9,13 +9,93 @@ namespace py = pybind11;
 namespace sdk = fourier::aurora_sdk;
 
 void bind_types(py::module_& m) {
-    py::register_exception<sdk::AuroraSdkError>(m, "AuroraSdkError");
-    py::register_exception<sdk::ConnectionError>(m, "ConnectionError");
-    py::register_exception<sdk::EndpointNotReadyError>(m, "EndpointNotReadyError");
-    py::register_exception<sdk::StateNotReadyError>(m, "StateNotReadyError");
-    py::register_exception<sdk::PublishError>(m, "PublishError");
-    py::register_exception<sdk::ServiceTimeoutError>(m, "ServiceTimeoutError");
-    py::register_exception<sdk::InvalidArgumentError>(m, "InvalidArgumentError");
+    const auto aurora_sdk_error = py::register_exception<sdk::AuroraSdkError>(
+        m, "AuroraSdkError", PyExc_RuntimeError);
+    py::register_exception<sdk::ConnectionError>(
+        m, "ConnectionError", aurora_sdk_error.ptr());
+    py::register_exception<sdk::InvalidArgumentError>(
+        m, "InvalidArgumentError", aurora_sdk_error.ptr());
+    py::register_exception<sdk::InvalidStateError>(
+        m, "InvalidStateError", aurora_sdk_error.ptr());
+
+    py::enum_<sdk::ClientState>(m, "ClientState")
+        .value("STOPPED", sdk::ClientState::Stopped)
+        .value("STARTING", sdk::ClientState::Starting)
+        .value("RUNNING", sdk::ClientState::Running)
+        .value("STOPPING", sdk::ClientState::Stopping);
+
+    py::enum_<sdk::Endpoint>(m, "Endpoint")
+        .value("FSM_SERVICE", sdk::Endpoint::FsmService)
+        .value("MOTION_COMMAND_PUBLISHER", sdk::Endpoint::MotionCommandPublisher)
+        .value(
+            "CONTROL_GROUP_COMMAND_PUBLISHER",
+            sdk::Endpoint::ControlGroupCommandPublisher)
+        .value(
+            "SUB_CONTROLLER_COMMAND_PUBLISHER",
+            sdk::Endpoint::SubControllerCommandPublisher)
+        .value("AURORA_STATE_SUBSCRIBER", sdk::Endpoint::AuroraStateSubscriber)
+        .value("MOTION_STATE_SUBSCRIBER", sdk::Endpoint::MotionStateSubscriber)
+        .value(
+            "CONTROL_GROUP_STATE_SUBSCRIBER",
+            sdk::Endpoint::ControlGroupStateSubscriber)
+        .value("ESTIMATOR_DATA_SUBSCRIBER", sdk::Endpoint::EstimatorDataSubscriber)
+        .value("ERROR_CODES_SUBSCRIBER", sdk::Endpoint::ErrorCodesSubscriber);
+
+    py::class_<sdk::EndpointStatus>(m, "EndpointStatus")
+        .def(py::init<>())
+        .def_readwrite("enabled", &sdk::EndpointStatus::enabled)
+        .def_readwrite("matched", &sdk::EndpointStatus::matched);
+
+    py::class_<sdk::EndpointMatchStatus>(m, "EndpointMatchStatus")
+        .def(py::init<>())
+        .def_readwrite("fsm_service", &sdk::EndpointMatchStatus::fsm_service)
+        .def_readwrite(
+            "motion_command_publisher",
+            &sdk::EndpointMatchStatus::motion_command_publisher)
+        .def_readwrite(
+            "control_group_command_publisher",
+            &sdk::EndpointMatchStatus::control_group_command_publisher)
+        .def_readwrite(
+            "sub_controller_command_publisher",
+            &sdk::EndpointMatchStatus::sub_controller_command_publisher)
+        .def_readwrite(
+            "aurora_state_subscriber",
+            &sdk::EndpointMatchStatus::aurora_state_subscriber)
+        .def_readwrite(
+            "motion_state_subscriber",
+            &sdk::EndpointMatchStatus::motion_state_subscriber)
+        .def_readwrite(
+            "control_group_state_subscriber",
+            &sdk::EndpointMatchStatus::control_group_state_subscriber)
+        .def_readwrite(
+            "estimator_data_subscriber",
+            &sdk::EndpointMatchStatus::estimator_data_subscriber)
+        .def_readwrite(
+            "error_codes_subscriber",
+            &sdk::EndpointMatchStatus::error_codes_subscriber);
+
+    py::class_<sdk::OperationResult>(m, "OperationResult")
+        .def(py::init<>())
+        .def_readwrite("code", &sdk::OperationResult::code)
+        .def_readwrite("message", &sdk::OperationResult::message)
+        .def("success", &sdk::OperationResult::success);
+
+    m.def(
+        "result_code_name",
+        [](uint32_t code) { return std::string(sdk::resultCodeName(code)); });
+    m.def(
+        "default_result_message",
+        [](uint32_t code) { return std::string(sdk::defaultResultMessage(code)); });
+    m.attr("SUCCESS") = sdk::result_codes::SUCCESS;
+    m.attr("CLIENT_ERROR") = sdk::result_codes::CLIENT_ERROR;
+    m.attr("CLIENT_NOT_RUNNING") = sdk::result_codes::CLIENT_NOT_RUNNING;
+    m.attr("ENDPOINT_DISABLED") = sdk::result_codes::ENDPOINT_DISABLED;
+    m.attr("ENDPOINT_UNMATCHED") = sdk::result_codes::ENDPOINT_UNMATCHED;
+    m.attr("PUBLISH_FAILED") = sdk::result_codes::PUBLISH_FAILED;
+    m.attr("SERVICE_TIMEOUT") = sdk::result_codes::SERVICE_TIMEOUT;
+    m.attr("TRANSPORT_ERROR") = sdk::result_codes::TRANSPORT_ERROR;
+    m.attr("INVALID_AURORA_RESPONSE") = sdk::result_codes::INVALID_AURORA_RESPONSE;
+    m.attr("STATE_NOT_RECEIVED") = sdk::result_codes::STATE_NOT_RECEIVED;
 
     py::class_<sdk::MessageHeader>(m, "MessageHeader")
         .def(py::init<>())
@@ -74,18 +154,18 @@ void bind_types(py::module_& m) {
         .def_readwrite("duration", &sdk::MotionCommand::duration);
 
     py::enum_<sdk::JointField>(m, "JointField")
-        .value("Position", sdk::JointField::Position)
-        .value("Velocity", sdk::JointField::Velocity)
-        .value("Effort", sdk::JointField::Effort);
+        .value("POSITION", sdk::JointField::Position)
+        .value("VELOCITY", sdk::JointField::Velocity)
+        .value("EFFORT", sdk::JointField::Effort);
 
     py::enum_<sdk::JointControlType>(m, "JointControlType")
-        .value("Joint", sdk::JointControlType::Joint)
-        .value("Motor", sdk::JointControlType::Motor);
+        .value("JOINT", sdk::JointControlType::Joint)
+        .value("MOTOR", sdk::JointControlType::Motor);
 
     py::enum_<sdk::MotorMode>(m, "MotorMode")
-        .value("Pd", sdk::MotorMode::Pd)
-        .value("Position", sdk::MotorMode::Position)
-        .value("Effort", sdk::MotorMode::Effort);
+        .value("PD", sdk::MotorMode::Pd)
+        .value("POSITION", sdk::MotorMode::Position)
+        .value("EFFORT", sdk::MotorMode::Effort);
 
     py::class_<sdk::ControlGroupStateEntry>(m, "ControlGroupStateEntry")
         .def(py::init<>())
@@ -118,18 +198,10 @@ void bind_types(py::module_& m) {
         .def_readwrite("velocity", &sdk::JointCommand::velocity)
         .def_readwrite("effort", &sdk::JointCommand::effort);
 
-    py::class_<sdk::CartesianCommand>(m, "CartesianCommand")
-        .def(py::init<>())
-        .def_readwrite("link_name", &sdk::CartesianCommand::link_name)
-        .def_readwrite("pose", &sdk::CartesianCommand::pose)
-        .def_readwrite("twist", &sdk::CartesianCommand::twist)
-        .def_readwrite("wrench", &sdk::CartesianCommand::wrench);
-
     py::class_<sdk::ControlGroupCommand>(m, "ControlGroupCommand")
         .def(py::init<>())
         .def_readwrite("header", &sdk::ControlGroupCommand::header)
-        .def_readwrite("joint_cmd", &sdk::ControlGroupCommand::joint_cmd)
-        .def_readwrite("cartesian_cmd", &sdk::ControlGroupCommand::cartesian_cmd);
+        .def_readwrite("joint_cmd", &sdk::ControlGroupCommand::joint_cmd);
 
     py::class_<sdk::BaseData>(m, "BaseData")
         .def(py::init<>())
@@ -197,11 +269,4 @@ void bind_types(py::module_& m) {
         .def_readwrite("source", &sdk::ErrorCodes::source)
         .def_readwrite("error_codes", &sdk::ErrorCodes::error_codes);
 
-    py::class_<sdk::ServiceCallResult>(m, "ServiceCallResult")
-        .def(py::init<>())
-        .def_readwrite("result_code", &sdk::ServiceCallResult::result_code)
-        .def_readwrite("message", &sdk::ServiceCallResult::message)
-        .def_readwrite("timed_out", &sdk::ServiceCallResult::timed_out)
-        .def_readwrite("transport_error", &sdk::ServiceCallResult::transport_error)
-        .def("success", &sdk::ServiceCallResult::success);
 }

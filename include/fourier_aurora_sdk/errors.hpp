@@ -15,32 +15,12 @@ public:
     using AuroraSdkError::AuroraSdkError;
 };
 
-class EndpointNotReadyError : public AuroraSdkError {
-public:
-    using AuroraSdkError::AuroraSdkError;
-};
-
-class StateNotReadyError : public AuroraSdkError {
-public:
-    using AuroraSdkError::AuroraSdkError;
-};
-
-class PublishError : public AuroraSdkError {
-public:
-    using AuroraSdkError::AuroraSdkError;
-};
-
-class ServiceTimeoutError : public AuroraSdkError {
-public:
-    using AuroraSdkError::AuroraSdkError;
-};
-
 class InvalidArgumentError : public AuroraSdkError {
 public:
     using AuroraSdkError::AuroraSdkError;
 };
 
-class CallbackError : public AuroraSdkError {
+class InvalidStateError : public AuroraSdkError {
 public:
     using AuroraSdkError::AuroraSdkError;
 };

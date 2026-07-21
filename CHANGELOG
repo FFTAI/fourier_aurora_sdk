@@ -1,7 +1,16 @@
 ### Version 2.0.0 (unreleased)
 
-- Refactored the SDK around a canonical C++ implementation.
-- Added Python bindings through pybind11 under the existing `fourier_aurora_client` import.
-- Added `fourierdds` transport for current Aurora upper-level topics and FSM service.
-- Added SDK-owned public state and command types.
-- Added singleton lifecycle handling, mock transport tests, and source revision pinning.
+- Refactored the SDK around one canonical C++ implementation and pybind11
+  bindings under the existing `fourier_aurora_client` import.
+- Added an explicit restartable singleton lifecycle with stopped-only
+  configuration, selective endpoints, synchronous `stop()`, and queryable
+  client and endpoint-match state.
+- Added SDK-owned state, command, callback, result, and exception types while
+  keeping the concrete FourierDDS facade publicly available.
+- Added robot-independent C++ diagnostic clients and standalone GR3 C++ and
+  Python workflow recipes.
+- Added mock lifecycle/concurrency tests, real DDS loopback coverage,
+  sanitizer profiles, installed-header and CMake-consumer checks, and a
+  fresh-environment wheel loopback test.
+- Unified native and Python version metadata at `2.0.0`, pinned package
+  revisions, and added deterministic Debian and wheel artifact verification.

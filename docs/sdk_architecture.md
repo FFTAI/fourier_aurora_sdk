@@ -15,8 +15,17 @@ tears down transport while preserving the client for later reconfiguration and
 restart. Multi-robot control belongs to separate processes or another
 orchestration layer.
 
+`config()` returns a canonical copy. Editing that copy has no effect until
+`configure()` validates and replaces the complete option set while stopped.
+Domain ID and the SDK-local user label have dedicated setters; the label is not
+authentication and is not transmitted by the current DDS protocol.
+
 The C++ callback extension points run inline on the DDS callback thread after
 SDK cache update. Python does not expose these callback hooks in stage 1.
+Callbacks must return in bounded time and cannot call `stop()` directly.
+Synchronous stop has no timeout: it rejects new work, waits for admitted work,
+and returns only after transport is quiescent. An admitted FSM call is bounded
+by `service_timeout_ms`.
 
 FourierDDS is the only stage-one backend and its concrete transport facade is
 public. Backend selection, `ITransport`, mock injection, and singleton test
@@ -30,3 +39,8 @@ production FourierDDS implementation.
 C++ callback handler aliases remain public in the SDK-owned `callbacks.hpp` so
 the public client and transport facade do not depend on the private transport
 interface. Python callback registration is not part of stage one.
+
+A private process-wide teardown coordinator moves fatal callback-origin cleanup
+off DDS listener threads. This internal path does not expose an asynchronous
+public stop API. Normal callers must invoke synchronous `stop()` explicitly;
+destructors provide no-throw fallback cleanup only.

@@ -13,6 +13,21 @@ The SDK does not log nonzero operation results. Callers own reporting and retry
 policy. Fatal SDK failures are outside this registry and are logged before an
 exception is raised.
 
+After structural argument validation, operation preconditions are evaluated in
+this order:
+
+1. required endpoint disabled;
+2. client not running;
+3. required endpoint unmatched;
+4. state not received or the attempted transport outcome.
+
+This makes multi-failure behavior deterministic. Subscription getters do not
+return an old cache as a successful live read while the endpoint is unmatched,
+and C++ output parameters remain unchanged on every failure. After rematch, a
+latest-snapshot getter may return the retained sample with its original
+timestamp; `waitForFsmState()` requires a sample from the current match
+generation.
+
 API misuse also remains outside this registry and throws a specific exception
 without SDK logging. Code `106` represents an operation-local transport failure
 where the client remains usable; a transport failure that makes continued

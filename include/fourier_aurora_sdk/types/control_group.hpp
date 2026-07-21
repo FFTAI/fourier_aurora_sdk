@@ -57,17 +57,9 @@ struct JointCommand {
     std::vector<double> effort;
 };
 
-struct CartesianCommand {
-    std::string link_name;
-    std::array<double, 7> pose{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::array<double, 6> twist{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    std::array<double, 6> wrench{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-};
-
 struct ControlGroupCommand {
     MessageHeader header;
     std::vector<JointCommand> joint_cmd;
-    std::vector<CartesianCommand> cartesian_cmd;
 };
 
 }  // namespace fourier::aurora_sdk

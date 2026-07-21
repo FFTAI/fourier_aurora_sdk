@@ -35,3 +35,9 @@ Scope-bound callback bookkeeping guarantees that synchronous `stop()` cannot
 hang after an exception. Python callback registration is not exposed in stage
 one because transport-thread delivery would add GIL and interpreter-lifecycle
 risk without a required Python use case.
+
+A fatal operation invoked from a C++ callback first rejects new work and queues
+teardown away from the callback thread. The exception is contained by the
+callback boundary, while an external `stop()` may synchronously join the same
+transition. This is distinct from expected `OperationResult` failures, which
+leave the session usable and produce no SDK log.

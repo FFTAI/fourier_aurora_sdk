@@ -1,149 +1,188 @@
 # Fourier Aurora SDK
 
-This repository contains the refactored Aurora SDK:
+Fourier Aurora SDK 2.0 is the internal-preview C++ and Python client for
+single-robot Aurora control over FourierDDS.
 
-- C++ SDK under `include/fourier_aurora_sdk` and `src/`
-- Python SDK package `fourier_aurora_client` backed by pybind11
-- `fourierdds` transport for Aurora DDS topics and services
+- Canonical C++ API under `fourier::aurora_sdk`
+- Python package `fourier_aurora_client` backed by pybind11
+- Restartable, process-wide high-level client
+- Selective DDS endpoint creation and live match status
+- Public C++ `FourierDdsTransport` facade for direct transport use
 
-The public SDK API uses SDK-owned types. Generated DDS message types and raw `fourierdds` entities are internal implementation details.
+Generated DDS message classes remain in the separately managed message module.
+The high-level client API uses SDK-owned state, command, result, and exception
+types.
+
+## Lifecycle
+
+`AuroraClient::getInstance()` only returns the stable singleton. It does not
+start DDS. The default domain is `123`, the default SDK-local user label is
+`aurora_client`, and all endpoints are initially enabled.
+
+Configuration and callback overrides may be changed only while `Stopped`.
+`start()` creates one transport session from a frozen configuration. `stop()`
+synchronously drains admitted operations/callbacks, destroys transport, clears
+session caches, and leaves the singleton available for reconfiguration or
+restart.
+
+```cpp
+using namespace fourier::aurora_sdk;
+
+auto& client = AuroraClient::getInstance();
+client.setDomainId(123);
+client.setUserId("my_controller");
+
+auto options = client.config();  // Returns a copy.
+options.enabled_endpoints = {
+    Endpoint::AuroraStateSubscriber,
+    Endpoint::FsmService,
+};
+client.configure(options);       // Replaces the complete option set.
+
+client.start();
+if (client.waitForEndpoints(std::chrono::seconds(5))) {
+    AuroraState state;
+    const OperationResult result = client.getAuroraState(state);
+    if (!result.success()) {
+        // The caller decides whether and how to report the result.
+    }
+}
+client.stop();
+```
+
+Python exposes the same lifecycle and snake-case operation names:
+
+```python
+from fourier_aurora_client import AuroraClient, Endpoint
+
+client = AuroraClient.get_instance()
+options = client.config()
+options.enabled_endpoints = [
+    Endpoint.AURORA_STATE_SUBSCRIBER,
+    Endpoint.FSM_SERVICE,
+]
+client.configure(options)
+
+client.start()
+if client.wait_for_endpoints(5.0):
+    result, state = client.get_aurora_state()
+client.stop()
+```
+
+Always call `stop()` explicitly before normal program shutdown. Omitting it
+leaves cleanup to process destruction; an admitted service request or blocked
+C++ callback can delay or hang shutdown. C++ callbacks execute on a DDS
+callback thread, must finish in bounded time, and must not call `stop()`
+directly. Python callback registration is intentionally unavailable in stage
+one.
+
+`Running` means only that local transport is active. Use endpoint match status
+or `waitForEndpoints()` to determine discovery; neither condition is robot
+readiness or command acknowledgement.
+
+## Results and Commands
+
+All getters, setters, publishes, and RPCs return `OperationResult`. C++ getters
+use an output parameter and leave it unchanged on failure. Python getters
+return `(OperationResult, value)`.
+
+- `0`: success
+- `100-199`: SDK client results
+- `200-299`: Aurora-owned results
+
+Aurora RPC codes and messages pass through unchanged, including temporary
+legacy FSM codes `1` and `2`. Expected nonzero results are not logged by the
+SDK. API misuse throws a small typed exception hierarchy; fatal connection
+failures are logged and raise `ConnectionError`.
+
+Values use SI units unless explicitly stated otherwise. Motion linear/angular
+velocity and read-only Cartesian state use the robot base frame; motion
+position uses the world frame. Local publish success means DDS accepted the
+sample, not that Aurora accepted or executed the command. See
+[command contract](docs/command_contract.md) and
+[result codes](docs/result_codes.md).
 
 ## Dependencies
 
-Stage 1 uses internal system packages. Install these before building:
+Stage one is tied to package-enforced dependency revisions:
 
-- `fourierdds`
-- generated `fourier_dds_msgs`
-- FastDDS/FastCDR packages matching the installed message libraries
-- pybind11, when building Python bindings
+- `fourier_dds 1.2.0-1`, source commit
+  `d209ad3c339540ae737ae8f24722186c1631bba2`
+- `fourier-dds-msgs 0.1.0-1`, source commit
+  `18a24585984e04be401cf1acc0151d5b5e95b2cd`
+- Matching FastDDS/FastCDR runtime supplied by those packages
+- pybind11 when Python is enabled
 
-The validated internal build environment is:
+Pass one dependency prefix to CMake:
 
 ```bash
-docker.fftaicorp.com/base/aurora_medium:latest
+-DFOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai
 ```
+
+The validated development environment is
+`docker.fftaicorp.com/base/aurora_medium:latest`. See
+[dependency discovery](docs/dependency_discovery.md).
 
 ## Build
 
-C++ only:
-
-```bash
-cmake -S . -B build -DFOURIER_AURORA_SDK_BUILD_PYTHON=OFF
-cmake --build build -j4
-ctest --test-dir build --output-on-failure
-```
-
-C++ plus Python bindings, with DDS transport enabled:
+Native Release builds enable the DDS transport, Python binding, diagnostic
+tools, and C++ recipes by default. Tests remain off:
 
 ```bash
 cmake -S . -B build \
-  -DCMAKE_PREFIX_PATH=/opt/fftai \
-  -DFOURIER_AURORA_SDK_BUILD_PYTHON=ON \
-  -DFOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT=ON
+  -DCMAKE_BUILD_TYPE=Release \
+  -DFOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai
 cmake --build build -j4
-ctest --test-dir build --output-on-failure
 ```
 
-Build a C++ SDK Debian package:
-
-```bash
-bash scripts/build_deb.sh
-sudo dpkg -i build_deb/fourier-aurora-sdk_*.deb
-```
-
-The Debian package installs under:
+Independent controls are:
 
 ```text
-/opt/fftai/fourier_aurora_sdk
+FOURIER_AURORA_SDK_BUILD_PYTHON
+FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS
+FOURIER_AURORA_SDK_BUILD_EXAMPLES
+FOURIER_AURORA_SDK_BUILD_TESTS
+FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT
 ```
 
-It also installs:
+Build scripts and verification profiles are described in
+[testing](docs/testing.md).
 
-- `/etc/ld.so.conf.d/fourier_aurora_sdk.conf` for runtime library lookup
+## Tools and Recipes
 
-Compile and run the installed C++ smoke test directly with `g++`:
+Native packages install diagnostic executables under
+`/opt/fftai/fourier_aurora_sdk/bin/client/`. Their required positional
+arguments, endpoint bundles, options, monitor behavior, and process exit codes
+are documented in the [diagnostic client reference](docs/client_tools.md).
 
-```bash
-bash scripts/test_installed_cpp_sdk.sh
-```
+Standalone GR3 recipes are under:
 
-Build the Python wheel:
+- [C++ recipes](examples/gr3/cpp)
+- [Python recipes](examples/gr3/python)
 
-```bash
-python3 -m build --wheel
-pip install dist/fourier_aurora_client-*.whl
-```
+They demonstrate one-snapshot information reads, a bounded forward walk, and a
+bounded arm swing workflow. Motion recipes require operator confirmation and
+must be reviewed on the named robot before use. GR3 Mini recipes remain a
+required pre-release TODO; robot-specific examples will not share source even
+when workflows currently match.
 
-The Python wheel bundles the Aurora C++ SDK shared library next to the pybind module,
-so installing the C++ SDK Debian package is not required for Python use. Stage 1 still
-requires the native DDS stack to be installed on the system:
+Direct C++ transport users should read the dedicated
+[FourierDDS transport reference](docs/fourierdds_transport.md). The high-level
+singleton remains the recommended robot-control API.
 
-- generated `fourier_dds_msgs` libraries under `/opt/fftai/fourier_dds_msgs/lib`
-- FastDDS/FastCDR libraries under `/usr/local/lib`
-- `fourierdds` headers/libraries available at build time
+## Release Scope
 
-The wheel is built with the DDS transport enabled and only builds the Python module
-target, not the C++ examples.
+Stage one validates Linux amd64 locally: C++ Debian and CPython 3.10 wheel.
+Linux arm64 artifacts are deferred to CI integration. The eventual public
+matrix is Linux-only C++ Debian for amd64/arm64 and standard-GIL CPython
+3.9-3.13 wheels for amd64/arm64.
 
-Installed C++ usage examples are copied to:
-
-```text
-/opt/fftai/fourier_aurora_sdk/share/doc/fourier_aurora_sdk/examples/cpp/usage
-```
-
-When built with `FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT=ON`, the example binaries are installed to:
-
-```text
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples
-```
-
-They accept optional `[domain_id] [user_id]` arguments:
-
-```bash
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/get_info
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_state
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_motion
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/set_arm_swing
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/state_client
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/motion_client
-/opt/fftai/fourier_aurora_sdk/bin/fourier_aurora_sdk_examples/control_group_client
-```
-
-Python usage examples are under:
-
-```text
-examples/python/usage
-```
-
-They mirror the minimal C++ usage examples:
-
-```bash
-python3 examples/python/usage/get_info.py 88 test
-python3 examples/python/usage/set_state.py 88 test
-python3 examples/python/usage/set_motion.py 88 test
-python3 examples/python/usage/set_arm_swing.py 88 test
-```
-
-## Repository Structure
-
-```text
-cmake/                        CMake package config template
-examples/                     Installed C++ smoke and usage examples
-include/                      Public C++ SDK headers
-src/                          C++ SDK implementation
-python/bindings/              pybind11 bindings
-python/fourier_aurora_client/ Python compatibility package
-tests/                        Unit tests
-docs/                         SDK architecture and dependency notes
-scripts/                      Wheel build entry points
-```
-
-## Notes
-
-- `AuroraClient` is a singleton. Call `close()` before creating a new instance with different options.
-- Python keeps selected legacy snake_case methods, but `get_motion_state()` compatibility dict is intentionally removed. Use `getMotionState()`.
-- `error_codes_pub` is exposed in C++ first; Python helper shape is deferred.
+Public developer tutorials, robot capability tables, governance,
+`SECURITY.md`, and complete third-party attribution are public-release TODOs.
+This repository currently documents the interface and examples needed by
+internal developers. See the [release checklist](docs/release_checklist.md)
+for the complete deferred matrix and publication gates.
 
 ## License
 
-[Apache 2.0](LICENSE) © Fourier
+[Apache License 2.0](LICENSE)

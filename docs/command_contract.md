@@ -14,7 +14,7 @@ otherwise.
 | Prismatic joint velocity | meters per second |
 | Prismatic joint effort | newtons |
 | Cartesian translation | meters |
-| Cartesian quaternion | dimensionless `[qx, qy, qz, qw]`, normalized |
+| Cartesian quaternion | dimensionless `[qx, qy, qz, qw]` |
 | Cartesian linear twist | meters per second |
 | Cartesian angular twist | radians per second |
 | Cartesian force | newtons |
@@ -31,6 +31,10 @@ The SDK is a transport wrapper. It does not decide whether group names, vector
 dimensions, control modes, gait values, numeric ranges, or command combinations
 are valid for the active robot. Aurora owns this validation so SDK, ROS, and
 direct-IDL publishers have the same command semantics.
+
+The SDK does not convert units, transform frames, normalize quaternions, clamp
+values, or add robot-specific range checks. Callers supply values in the
+documented protocol form.
 
 A successful SDK publish result means that the wrapper published the command;
 it does not by itself mean that Aurora accepted or executed it. Aurora must

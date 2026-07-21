@@ -1,9 +1,5 @@
 @PACKAGE_INIT@
 
-include(CMakeFindDependencyMacro)
-
-find_dependency(fourier_dds)
-
 include("${CMAKE_CURRENT_LIST_DIR}/fourier_aurora_sdkTargets.cmake")
 
 check_required_components(fourier_aurora_sdk)

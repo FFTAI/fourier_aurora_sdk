@@ -15,6 +15,18 @@ An Aurora client with no active transport session. Its configuration may be
 changed and it may be started again.
 _Avoid_: Closed client
 
+**Restartable transport session**:
+The finite DDS-resource lifetime created by one successful `start()` and ended
+by `stop()` or fatal cleanup. Starting again creates fresh transport resources
+without replacing the process-wide client object.
+_Avoid_: Client instance, permanent connection
+
+**SDK-local user label**:
+A nonempty process diagnostic label configured through `setUserId()`. The
+current protocol does not send it to Aurora and it provides no authentication
+or routing.
+_Avoid_: Username, robot identity, credential
+
 **Single-robot process**:
 An application process whose one Aurora client controls one robot. Multi-robot
 control uses separate processes or an external orchestration layer.
@@ -30,6 +42,12 @@ _Avoid_: Client state, robot readiness
 An SDK communication endpoint selected for creation in the next or current
 transport session. Endpoints not selected are absent rather than unmatched.
 _Avoid_: Connected endpoint, initialized endpoint
+
+**Configured endpoint set**:
+The canonical endpoint list stored in `ConnectionOptions`. It defaults to all
+endpoints, is frozen for each transport session, and is replaced as part of a
+complete stopped-stage configuration update.
+_Avoid_: Runtime operation flags
 
 **Operation result**:
 The immediate outcome of an SDK getter, setter, publish, or RPC request. It can

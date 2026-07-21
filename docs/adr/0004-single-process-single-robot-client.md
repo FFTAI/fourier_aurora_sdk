@@ -24,3 +24,8 @@ This decision avoids duplicate high-level command sessions inside one process,
 but it does not provide command authority across processes or DDS publishers.
 Aurora remains responsible for validating and arbitrating commands from SDK,
 ROS, and direct-IDL clients.
+
+The public `FourierDdsTransport` facade is an explicitly owned lower-level
+session and is not governed by the singleton object rule. Direct users that
+create additional sessions assume DDS resource and command-arbitration
+responsibility; this does not turn the high-level SDK into a multi-robot API.

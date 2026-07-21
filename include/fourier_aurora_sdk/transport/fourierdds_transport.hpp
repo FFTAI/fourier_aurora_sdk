@@ -1,45 +1,69 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 
+#include "fourier_aurora_sdk/callbacks.hpp"
 #include "fourier_aurora_sdk/connection_options.hpp"
-#include "fourier_aurora_sdk/transport/transport.hpp"
+#include "fourier_aurora_sdk/types.hpp"
 
 namespace fourier::aurora_sdk {
 
-class FourierDdsTransport final : public ITransport {
+namespace detail {
+class FourierDdsTransportFactory;
+}
+
+class FourierDdsTransport final {
 public:
-    FourierDdsTransport(uint32_t domain_id, const NormalizedConnectionOptions& options);
-    ~FourierDdsTransport() override;
+    explicit FourierDdsTransport(
+        uint32_t domain_id,
+        ConnectionOptions options = {});
+    ~FourierDdsTransport() noexcept;
 
     FourierDdsTransport(const FourierDdsTransport&) = delete;
     FourierDdsTransport& operator=(const FourierDdsTransport&) = delete;
+    FourierDdsTransport(FourierDdsTransport&&) = delete;
+    FourierDdsTransport& operator=(FourierDdsTransport&&) = delete;
 
-    void setAuroraStateHandler(AuroraStateHandler handler) override;
-    void setMotionStateHandler(MotionStateHandler handler) override;
-    void setControlGroupStateHandler(ControlGroupStateHandler handler) override;
-    void setEstimatorDataHandler(EstimatorDataHandler handler) override;
-    void setErrorCodesHandler(ErrorCodesHandler handler) override;
+    void setAuroraStateHandler(AuroraStateHandler handler);
+    void setMotionStateHandler(MotionStateHandler handler);
+    void setControlGroupStateHandler(ControlGroupStateHandler handler);
+    void setEstimatorDataHandler(EstimatorDataHandler handler);
+    void setErrorCodesHandler(ErrorCodesHandler handler);
 
-    void publishMotionCommand(const MotionCommand& command) override;
-    void publishControlGroupCommand(const ControlGroupCommand& command) override;
-    void publishSubControllerCommand(const SubControllerCommand& command) override;
-    ServiceCallResult requestFsmState(uint32_t state_id, uint32_t timeout_ms) override;
+    [[nodiscard]] OperationResult publishMotionCommand(
+        const MotionCommand& command);
+    [[nodiscard]] OperationResult publishControlGroupCommand(
+        const ControlGroupCommand& command);
+    [[nodiscard]] OperationResult publishSubControllerCommand(
+        const SubControllerCommand& command);
+    [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
 
-    bool isMotionCommandPublisherMatched() const override;
-    bool isControlGroupCommandPublisherMatched() const override;
-    bool isSubControllerCommandPublisherMatched() const override;
-    bool isAuroraStateSubscriberMatched() const override;
-    bool isMotionStateSubscriberMatched() const override;
-    bool isControlGroupStateSubscriberMatched() const override;
-    bool isEstimatorDataSubscriberMatched() const override;
-    bool isErrorCodesSubscriberMatched() const override;
+    [[nodiscard]] EndpointMatchStatus endpointMatchStatus() const;
+    [[nodiscard]] bool isFsmServiceMatched() const;
+    [[nodiscard]] bool isMotionCommandPublisherMatched() const;
+    [[nodiscard]] bool isControlGroupCommandPublisherMatched() const;
+    [[nodiscard]] bool isSubControllerCommandPublisherMatched() const;
+    [[nodiscard]] bool isAuroraStateSubscriberMatched() const;
+    [[nodiscard]] bool isMotionStateSubscriberMatched() const;
+    [[nodiscard]] bool isControlGroupStateSubscriberMatched() const;
+    [[nodiscard]] bool isEstimatorDataSubscriberMatched() const;
+    [[nodiscard]] bool isErrorCodesSubscriberMatched() const;
 
-    void close() override;
+    void stop();
 
 private:
     struct Impl;
-    std::unique_ptr<Impl> impl_;
+    struct InitialHandlers;
+
+    FourierDdsTransport(
+        uint32_t domain_id,
+        ConnectionOptions options,
+        InitialHandlers handlers);
+
+    friend class detail::FourierDdsTransportFactory;
+
+    std::shared_ptr<Impl> impl_;
 };
 
 }  // namespace fourier::aurora_sdk
