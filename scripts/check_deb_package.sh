@@ -123,4 +123,4 @@ FOURIER_AURORA_SDK_DDS_PREFIX="${dds_prefix}" \
 BUILD_ROOT="${build_root}" \
     "${project_root}/scripts/test_installed_cpp_sdk.sh"
 
-echo "Debian package passed metadata, content, ELF, header, and consumer checks."
+echo "Debian package passed metadata, content, ELF, header, consumer, and DDS loopback checks."

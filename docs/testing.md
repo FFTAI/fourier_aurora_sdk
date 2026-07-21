@@ -97,10 +97,10 @@ FOURIER_AURORA_SDK_DDS_PREFIX=/tmp/aurora_sdk_impl/prefix/opt/fftai \
 
 The Debian gate checks exact package dependencies and contents, standalone
 compilation of every installed public header, an isolated exported-CMake
-consumer, ELF `RUNPATH`, and staged native dependency resolution. The wheel
-gates check its mutually exclusive manifest, full license, metadata, ELF
-linkage, fresh virtual-environment import, isolated loader resolution, and an
-installed-client DDS state/RPC/motion loopback.
+consumer, ELF `RUNPATH`, staged native dependency resolution, and an installed
+C++ DDS state/RPC/motion loopback. The wheel gates check its mutually exclusive
+manifest, full license, metadata, ELF linkage, fresh virtual-environment import,
+isolated loader resolution, and the equivalent installed-Python loopback.
 
 After the final source commits, rerun builds with the default
 `INCLUDE_COMMIT_HASH=ON`. Hash-on mode rejects any tracked, staged, or untracked
