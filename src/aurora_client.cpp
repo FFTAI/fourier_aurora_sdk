@@ -779,14 +779,17 @@ struct AuroraClient::Impl {
     uint64_t aurora_sample_generation = 0;
 };
 
+// Returns the process-wide client and ensures fatal teardown support exists.
 AuroraClient& AuroraClient::getInstance() {
     (void)detail::TeardownCoordinator::instance();
     static AuroraClient instance;
     return instance;
 }
 
+// Initializes the singleton in its stopped, configurable state.
 AuroraClient::AuroraClient() : impl_(std::make_unique<Impl>()) {}
 
+// Provides no-throw fallback cleanup when the application omitted stop().
 AuroraClient::~AuroraClient() noexcept {
     try {
         impl_->stop();
@@ -799,11 +802,13 @@ AuroraClient::~AuroraClient() noexcept {
     }
 }
 
+// Returns a copy so callers cannot mutate the canonical options implicitly.
 ConnectionOptions AuroraClient::config() const {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     return impl_->options;
 }
 
+// Validates and replaces the complete stopped-stage connection configuration.
 void AuroraClient::configure(const ConnectionOptions& options) {
     const auto canonical =
         detail::normalizeConnectionOptions(options).public_options;
@@ -815,6 +820,7 @@ void AuroraClient::configure(const ConnectionOptions& options) {
     impl_->options = canonical;
 }
 
+// Selects the DDS domain for subsequent transport sessions.
 void AuroraClient::setDomainId(uint32_t domain_id) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->client_state != ClientState::Stopped) {
@@ -824,6 +830,7 @@ void AuroraClient::setDomainId(uint32_t domain_id) {
     impl_->domain_id = domain_id;
 }
 
+// Validates and stores the SDK-local diagnostic label for future sessions.
 void AuroraClient::setUserId(std::string user_id) {
     detail::validateUserId(user_id);
     std::lock_guard<std::mutex> lock(impl_->mutex);
@@ -834,37 +841,45 @@ void AuroraClient::setUserId(std::string user_id) {
     impl_->user_id = std::move(user_id);
 }
 
+// Reads the configured DDS domain independently of transport state.
 uint32_t AuroraClient::domainId() const {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     return impl_->domain_id;
 }
 
+// Reads the configured SDK-local diagnostic label.
 std::string AuroraClient::userId() const {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     return impl_->user_id;
 }
 
+// Reports only the local lifecycle state, not endpoint or robot readiness.
 ClientState AuroraClient::state() const {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     return impl_->client_state;
 }
 
+// Creates a transport session from a frozen copy of the current configuration.
 void AuroraClient::start() {
     impl_->start();
 }
 
+// Synchronously drains callbacks and operations, then destroys transport resources.
 void AuroraClient::stop() {
     impl_->stop();
 }
 
+// Takes one enabled/matched snapshot across the configured endpoint set.
 EndpointMatchStatus AuroraClient::endpointMatchStatus() const {
     return impl_->endpointMatchStatus();
 }
 
+// Provides the common single-endpoint readiness check for the FSM service.
 bool AuroraClient::isFsmServiceMatched() const {
     return endpointMatchStatus().fsm_service.matched;
 }
 
+// Polls local match state until every enabled endpoint is ready or time expires.
 bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
     if (timeout.count() < 0) {
         throw InvalidArgumentError("timeout must be nonnegative");
@@ -900,6 +915,7 @@ bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
     }
 }
 
+// Waits for a fresh Aurora snapshot whose current FSM ID matches the request.
 bool AuroraClient::waitForFsmState(
     uint32_t state_id,
     std::chrono::milliseconds timeout) {
@@ -953,6 +969,7 @@ bool AuroraClient::waitForFsmState(
     }
 }
 
+// Copies the latest complete Aurora-state snapshot into the caller's output.
 OperationResult AuroraClient::getAuroraState(AuroraState& output) const {
     return impl_->readCached(
         Endpoint::AuroraStateSubscriber,
@@ -960,6 +977,7 @@ OperationResult AuroraClient::getAuroraState(AuroraState& output) const {
         output);
 }
 
+// Copies the latest complete motion-state snapshot into the caller's output.
 OperationResult AuroraClient::getMotionState(MotionState& output) const {
     return impl_->readCached(
         Endpoint::MotionStateSubscriber,
@@ -967,6 +985,7 @@ OperationResult AuroraClient::getMotionState(MotionState& output) const {
         output);
 }
 
+// Copies the latest complete control-group snapshot into the caller's output.
 OperationResult AuroraClient::getControlGroupState(
     ControlGroupState& output) const {
     return impl_->readCached(
@@ -975,6 +994,7 @@ OperationResult AuroraClient::getControlGroupState(
         output);
 }
 
+// Copies the latest complete estimator snapshot into the caller's output.
 OperationResult AuroraClient::getEstimatorData(
     EstimatorData& output) const {
     return impl_->readCached(
@@ -983,6 +1003,7 @@ OperationResult AuroraClient::getEstimatorData(
         output);
 }
 
+// Copies the latest asynchronous robot error-code snapshot.
 OperationResult AuroraClient::getErrorCodes(ErrorCodes& output) const {
     return impl_->readCached(
         Endpoint::ErrorCodesSubscriber,
@@ -990,6 +1011,7 @@ OperationResult AuroraClient::getErrorCodes(ErrorCodes& output) const {
         output);
 }
 
+// Projects base pose and motion fields from one estimator snapshot.
 OperationResult AuroraClient::getBaseData(BaseData& output) const {
     EstimatorData estimator;
     const auto result = impl_->readCached(
@@ -1017,6 +1039,7 @@ OperationResult AuroraClient::getBaseData(BaseData& output) const {
     return makeResult(result_codes::SUCCESS);
 }
 
+// Projects contact forces and probabilities from one estimator snapshot.
 OperationResult AuroraClient::getContactData(ContactData& output) const {
     EstimatorData estimator;
     const auto result = impl_->readCached(
@@ -1035,6 +1058,7 @@ OperationResult AuroraClient::getContactData(ContactData& output) const {
     return makeResult(result_codes::SUCCESS);
 }
 
+// Extracts stable level from one motion-state snapshot.
 OperationResult AuroraClient::getStableLevel(uint8_t& output) const {
     MotionState motion;
     const auto result = impl_->readCached(
@@ -1048,6 +1072,7 @@ OperationResult AuroraClient::getStableLevel(uint8_t& output) const {
     return makeResult(result_codes::SUCCESS);
 }
 
+// Builds the compact height, pitch, yaw, and stable-level stand-pose view.
 OperationResult AuroraClient::getStandPose(
     std::vector<double>& output) const {
     MotionState motion;
@@ -1067,6 +1092,7 @@ OperationResult AuroraClient::getStandPose(
     return makeResult(result_codes::SUCCESS);
 }
 
+// Finds a named group and returns one measured joint field from one snapshot.
 OperationResult AuroraClient::getJointState(
     const std::string& group_name,
     JointField field,
@@ -1095,6 +1121,7 @@ OperationResult AuroraClient::getJointState(
     return makeResult(result_codes::SUCCESS);
 }
 
+// Finds a named group and returns one commanded joint field from one snapshot.
 OperationResult AuroraClient::getJointCommand(
     const std::string& group_name,
     JointField field,
@@ -1123,6 +1150,7 @@ OperationResult AuroraClient::getJointCommand(
     return makeResult(result_codes::SUCCESS);
 }
 
+// Finds and returns one named link's measured Cartesian state.
 OperationResult AuroraClient::getCartesianState(
     const std::string& link_name,
     CartesianStateEntry& output) const {
@@ -1149,6 +1177,7 @@ OperationResult AuroraClient::getCartesianState(
     return makeResult(result_codes::SUCCESS);
 }
 
+// Finds and returns one named link's observed Cartesian command.
 OperationResult AuroraClient::getCartesianCommand(
     const std::string& link_name,
     CartesianStateEntry& output) const {
@@ -1175,6 +1204,7 @@ OperationResult AuroraClient::getCartesianCommand(
     return makeResult(result_codes::SUCCESS);
 }
 
+// Returns the last motion command successfully transmitted by this client.
 OperationResult AuroraClient::getLastMotionCommand(
     MotionCommand& output) const {
     return impl_->readCached(
@@ -1183,6 +1213,7 @@ OperationResult AuroraClient::getLastMotionCommand(
         output);
 }
 
+// Returns the last control-group command successfully transmitted by this client.
 OperationResult AuroraClient::getLastControlGroupCommand(
     ControlGroupCommand& output) const {
     return impl_->readCached(
@@ -1191,6 +1222,7 @@ OperationResult AuroraClient::getLastControlGroupCommand(
         output);
 }
 
+// Returns the last sub-controller command successfully transmitted by this client.
 OperationResult AuroraClient::getLastSubControllerCommand(
     SubControllerCommand& output) const {
     return impl_->readCached(
@@ -1199,6 +1231,7 @@ OperationResult AuroraClient::getLastSubControllerCommand(
         output);
 }
 
+// Stamps, publishes, and caches one complete motion command.
 OperationResult AuroraClient::publishMotionCommand(
     const MotionCommand& command) {
     OperationResult failure;
@@ -1222,6 +1255,7 @@ OperationResult AuroraClient::publishMotionCommand(
     return result;
 }
 
+// Stamps, publishes, and caches one complete control-group command.
 OperationResult AuroraClient::publishControlGroupCommand(
     const ControlGroupCommand& command) {
     OperationResult failure;
@@ -1245,6 +1279,7 @@ OperationResult AuroraClient::publishControlGroupCommand(
     return result;
 }
 
+// Stamps, publishes, and caches one complete sub-controller command.
 OperationResult AuroraClient::publishSubControllerCommand(
     const SubControllerCommand& command) {
     OperationResult failure;
@@ -1268,6 +1303,7 @@ OperationResult AuroraClient::publishSubControllerCommand(
     return result;
 }
 
+// Sends one typed FSM request and preserves Aurora's returned result.
 OperationResult AuroraClient::requestFsmState(uint32_t state_id) {
     OperationResult failure;
     auto admission =
@@ -1278,6 +1314,7 @@ OperationResult AuroraClient::requestFsmState(uint32_t state_id) {
     return admission.transport()->requestFsmState(state_id);
 }
 
+// Converts user-facing base-frame velocities into a complete motion command.
 OperationResult AuroraClient::setVelocity(
     double vx,
     double vy,
@@ -1292,6 +1329,7 @@ OperationResult AuroraClient::setVelocity(
     return publishMotionCommand(command);
 }
 
+// Converts nominal-standing pose offsets into a complete motion command.
 OperationResult AuroraClient::setStandPose(
     double delta_height,
     double delta_pitch,
@@ -1304,12 +1342,14 @@ OperationResult AuroraClient::setStandPose(
     return publishMotionCommand(command);
 }
 
+// Converts a reset request into a complete sub-controller command.
 OperationResult AuroraClient::resetUnicontroller() {
     SubControllerCommand command;
     command.reset = true;
     return publishSubControllerCommand(command);
 }
 
+// Stores the stopped-stage callback invoked after Aurora-state cache updates.
 void AuroraClient::onAuroraState(AuroraStateHandler callback) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->client_state != ClientState::Stopped) {
@@ -1319,6 +1359,7 @@ void AuroraClient::onAuroraState(AuroraStateHandler callback) {
     impl_->callback_overrides.aurora_state = std::move(callback);
 }
 
+// Stores the stopped-stage callback invoked after motion-state cache updates.
 void AuroraClient::onMotionState(MotionStateHandler callback) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->client_state != ClientState::Stopped) {
@@ -1328,6 +1369,7 @@ void AuroraClient::onMotionState(MotionStateHandler callback) {
     impl_->callback_overrides.motion_state = std::move(callback);
 }
 
+// Stores the stopped-stage callback invoked after control-group cache updates.
 void AuroraClient::onControlGroupState(
     ControlGroupStateHandler callback) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
@@ -1338,6 +1380,7 @@ void AuroraClient::onControlGroupState(
     impl_->callback_overrides.control_group_state = std::move(callback);
 }
 
+// Stores the stopped-stage callback invoked after estimator cache updates.
 void AuroraClient::onEstimatorData(EstimatorDataHandler callback) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->client_state != ClientState::Stopped) {
@@ -1347,6 +1390,7 @@ void AuroraClient::onEstimatorData(EstimatorDataHandler callback) {
     impl_->callback_overrides.estimator_data = std::move(callback);
 }
 
+// Stores the stopped-stage callback invoked after error-code cache updates.
 void AuroraClient::onErrorCodes(ErrorCodesHandler callback) {
     std::lock_guard<std::mutex> lock(impl_->mutex);
     if (impl_->client_state != ClientState::Stopped) {

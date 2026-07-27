@@ -14,8 +14,17 @@
 
 namespace fourier::aurora_sdk {
 
+/**
+ * Process-wide, restartable high-level Aurora client.
+ *
+ * Atomic APIs operate on one complete typed endpoint value. Abstract APIs
+ * project or construct simpler values through an atomic API. "Atomic" describes
+ * the API boundary, not a concurrency transaction guarantee.
+ */
 class AuroraClient {
 public:
+    // Client functions operate on the process-wide instance, local
+    // configuration, lifecycle, and endpoint readiness.
     static AuroraClient& getInstance();
 
     AuroraClient(const AuroraClient&) = delete;
@@ -37,10 +46,8 @@ public:
     [[nodiscard]] EndpointMatchStatus endpointMatchStatus() const;
     [[nodiscard]] bool isFsmServiceMatched() const;
     [[nodiscard]] bool waitForEndpoints(std::chrono::milliseconds timeout);
-    [[nodiscard]] bool waitForFsmState(
-        uint32_t state_id,
-        std::chrono::milliseconds timeout);
 
+    // Atomic getters return one complete cached value from a typed endpoint.
     [[nodiscard]] OperationResult getAuroraState(AuroraState& output) const;
     [[nodiscard]] OperationResult getMotionState(MotionState& output) const;
     [[nodiscard]] OperationResult getControlGroupState(
@@ -48,6 +55,9 @@ public:
     [[nodiscard]] OperationResult getEstimatorData(
         EstimatorData& output) const;
     [[nodiscard]] OperationResult getErrorCodes(ErrorCodes& output) const;
+
+    // Abstract getters and waits expose a focused view derived from one atomic
+    // snapshot, preserving single-snapshot consistency.
     [[nodiscard]] OperationResult getBaseData(BaseData& output) const;
     [[nodiscard]] OperationResult getContactData(ContactData& output) const;
     [[nodiscard]] OperationResult getStableLevel(uint8_t& output) const;
@@ -67,7 +77,12 @@ public:
     [[nodiscard]] OperationResult getCartesianCommand(
         const std::string& link_name,
         CartesianStateEntry& output) const;
+    [[nodiscard]] bool waitForFsmState(
+        uint32_t state_id,
+        std::chrono::milliseconds timeout);
 
+    // Client cache getters return commands last published by this client,
+    // rather than robot-reported state.
     [[nodiscard]] OperationResult getLastMotionCommand(
         MotionCommand& output) const;
     [[nodiscard]] OperationResult getLastControlGroupCommand(
@@ -75,6 +90,8 @@ public:
     [[nodiscard]] OperationResult getLastSubControllerCommand(
         SubControllerCommand& output) const;
 
+    // Atomic setters and RPCs send one complete typed value without adding
+    // higher-level command semantics.
     [[nodiscard]] OperationResult publishMotionCommand(
         const MotionCommand& command);
     [[nodiscard]] OperationResult publishControlGroupCommand(
@@ -83,6 +100,8 @@ public:
         const SubControllerCommand& command);
     [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
 
+    // Abstract setters construct a typed command from simpler user-facing
+    // values, then delegate to an atomic setter.
     [[nodiscard]] OperationResult setVelocity(
         double vx,
         double vy,
@@ -96,6 +115,8 @@ public:
         double duration = 1.0);
     [[nodiscard]] OperationResult resetUnicontroller();
 
+    // Client callback functions configure local post-cache-update hooks while
+    // stopped; callbacks run inline on the DDS callback thread.
     void onAuroraState(AuroraStateHandler callback);
     void onMotionState(MotionStateHandler callback);
     void onControlGroupState(ControlGroupStateHandler callback);
@@ -103,6 +124,7 @@ public:
     void onErrorCodes(ErrorCodesHandler callback);
 
 private:
+    // Singleton construction and no-throw fallback cleanup are internal.
     AuroraClient();
     ~AuroraClient() noexcept;
 
