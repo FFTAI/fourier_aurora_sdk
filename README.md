@@ -1,6 +1,6 @@
 # Fourier Aurora SDK
 
-Fourier Aurora SDK 2.0 is the internal-preview C++ and Python client for
+Fourier Aurora SDK 2.0.1 is the internal-preview C++ and Python client for
 single-robot Aurora control over FourierDDS.
 
 - Canonical C++ API under `fourier::aurora_sdk`
@@ -16,8 +16,9 @@ types.
 ## Lifecycle
 
 `AuroraClient::getInstance()` only returns the stable singleton. It does not
-start DDS. The default domain is `123`, the default SDK-local user label is
-`aurora_client`, and all endpoints are initially enabled.
+start DDS. The default domain is `123`. Lease-capable configurations require a
+deployment-assigned nonzero `source_id`; an omitted Source Name becomes
+`aurora_sdk_{source_id}`.
 
 Configuration and callback overrides may be changed only while `Stopped`.
 `start()` creates one transport session from a frozen configuration. `stop()`
@@ -30,9 +31,8 @@ using namespace fourier::aurora_sdk;
 
 auto& client = AuroraClient::getInstance();
 client.setDomainId(123);
-client.setUserId("my_controller");
-
 auto options = client.config();  // Returns a copy.
+options.source_id = 42;          // Stable module identity assigned by deployment.
 options.enabled_endpoints = {
     Endpoint::AuroraStateSubscriber,
     Endpoint::FsmService,
@@ -49,6 +49,30 @@ if (client.waitForEndpoints(std::chrono::seconds(5))) {
 }
 client.stop();
 ```
+
+## Control lease
+
+Motion, control-group, and temporary motor-configuration commands are published
+only while the client owns a lease covering every targeted resource.
+Registration is explicit, renewal is automatic, and replacement is atomic: a
+rejected replacement leaves the old lease usable until its deadline.
+
+```cpp
+auto lease = client.registerLease({
+    AuroraResource::MotionCommand,
+    AuroraResource::LeftLeg,
+});
+if (lease.usable()) {
+    client.publishMotionCommand(command);
+}
+lease = client.replaceLease({AuroraResource::RightLeg});
+client.releaseLease();
+```
+
+The SDK writes no lease state to disk. A restarted process registers a fresh
+lease; if its former lease still exists, wait for the short expiry and retry.
+Deployment owners should maintain a reviewed
+[Source ID registry](docs/source_id_registry.md).
 
 Python exposes the same lifecycle and snake-case operation names:
 
@@ -89,6 +113,7 @@ return `(OperationResult, value)`.
 - `0`: success
 - `100-199`: SDK client results
 - `200-299`: Aurora-owned results
+- `300-339`: typed SDK lease and sub-controller results
 
 Aurora RPC codes and messages pass through unchanged, including temporary
 legacy FSM codes `1` and `2`. Expected nonzero results are not logged by the

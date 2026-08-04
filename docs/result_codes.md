@@ -40,6 +40,8 @@ operation unsafe is fatal.
 | `0` | Success |
 | `100-199` | Aurora SDK client |
 | `200-299` | Aurora service replies |
+| `300-319` | SDK lease lifecycle and authority mapping |
+| `320-339` | SDK sub-controller service mapping |
 
 Codes outside these ranges are reserved. The SDK passes Aurora result values
 and messages through unchanged. During the Aurora migration, legacy FSM
@@ -60,6 +62,35 @@ not client codes and are not remapped.
 | `106` | `TRANSPORT_ERROR` | Other transport failure |
 | `107` | `INVALID_AURORA_RESPONSE` | Malformed or invalid Aurora reply |
 | `108` | `STATE_NOT_RECEIVED` | No state sample has been received yet |
+
+## Lease Codes
+
+| Code | Name | Meaning |
+|---:|---|---|
+| `300` | `LEASE_INVALID_REQUEST` | Aurora rejected the lease request structure |
+| `301` | `LEASE_UNKNOWN_RESOURCE` | A requested resource is not in Aurora's catalog |
+| `302` | `LEASE_PRIORITY_NOT_ALLOWED` | The source may not use the requested priority |
+| `303` | `LEASE_RESOURCE_BUSY` | Another lease owns at least one requested resource |
+| `304` | `LEASE_NOT_FOUND` | Aurora does not recognize the lease token |
+| `305` | `LEASE_EXPIRED` | The lease period has ended |
+| `306` | `LEASE_OPERATION_ID_CONFLICT` | An operation ID was reused with different content |
+| `307` | `LEASE_AUTHORITY_ERROR` | Aurora reported an internal authority failure |
+| `308` | `LEASE_SOURCE_ALREADY_ACTIVE` | This source already owns a module lease |
+| `309` | `LEASE_AUTHORITY_BUSY` | Aurora cannot safely retain another transition |
+| `310` | `LEASE_NOT_ACTIVE` | The client has no current usable lease |
+| `311` | `LEASE_RESOURCE_NOT_COVERED` | The current lease does not cover the complete command |
+| `312` | `LEASE_OPERATION_IN_PROGRESS` | Register, replace, or release is in progress |
+| `313` | `LEASE_LOST` | The SDK has permanently stopped using the lease |
+| `314` | `LEASE_OPERATION_TIMEOUT` | The public lease operation deadline elapsed |
+
+## Sub-controller Codes
+
+| Code | Name | Meaning |
+|---:|---|---|
+| `320` | `SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER` | The active state has no single running universal controller |
+| `321` | `SUB_CONTROLLER_STATE_SWITCH_BUSY` | Aurora is switching states |
+| `322` | `SUB_CONTROLLER_INVALID_REQUEST` | The complete controller request is invalid |
+| `323` | `SUB_CONTROLLER_INTERNAL_ERROR` | Aurora could not process the service request |
 
 ## Aurora Codes
 

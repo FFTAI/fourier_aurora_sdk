@@ -122,7 +122,12 @@ if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT)
         ErrorCodes
         RobotMotionCmd
         RobotControlGroupCmd
+        MotorCfgCmd
+        MotorCfgState
         SubControllerCmd
+        SubControllerService
+        LeaseInfo
+        ManageLease
         SetInt
         TracerHeader
         Header
@@ -357,6 +362,10 @@ if(FOURIER_AURORA_SDK_BUILD_TESTS)
     add_aurora_sdk_test(
         client_concurrency
         tests/cpp/test_client_concurrency.cpp
+    )
+    add_aurora_sdk_test(
+        lease_contract
+        tests/cpp/test_lease_contract.cpp
     )
     add_aurora_sdk_test(
         teardown_coordinator

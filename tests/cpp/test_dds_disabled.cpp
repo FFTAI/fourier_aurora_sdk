@@ -17,15 +17,16 @@ int main() {
     auto& client = sdk::AuroraClient::getInstance();
     client.stop();
     client.setDomainId(123);
-    client.setUserId("aurora_client");
-    client.configure({});
+    auto options = client.config();
+    options.source_id = 42;
+    client.configure(options);
 
     SDK_CHECK_THROWS(test, sdk::ConnectionError, client.start());
     SDK_CHECK(test, client.state() == sdk::ClientState::Stopped);
     SDK_CHECK_THROWS(
         test,
         sdk::ConnectionError,
-        sdk::FourierDdsTransport(123));
+        sdk::FourierDdsTransport(123, options));
     client.stop();
     return test.result();
 }

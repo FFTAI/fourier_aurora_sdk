@@ -8,7 +8,7 @@
 
 namespace fourier::aurora_sdk::detail {
 
-inline constexpr std::size_t kEndpointCount = 9;
+inline constexpr std::size_t kEndpointCount = 12;
 
 struct NormalizedConnectionOptions {
     ConnectionOptions public_options;
@@ -26,6 +26,6 @@ struct NormalizedConnectionOptions {
 [[nodiscard]] std::size_t endpointIndex(Endpoint endpoint);
 [[nodiscard]] NormalizedConnectionOptions normalizeConnectionOptions(
     const ConnectionOptions& options);
-void validateUserId(const std::string& user_id);
+[[nodiscard]] std::string effectiveSourceName(const ConnectionOptions& options);
 
 }  // namespace fourier::aurora_sdk::detail

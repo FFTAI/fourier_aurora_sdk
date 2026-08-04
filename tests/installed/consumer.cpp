@@ -37,14 +37,15 @@ int runDdsLoopback() {
     try {
         client.stop();
         if (client.state() != sdk::ClientState::Stopped ||
-            client.domainId() != 123 || client.userId() != "aurora_client") {
+            client.domainId() != 123 || client.config().source_id != 0) {
             std::cerr << "installed client defaults are incorrect\n";
             return 1;
         }
 
         client.setDomainId(214);
-        client.setUserId("deb_loopback");
         auto options = client.config();
+        options.source_id = 77;
+        options.source_name = "deb_loopback";
         options.namespace_name = "aurora_sdk_wheel_loopback";
         options.dds_mode = 0;
         options.is_ros_compatible = false;
@@ -52,6 +53,7 @@ int runDdsLoopback() {
         options.use_discovery_server = false;
         options.service_timeout_ms = 1000;
         options.enabled_endpoints = {
+            sdk::Endpoint::ManageLeaseService,
             sdk::Endpoint::AuroraStateSubscriber,
             sdk::Endpoint::MotionCommandPublisher,
             sdk::Endpoint::FsmService,
@@ -62,6 +64,16 @@ int runDdsLoopback() {
         if (client.state() != sdk::ClientState::Running ||
             !client.waitForEndpoints(5s)) {
             std::cerr << "installed client endpoints did not match\n";
+            client.stop();
+            return 1;
+        }
+
+        const auto lease =
+            client.registerLease({sdk::AuroraResource::MotionCommand});
+        if (!lease.usable()) {
+            std::cerr << "installed client could not register lease: "
+                      << lease.operation.code << " "
+                      << lease.operation.message << "\n";
             client.stop();
             return 1;
         }

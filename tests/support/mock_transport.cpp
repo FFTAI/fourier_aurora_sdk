@@ -16,18 +16,24 @@ EndpointStatus& endpointStatus(
     switch (endpoint) {
         case Endpoint::FsmService:
             return status.fsm_service;
+        case Endpoint::ManageLeaseService:
+            return status.manage_lease_service;
         case Endpoint::MotionCommandPublisher:
             return status.motion_command_publisher;
         case Endpoint::ControlGroupCommandPublisher:
             return status.control_group_command_publisher;
-        case Endpoint::SubControllerCommandPublisher:
-            return status.sub_controller_command_publisher;
+        case Endpoint::MotorConfigurationCommandPublisher:
+            return status.motor_configuration_command_publisher;
+        case Endpoint::SubControllerService:
+            return status.sub_controller_service;
         case Endpoint::AuroraStateSubscriber:
             return status.aurora_state_subscriber;
         case Endpoint::MotionStateSubscriber:
             return status.motion_state_subscriber;
         case Endpoint::ControlGroupStateSubscriber:
             return status.control_group_state_subscriber;
+        case Endpoint::MotorConfigurationStateSubscriber:
+            return status.motor_configuration_state_subscriber;
         case Endpoint::EstimatorDataSubscriber:
             return status.estimator_data_subscriber;
         case Endpoint::ErrorCodesSubscriber:
@@ -50,12 +56,13 @@ public:
         : session_(std::move(session)) {}
 
     OperationResult publishMotionCommand(
-        const MotionCommand& command) override {
+        const MotionCommand& command, const detail::LeaseToken& token) override {
         std::unique_lock<std::mutex> lock(session_->mutex);
         if (session_->stopped) {
             return notRunningResult();
         }
         session_->motion_commands.push_back(command);
+        session_->motion_tokens.push_back(token);
         if (session_->fatal_publish) {
             const auto observer = session_->terminal_observer;
             lock.unlock();
@@ -68,12 +75,13 @@ public:
     }
 
     OperationResult publishControlGroupCommand(
-        const ControlGroupCommand& command) override {
+        const ControlGroupCommand& command, const detail::LeaseToken& token) override {
         std::unique_lock<std::mutex> lock(session_->mutex);
         if (session_->stopped) {
             return notRunningResult();
         }
         session_->control_group_commands.push_back(command);
+        session_->control_group_tokens.push_back(token);
         if (session_->fatal_publish) {
             const auto observer = session_->terminal_observer;
             lock.unlock();
@@ -85,7 +93,16 @@ public:
         return session_->control_group_publish_result;
     }
 
-    OperationResult publishSubControllerCommand(
+    OperationResult publishMotorConfigurationCommand(
+        const MotorConfigurationCommand& command,
+        const detail::LeaseToken& token) override {
+        std::lock_guard<std::mutex> lock(session_->mutex);
+        session_->motor_configuration_commands.push_back(command);
+        session_->motor_configuration_tokens.push_back(token);
+        return session_->motor_configuration_publish_result;
+    }
+
+    OperationResult setSubController(
         const SubControllerCommand& command) override {
         std::unique_lock<std::mutex> lock(session_->mutex);
         if (session_->stopped) {
@@ -100,7 +117,23 @@ public:
             }
             throw ConnectionError("injected fatal publish failure");
         }
-        return session_->sub_controller_publish_result;
+        return session_->sub_controller_result;
+    }
+
+    detail::LeaseManagementResponse manageLease(
+        const detail::LeaseManagementRequest& request,
+        uint32_t) override {
+        std::lock_guard<std::mutex> lock(session_->mutex);
+        session_->lease_requests.push_back(request);
+        auto response = session_->lease_response;
+        if (response.operation.success() && response.wire_result == 0) {
+            response.lease_id = request.action == 0 || request.action == 3
+                ? (session_->lease_requests.size() + 100)
+                : request.lease_id;
+            response.renew_duration = request.action == 2
+                ? 0.0 : request.renew_duration;
+        }
+        return response;
     }
 
     OperationResult requestFsmState(uint32_t state_id) override {

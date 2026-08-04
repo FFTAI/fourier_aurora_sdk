@@ -12,15 +12,16 @@ included in Python wheels, and do not encode a robot-specific workflow.
 
 ## Common Contract
 
-Every tool requires the DDS domain ID and an SDK-local user label:
+Every tool requires the DDS domain ID and a nonzero module `source_id`:
 
 ```text
-<tool> <domain_id> <user_id> <operation...>
+<tool> <domain_id> <source_id> <operation...>
 ```
 
-`domain_id` is an unsigned 32-bit DDS domain. `user_id` identifies diagnostic
-output inside the process; it is not authentication, routing, or an identity
-sent to Aurora. Both values are printed at startup.
+Both values are unsigned 32-bit integers. `source_id` is sent to Aurora as the
+module identity and is used by the lease authority. It must be stable and
+unique among concurrently connected modules. Both values are printed at
+startup.
 
 Each tool always creates its documented endpoint bundle. Options select
 operations, not endpoint construction. The tools intentionally do not call
@@ -49,11 +50,11 @@ Fixed endpoints:
 Usage:
 
 ```bash
-state_client 123 sdk_debug --get-state
-state_client 123 sdk_debug --get-available-states
-state_client 123 sdk_debug --request-state 13
-state_client 123 sdk_debug --get-state --request-state 13
-state_client 123 sdk_debug --monitor-state
+state_client 123 42 --get-state
+state_client 123 42 --get-available-states
+state_client 123 42 --request-state 13
+state_client 123 42 --get-state --request-state 13
+state_client 123 42 --monitor-state
 ```
 
 `--get-state` prints the latest robot information, switch status, and current
@@ -69,6 +70,10 @@ Fixed endpoints:
 - `MotionStateSubscriber`
 - `EstimatorDataSubscriber`
 - `MotionCommandPublisher`
+- `ManageLeaseService`
+
+The tool registers the `motion_cmd` lease before publishing a command and
+fails without publishing if registration is unsuccessful.
 
 Read options:
 
@@ -105,7 +110,7 @@ Command fields may be combined to publish one `MotionCommand`:
 Example:
 
 ```bash
-motion_client 123 sdk_debug \
+motion_client 123 42 \
   --get-state --get-estimator \
   --lin-velocity 0.1 0.0 0.0 --duration 1.0
 ```
@@ -120,13 +125,14 @@ Fixed endpoints:
 
 - `ControlGroupStateSubscriber`
 - `ControlGroupCommandPublisher`
+- `ManageLeaseService`
 
 Usage:
 
 ```bash
-control_group_client 123 sdk_debug --get-state
-control_group_client 123 sdk_debug --monitor-state
-control_group_client 123 sdk_debug \
+control_group_client 123 42 --get-state
+control_group_client 123 42 --monitor-state
+control_group_client 123 42 \
   --position left_manipulator 0.0 0.2 0.0 -0.7 \
   --position right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100
@@ -140,4 +146,5 @@ defaults to 5 seconds and `--rate` defaults to 100 Hz.
 
 The SDK forwards representable group names, vector lengths, control modes, and
 numeric values. Aurora remains responsible for robot-specific semantic
-validation.
+validation. Before publishing, the tool registers one lease covering every
+joint group in the command.

@@ -113,6 +113,16 @@ void bind_client(py::module_& m) {
                 options.service_timeout_ms =
                     requireUint32(value, "service_timeout_ms");
             })
+        .def_property(
+            "source_id",
+            [](const sdk::ConnectionOptions& options) { return options.source_id; },
+            [](sdk::ConnectionOptions& options, const py::object& value) {
+                options.source_id = requireUint32(value, "source_id");
+            })
+        .def_readwrite("source_name", &sdk::ConnectionOptions::source_name)
+        .def_readwrite(
+            "allow_emergency_lease_priority",
+            &sdk::ConnectionOptions::allow_emergency_lease_priority)
         .def_readwrite(
             "enabled_endpoints",
             &sdk::ConnectionOptions::enabled_endpoints);
@@ -133,9 +143,7 @@ void bind_client(py::module_& m) {
             [](sdk::AuroraClient& client, const py::object& value) {
                 client.setDomainId(requireUint32(value, "domain_id"));
             })
-        .def("set_user_id", &sdk::AuroraClient::setUserId)
         .def("domain_id", &sdk::AuroraClient::domainId)
-        .def("user_id", &sdk::AuroraClient::userId)
         .def("state", &sdk::AuroraClient::state)
         .def(
             "start",
@@ -195,6 +203,13 @@ void bind_client(py::module_& m) {
             [](const sdk::AuroraClient& client) {
                 sdk::ControlGroupState output;
                 const auto result = client.getControlGroupState(output);
+                return py::make_tuple(result, output);
+            })
+        .def(
+            "get_motor_configuration_state",
+            [](const sdk::AuroraClient& client) {
+                sdk::MotorConfigurationState output;
+                const auto result = client.getMotorConfigurationState(output);
                 return py::make_tuple(result, output);
             })
         .def(
@@ -294,6 +309,13 @@ void bind_client(py::module_& m) {
                 return py::make_tuple(result, output);
             })
         .def(
+            "get_last_motor_configuration_command",
+            [](const sdk::AuroraClient& client) {
+                sdk::MotorConfigurationCommand output;
+                const auto result = client.getLastMotorConfigurationCommand(output);
+                return py::make_tuple(result, output);
+            })
+        .def(
             "get_last_sub_controller_command",
             [](const sdk::AuroraClient& client) {
                 sdk::SubControllerCommand output;
@@ -308,8 +330,35 @@ void bind_client(py::module_& m) {
             "publish_control_group_command",
             &sdk::AuroraClient::publishControlGroupCommand)
         .def(
-            "publish_sub_controller_command",
-            &sdk::AuroraClient::publishSubControllerCommand)
+            "publish_motor_configuration_command",
+            &sdk::AuroraClient::publishMotorConfigurationCommand)
+        .def("set_sub_controller", &sdk::AuroraClient::setSubController)
+        .def(
+            "register_lease",
+            &sdk::AuroraClient::registerLease,
+            py::arg("resources"), py::arg("option") = sdk::LeaseOption{})
+        .def(
+            "replace_lease",
+            &sdk::AuroraClient::replaceLease,
+            py::arg("resources"), py::arg("option") = sdk::LeaseOption{})
+        .def("release_lease", &sdk::AuroraClient::releaseLease)
+        .def("get_lease", &sdk::AuroraClient::getLease)
+        .def(
+            "on_lease_changed",
+            [](sdk::AuroraClient& client, py::object callback) {
+                if (callback.is_none()) {
+                    client.onLeaseChanged({});
+                    return;
+                }
+                if (!PyCallable_Check(callback.ptr())) {
+                    throw sdk::InvalidArgumentError("lease callback must be callable");
+                }
+                client.onLeaseChanged(
+                    [callback = std::move(callback)](sdk::LeaseResult result) {
+                        py::gil_scoped_acquire acquire;
+                        callback(std::move(result));
+                    });
+            })
         .def(
             "request_fsm_state",
             [](sdk::AuroraClient& client, const py::object& state_id) {

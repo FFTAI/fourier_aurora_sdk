@@ -35,9 +35,7 @@ public:
     [[nodiscard]] ConnectionOptions config() const;
     void configure(const ConnectionOptions& options);
     void setDomainId(uint32_t domain_id);
-    void setUserId(std::string user_id);
     [[nodiscard]] uint32_t domainId() const;
-    [[nodiscard]] std::string userId() const;
 
     [[nodiscard]] ClientState state() const;
     void start();
@@ -52,6 +50,8 @@ public:
     [[nodiscard]] OperationResult getMotionState(MotionState& output) const;
     [[nodiscard]] OperationResult getControlGroupState(
         ControlGroupState& output) const;
+    [[nodiscard]] OperationResult getMotorConfigurationState(
+        MotorConfigurationState& output) const;
     [[nodiscard]] OperationResult getEstimatorData(
         EstimatorData& output) const;
     [[nodiscard]] OperationResult getErrorCodes(ErrorCodes& output) const;
@@ -87,6 +87,8 @@ public:
         MotionCommand& output) const;
     [[nodiscard]] OperationResult getLastControlGroupCommand(
         ControlGroupCommand& output) const;
+    [[nodiscard]] OperationResult getLastMotorConfigurationCommand(
+        MotorConfigurationCommand& output) const;
     [[nodiscard]] OperationResult getLastSubControllerCommand(
         SubControllerCommand& output) const;
 
@@ -96,9 +98,21 @@ public:
         const MotionCommand& command);
     [[nodiscard]] OperationResult publishControlGroupCommand(
         const ControlGroupCommand& command);
-    [[nodiscard]] OperationResult publishSubControllerCommand(
+    [[nodiscard]] OperationResult publishMotorConfigurationCommand(
+        const MotorConfigurationCommand& command);
+    [[nodiscard]] OperationResult setSubController(
         const SubControllerCommand& command);
     [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
+
+    // Explicitly manages the one module-level lease owned by this client.
+    [[nodiscard]] LeaseResult registerLease(
+        const std::vector<AuroraResource>& resources,
+        const LeaseOption& option = {});
+    [[nodiscard]] LeaseResult replaceLease(
+        const std::vector<AuroraResource>& resources,
+        const LeaseOption& option = {});
+    [[nodiscard]] LeaseResult releaseLease();
+    [[nodiscard]] LeaseResult getLease() const;
 
     // Abstract setters construct a typed command from simpler user-facing
     // values, then delegate to an atomic setter.
@@ -120,8 +134,10 @@ public:
     void onAuroraState(AuroraStateHandler callback);
     void onMotionState(MotionStateHandler callback);
     void onControlGroupState(ControlGroupStateHandler callback);
+    void onMotorConfigurationState(MotorConfigurationStateHandler callback);
     void onEstimatorData(EstimatorDataHandler callback);
     void onErrorCodes(ErrorCodesHandler callback);
+    void onLeaseChanged(LeaseChangedHandler callback);
 
 private:
     // Singleton construction and no-throw fallback cleanup are internal.

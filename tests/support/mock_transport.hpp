@@ -28,12 +28,17 @@ struct MockSession {
     OperationResult control_group_publish_result{
         result_codes::SUCCESS,
         std::string(defaultResultMessage(result_codes::SUCCESS))};
-    OperationResult sub_controller_publish_result{
+    OperationResult motor_configuration_publish_result{
+        result_codes::SUCCESS,
+        std::string(defaultResultMessage(result_codes::SUCCESS))};
+    OperationResult sub_controller_result{
         result_codes::SUCCESS,
         std::string(defaultResultMessage(result_codes::SUCCESS))};
     OperationResult fsm_result{
         result_codes::SUCCESS,
         "success"};
+    detail::LeaseManagementResponse lease_response{
+        {result_codes::SUCCESS, "success"}, 0, 1, 2.0, "lease accepted"};
 
     bool stopped = false;
     bool block_stop = false;
@@ -49,8 +54,13 @@ struct MockSession {
     std::thread::id stop_thread;
     std::vector<uint32_t> fsm_requests;
     std::vector<MotionCommand> motion_commands;
+    std::vector<detail::LeaseToken> motion_tokens;
     std::vector<ControlGroupCommand> control_group_commands;
+    std::vector<detail::LeaseToken> control_group_tokens;
+    std::vector<MotorConfigurationCommand> motor_configuration_commands;
+    std::vector<detail::LeaseToken> motor_configuration_tokens;
     std::vector<SubControllerCommand> sub_controller_commands;
+    std::vector<detail::LeaseManagementRequest> lease_requests;
 
     void setMatched(Endpoint endpoint, bool matched);
     void setAllEnabledMatched(bool matched);

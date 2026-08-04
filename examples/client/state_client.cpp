@@ -25,7 +25,7 @@ struct Operation {
 
 void printUsage(const char* program) {
     std::cerr
-        << "Usage: " << program << " <domain_id> <user_id> <operation...>\n"
+        << "Usage: " << program << " <domain_id> <source_id> <operation...>\n"
         << "Operations:\n"
         << "  --get-state\n"
         << "  --get-available-states\n"
@@ -89,7 +89,7 @@ int main(int argc, char** argv) {
     uint32_t domain_id = 0;
     if (!client_example::parseUint32(argv[1], domain_id) ||
         std::string(argv[2]).empty()) {
-        std::cerr << "domain_id must be uint32 and user_id must be nonempty.\n";
+        std::cerr << "domain_id and source_id must be uint32 values.\n";
         return client_example::kUsageError;
     }
 

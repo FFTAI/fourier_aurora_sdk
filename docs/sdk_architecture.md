@@ -17,11 +17,14 @@ orchestration layer.
 
 `config()` returns a canonical copy. Editing that copy has no effect until
 `configure()` validates and replaces the complete option set while stopped.
-Domain ID and the SDK-local user label have dedicated setters; the label is not
-authentication and is not transmitted by the current DDS protocol.
+Domain ID, the required lease-capable integer `source_id`, and optional
+display-only `source_name` are frozen for each running session.
 
-The C++ callback extension points run inline on the DDS callback thread after
-SDK cache update. Python does not expose these callback hooks in stage 1.
+The C++ transport callback extension points run inline on the DDS callback
+thread after SDK cache update. Python does not expose those transport callback
+hooks in stage 1. Lease-change notification is separate: C++ and Python receive
+it from a dedicated serialized notification executor so user code cannot delay
+DDS receive processing or lease renewal.
 Callbacks must return in bounded time and cannot call `stop()` directly.
 Synchronous stop has no timeout: it rejects new work, waits for admitted work,
 and returns only after transport is quiescent. An admitted FSM call is bounded
@@ -38,7 +41,8 @@ production FourierDDS implementation.
 
 C++ callback handler aliases remain public in the SDK-owned `callbacks.hpp` so
 the public client and transport facade do not depend on the private transport
-interface. Python callback registration is not part of stage one.
+interface. Python transport-callback registration is not part of stage one;
+the lease-notification exception follows ADR 0020.
 
 A private process-wide teardown coordinator moves fatal callback-origin cleanup
 off DDS listener threads. This internal path does not expose an asynchronous

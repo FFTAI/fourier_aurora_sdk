@@ -11,6 +11,9 @@ namespace fourier::aurora_sdk {
 
 namespace detail {
 class FourierDdsTransportFactory;
+struct LeaseToken;
+struct LeaseManagementRequest;
+struct LeaseManagementResponse;
 }
 
 class FourierDdsTransport final {
@@ -28,25 +31,33 @@ public:
     void setAuroraStateHandler(AuroraStateHandler handler);
     void setMotionStateHandler(MotionStateHandler handler);
     void setControlGroupStateHandler(ControlGroupStateHandler handler);
+    void setMotorConfigurationStateHandler(MotorConfigurationStateHandler handler);
     void setEstimatorDataHandler(EstimatorDataHandler handler);
     void setErrorCodesHandler(ErrorCodesHandler handler);
 
     [[nodiscard]] OperationResult publishMotionCommand(
-        const MotionCommand& command);
+        const MotionCommand& command, const detail::LeaseToken& lease);
     [[nodiscard]] OperationResult publishControlGroupCommand(
-        const ControlGroupCommand& command);
-    [[nodiscard]] OperationResult publishSubControllerCommand(
+        const ControlGroupCommand& command, const detail::LeaseToken& lease);
+    [[nodiscard]] OperationResult publishMotorConfigurationCommand(
+        const MotorConfigurationCommand& command, const detail::LeaseToken& lease);
+    [[nodiscard]] OperationResult setSubController(
         const SubControllerCommand& command);
+    [[nodiscard]] detail::LeaseManagementResponse manageLease(
+        const detail::LeaseManagementRequest& request, uint32_t timeout_ms);
     [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
 
     [[nodiscard]] EndpointMatchStatus endpointMatchStatus() const;
     [[nodiscard]] bool isFsmServiceMatched() const;
     [[nodiscard]] bool isMotionCommandPublisherMatched() const;
     [[nodiscard]] bool isControlGroupCommandPublisherMatched() const;
-    [[nodiscard]] bool isSubControllerCommandPublisherMatched() const;
+    [[nodiscard]] bool isMotorConfigurationCommandPublisherMatched() const;
+    [[nodiscard]] bool isSubControllerServiceMatched() const;
+    [[nodiscard]] bool isManageLeaseServiceMatched() const;
     [[nodiscard]] bool isAuroraStateSubscriberMatched() const;
     [[nodiscard]] bool isMotionStateSubscriberMatched() const;
     [[nodiscard]] bool isControlGroupStateSubscriberMatched() const;
+    [[nodiscard]] bool isMotorConfigurationStateSubscriberMatched() const;
     [[nodiscard]] bool isEstimatorDataSubscriberMatched() const;
     [[nodiscard]] bool isErrorCodesSubscriberMatched() const;
 

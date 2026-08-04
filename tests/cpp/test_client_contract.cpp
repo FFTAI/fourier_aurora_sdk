@@ -37,8 +37,8 @@ void testTraitsAndDefaults(testing::TestHarness& test) {
     SDK_CHECK(test, &client == &alias);
     SDK_CHECK(test, client.state() == sdk::ClientState::Stopped);
     SDK_CHECK(test, client.domainId() == 123);
-    SDK_CHECK(test, client.userId() == "aurora_client");
-    SDK_CHECK(test, client.config().enabled_endpoints.size() == 9);
+    SDK_CHECK(test, client.config().source_id == 42);
+    SDK_CHECK(test, client.config().enabled_endpoints.size() == 12);
 
     const sdk::OperationResult default_result;
     SDK_CHECK(test, default_result.code == sdk::result_codes::CLIENT_ERROR);
@@ -102,13 +102,12 @@ void testConfiguration(testing::TestHarness& test) {
         test, sdk::InvalidArgumentError, client.configure(invalid));
     SDK_CHECK(test, client.config() == before_invalid);
 
-    SDK_CHECK_THROWS(
-        test, sdk::InvalidArgumentError, client.setUserId(""));
-    SDK_CHECK(test, client.userId() == "aurora_client");
     client.setDomainId(42);
-    client.setUserId("contract_test");
+    auto renamed = client.config();
+    renamed.source_name = "contract_test";
+    client.configure(renamed);
     SDK_CHECK(test, client.domainId() == 42);
-    SDK_CHECK(test, client.userId() == "contract_test");
+    SDK_CHECK(test, client.config().source_name == "contract_test");
 }
 
 void testEndpointAndGetterSemantics(testing::TestHarness& test) {
@@ -305,13 +304,20 @@ void testPublicationAndCommandCaches(testing::TestHarness& test) {
     auto& client = testing::resetClientFixture();
     auto options = client.config();
     options.enabled_endpoints = {
+        sdk::Endpoint::ManageLeaseService,
         sdk::Endpoint::MotionCommandPublisher,
         sdk::Endpoint::ControlGroupCommandPublisher,
-        sdk::Endpoint::SubControllerCommandPublisher,
+        sdk::Endpoint::SubControllerService,
     };
     client.configure(options);
     client.start();
     auto session = testing::mockFactoryControl().latest();
+    const auto lease = client.registerLease({
+        sdk::AuroraResource::MotionCommand,
+        sdk::AuroraResource::LeftLeg,
+    });
+    SDK_CHECK(test, lease.success());
+    SDK_CHECK(test, lease.usable());
 
     sdk::MotionCommand command;
     command.header.send_time =
@@ -358,7 +364,7 @@ void testPublicationAndCommandCaches(testing::TestHarness& test) {
 
     sdk::ControlGroupCommand group_command;
     sdk::JointCommand joint;
-    joint.group_name = "arbitrary_group";
+    joint.group_name = "left_leg";
     joint.control_type = static_cast<sdk::JointControlType>(200);
     joint.motor_mode = static_cast<sdk::MotorMode>(201);
     joint.position = {1.0, 2.0, 3.0};

@@ -26,18 +26,23 @@ void bind_types(py::module_& m) {
 
     py::enum_<sdk::Endpoint>(m, "Endpoint")
         .value("FSM_SERVICE", sdk::Endpoint::FsmService)
+        .value("MANAGE_LEASE_SERVICE", sdk::Endpoint::ManageLeaseService)
         .value("MOTION_COMMAND_PUBLISHER", sdk::Endpoint::MotionCommandPublisher)
         .value(
             "CONTROL_GROUP_COMMAND_PUBLISHER",
             sdk::Endpoint::ControlGroupCommandPublisher)
         .value(
-            "SUB_CONTROLLER_COMMAND_PUBLISHER",
-            sdk::Endpoint::SubControllerCommandPublisher)
+            "MOTOR_CONFIGURATION_COMMAND_PUBLISHER",
+            sdk::Endpoint::MotorConfigurationCommandPublisher)
+        .value("SUB_CONTROLLER_SERVICE", sdk::Endpoint::SubControllerService)
         .value("AURORA_STATE_SUBSCRIBER", sdk::Endpoint::AuroraStateSubscriber)
         .value("MOTION_STATE_SUBSCRIBER", sdk::Endpoint::MotionStateSubscriber)
         .value(
             "CONTROL_GROUP_STATE_SUBSCRIBER",
             sdk::Endpoint::ControlGroupStateSubscriber)
+        .value(
+            "MOTOR_CONFIGURATION_STATE_SUBSCRIBER",
+            sdk::Endpoint::MotorConfigurationStateSubscriber)
         .value("ESTIMATOR_DATA_SUBSCRIBER", sdk::Endpoint::EstimatorDataSubscriber)
         .value("ERROR_CODES_SUBSCRIBER", sdk::Endpoint::ErrorCodesSubscriber);
 
@@ -49,6 +54,7 @@ void bind_types(py::module_& m) {
     py::class_<sdk::EndpointMatchStatus>(m, "EndpointMatchStatus")
         .def(py::init<>())
         .def_readwrite("fsm_service", &sdk::EndpointMatchStatus::fsm_service)
+        .def_readwrite("manage_lease_service", &sdk::EndpointMatchStatus::manage_lease_service)
         .def_readwrite(
             "motion_command_publisher",
             &sdk::EndpointMatchStatus::motion_command_publisher)
@@ -56,8 +62,9 @@ void bind_types(py::module_& m) {
             "control_group_command_publisher",
             &sdk::EndpointMatchStatus::control_group_command_publisher)
         .def_readwrite(
-            "sub_controller_command_publisher",
-            &sdk::EndpointMatchStatus::sub_controller_command_publisher)
+            "motor_configuration_command_publisher",
+            &sdk::EndpointMatchStatus::motor_configuration_command_publisher)
+        .def_readwrite("sub_controller_service", &sdk::EndpointMatchStatus::sub_controller_service)
         .def_readwrite(
             "aurora_state_subscriber",
             &sdk::EndpointMatchStatus::aurora_state_subscriber)
@@ -67,6 +74,9 @@ void bind_types(py::module_& m) {
         .def_readwrite(
             "control_group_state_subscriber",
             &sdk::EndpointMatchStatus::control_group_state_subscriber)
+        .def_readwrite(
+            "motor_configuration_state_subscriber",
+            &sdk::EndpointMatchStatus::motor_configuration_state_subscriber)
         .def_readwrite(
             "estimator_data_subscriber",
             &sdk::EndpointMatchStatus::estimator_data_subscriber)
@@ -96,6 +106,9 @@ void bind_types(py::module_& m) {
     m.attr("TRANSPORT_ERROR") = sdk::result_codes::TRANSPORT_ERROR;
     m.attr("INVALID_AURORA_RESPONSE") = sdk::result_codes::INVALID_AURORA_RESPONSE;
     m.attr("STATE_NOT_RECEIVED") = sdk::result_codes::STATE_NOT_RECEIVED;
+    m.attr("LEASE_NOT_ACTIVE") = sdk::result_codes::LEASE_NOT_ACTIVE;
+    m.attr("LEASE_RESOURCE_NOT_COVERED") = sdk::result_codes::LEASE_RESOURCE_NOT_COVERED;
+    m.attr("LEASE_LOST") = sdk::result_codes::LEASE_LOST;
 
     py::class_<sdk::MessageHeader>(m, "MessageHeader")
         .def(py::init<>())
@@ -123,7 +136,8 @@ void bind_types(py::module_& m) {
         .def_readwrite("robot_info", &sdk::AuroraState::robot_info)
         .def_readwrite("switch_status", &sdk::AuroraState::switch_status)
         .def_readwrite("current_state", &sdk::AuroraState::current_state)
-        .def_readwrite("available_states", &sdk::AuroraState::available_states);
+        .def_readwrite("available_states", &sdk::AuroraState::available_states)
+        .def_readwrite("authority_resources", &sdk::AuroraState::authority_resources);
 
     py::class_<sdk::MotionState>(m, "MotionState")
         .def(py::init<>())
@@ -268,5 +282,95 @@ void bind_types(py::module_& m) {
         .def_readwrite("header", &sdk::ErrorCodes::header)
         .def_readwrite("source", &sdk::ErrorCodes::source)
         .def_readwrite("error_codes", &sdk::ErrorCodes::error_codes);
+
+    py::enum_<sdk::AuroraResource>(m, "AuroraResource")
+        .value("LEFT_LEG", sdk::AuroraResource::LeftLeg)
+        .value("RIGHT_LEG", sdk::AuroraResource::RightLeg)
+        .value("WAIST", sdk::AuroraResource::Waist)
+        .value("HEAD", sdk::AuroraResource::Head)
+        .value("LEFT_MANIPULATOR", sdk::AuroraResource::LeftManipulator)
+        .value("RIGHT_MANIPULATOR", sdk::AuroraResource::RightManipulator)
+        .value("LEFT_END_EFFECTOR", sdk::AuroraResource::LeftEndEffector)
+        .value("RIGHT_END_EFFECTOR", sdk::AuroraResource::RightEndEffector)
+        .value("MOTION_COMMAND", sdk::AuroraResource::MotionCommand);
+
+    py::enum_<sdk::LeasePriority>(m, "LeasePriority")
+        .value("NORMAL", sdk::LeasePriority::Normal)
+        .value("EMERGENCY", sdk::LeasePriority::Emergency);
+    py::enum_<sdk::LeaseState>(m, "LeaseState")
+        .value("UNREGISTERED", sdk::LeaseState::Unregistered)
+        .value("REGISTERING", sdk::LeaseState::Registering)
+        .value("ACTIVE", sdk::LeaseState::Active)
+        .value("REPLACING", sdk::LeaseState::Replacing)
+        .value("RELEASING", sdk::LeaseState::Releasing)
+        .value("LOST", sdk::LeaseState::Lost);
+    py::enum_<sdk::LeaseLossReason>(m, "LeaseLossReason")
+        .value("NONE", sdk::LeaseLossReason::None)
+        .value("DEADLINE_EXPIRED", sdk::LeaseLossReason::DeadlineExpired)
+        .value("AUTHORITY_REJECTED", sdk::LeaseLossReason::AuthorityRejected)
+        .value("OPERATION_TIMEOUT", sdk::LeaseLossReason::OperationTimeout)
+        .value("INVALID_AUTHORITY_RESPONSE", sdk::LeaseLossReason::InvalidAuthorityResponse)
+        .value("PUBLICATION_DRAIN_TIMEOUT", sdk::LeaseLossReason::PublicationDrainTimeout)
+        .value("INTERNAL_ERROR", sdk::LeaseLossReason::InternalError);
+    py::class_<sdk::LeaseOption>(m, "LeaseOption")
+        .def(py::init<>())
+        .def_readwrite("duration", &sdk::LeaseOption::duration)
+        .def_readwrite("priority", &sdk::LeaseOption::priority)
+        .def_readwrite("timeout", &sdk::LeaseOption::timeout);
+    py::class_<sdk::LeaseResult>(m, "LeaseResult")
+        .def(py::init<>())
+        .def_readwrite("operation", &sdk::LeaseResult::operation)
+        .def_readwrite("state", &sdk::LeaseResult::state)
+        .def_readwrite("source_id", &sdk::LeaseResult::source_id)
+        .def_readwrite("source_name", &sdk::LeaseResult::source_name)
+        .def_readwrite("lease_id", &sdk::LeaseResult::lease_id)
+        .def_readwrite("resources", &sdk::LeaseResult::resources)
+        .def_readwrite("priority", &sdk::LeaseResult::priority)
+        .def_readwrite("granted_duration", &sdk::LeaseResult::granted_duration)
+        .def_readwrite("remaining_duration", &sdk::LeaseResult::remaining_duration)
+        .def_readwrite("loss_reason", &sdk::LeaseResult::loss_reason)
+        .def("success", &sdk::LeaseResult::success)
+        .def("usable", &sdk::LeaseResult::usable);
+    py::class_<sdk::AuthorityResourceStatus>(m, "AuthorityResourceStatus")
+        .def(py::init<>())
+        .def_readwrite("resource", &sdk::AuthorityResourceStatus::resource)
+        .def_readwrite("acquired", &sdk::AuthorityResourceStatus::acquired)
+        .def_readwrite("holder_source_id", &sdk::AuthorityResourceStatus::holder_source_id)
+        .def_readwrite("holder_source_name", &sdk::AuthorityResourceStatus::holder_source_name)
+        .def_readwrite("holder_priority", &sdk::AuthorityResourceStatus::holder_priority);
+
+    py::enum_<sdk::MotorConfigurationMode>(m, "MotorConfigurationMode")
+        .value("DISABLE", sdk::MotorConfigurationMode::Disable)
+        .value("POSITION", sdk::MotorConfigurationMode::Position)
+        .value("VELOCITY", sdk::MotorConfigurationMode::Velocity)
+        .value("TORQUE", sdk::MotorConfigurationMode::Torque)
+        .value("PD", sdk::MotorConfigurationMode::Pd);
+    py::class_<sdk::MotorConfigurationGroupCommand>(m, "MotorConfigurationGroupCommand")
+        .def(py::init<>())
+        .def_readwrite("group_name", &sdk::MotorConfigurationGroupCommand::group_name)
+        .def_readwrite("mode", &sdk::MotorConfigurationGroupCommand::mode)
+        .def_readwrite("position_kp", &sdk::MotorConfigurationGroupCommand::position_kp)
+        .def_readwrite("position_ki", &sdk::MotorConfigurationGroupCommand::position_ki)
+        .def_readwrite("position_kd", &sdk::MotorConfigurationGroupCommand::position_kd)
+        .def_readwrite("pd_kp", &sdk::MotorConfigurationGroupCommand::pd_kp)
+        .def_readwrite("pd_kd", &sdk::MotorConfigurationGroupCommand::pd_kd);
+    py::class_<sdk::MotorConfigurationCommand>(m, "MotorConfigurationCommand")
+        .def(py::init<>())
+        .def_readwrite("header", &sdk::MotorConfigurationCommand::header)
+        .def_readwrite("groups", &sdk::MotorConfigurationCommand::groups);
+    py::class_<sdk::MotorConfigurationGroupState>(m, "MotorConfigurationGroupState")
+        .def(py::init<>())
+        .def_readwrite("group_name", &sdk::MotorConfigurationGroupState::group_name)
+        .def_readwrite("mode", &sdk::MotorConfigurationGroupState::mode)
+        .def_readwrite("motor_error", &sdk::MotorConfigurationGroupState::motor_error)
+        .def_readwrite("position_kp", &sdk::MotorConfigurationGroupState::position_kp)
+        .def_readwrite("position_ki", &sdk::MotorConfigurationGroupState::position_ki)
+        .def_readwrite("position_kd", &sdk::MotorConfigurationGroupState::position_kd)
+        .def_readwrite("pd_kp", &sdk::MotorConfigurationGroupState::pd_kp)
+        .def_readwrite("pd_kd", &sdk::MotorConfigurationGroupState::pd_kd);
+    py::class_<sdk::MotorConfigurationState>(m, "MotorConfigurationState")
+        .def(py::init<>())
+        .def_readwrite("header", &sdk::MotorConfigurationState::header)
+        .def_readwrite("groups", &sdk::MotorConfigurationState::groups);
 
 }

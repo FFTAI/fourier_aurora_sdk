@@ -8,8 +8,10 @@ int main() {
     resetMockTransportFixture();
     auto& client = AuroraClient::getInstance();
     client.setDomainId(123);
-    client.setUserId("destructor_fallback_test");
-    client.configure({});
+    auto options = client.config();
+    options.source_id = 77;
+    options.source_name = "destructor_fallback_test";
+    client.configure(options);
     client.start();
 
     // Intentionally omit stop(). CTest bounds this process so fallback

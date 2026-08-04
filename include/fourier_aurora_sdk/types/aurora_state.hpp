@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "fourier_aurora_sdk/types/common.hpp"
+#include "fourier_aurora_sdk/types/lease.hpp"
 
 namespace fourier::aurora_sdk {
 
@@ -28,6 +29,7 @@ struct AuroraState {
     uint8_t switch_status = 0;
     StateInfo current_state;
     std::vector<StateInfo> available_states;
+    std::vector<AuthorityResourceStatus> authority_resources;
 };
 
 }  // namespace fourier::aurora_sdk

@@ -11,14 +11,14 @@ Linux 原生 SDK 包会在以下目录安装三个与机器人型号无关的诊
 
 ## 通用约定
 
-所有工具都要求 DDS domain ID 和 SDK 本地用户标签：
+所有工具都要求 DDS domain ID 和非零模块 `source_id`：
 
 ```text
-<tool> <domain_id> <user_id> <operation...>
+<tool> <domain_id> <source_id> <operation...>
 ```
 
-`domain_id` 是无符号 32 位 DDS domain；`user_id` 只用于进程内诊断标识，
-不是认证信息、路由信息，也不会发送给 Aurora。工具启动时会打印这两个值。
+两者都是无符号 32 位整数。`source_id` 会作为模块身份发送给 Aurora，并用于
+租约管理；同时连接的模块必须使用不同且稳定的值。工具启动时会打印这两个值。
 
 每个工具始终创建下文列出的固定 endpoint 组合。命令行参数只选择操作，不改变
 endpoint。诊断工具不会调用聚合的 `waitForEndpoints()`，避免无关 endpoint
@@ -43,11 +43,11 @@ endpoint。诊断工具不会调用聚合的 `waitForEndpoints()`，避免无关
 - `FsmService`
 
 ```bash
-state_client 123 sdk_debug --get-state
-state_client 123 sdk_debug --get-available-states
-state_client 123 sdk_debug --request-state 13
-state_client 123 sdk_debug --get-state --request-state 13
-state_client 123 sdk_debug --monitor-state
+state_client 123 42 --get-state
+state_client 123 42 --get-available-states
+state_client 123 42 --request-state 13
+state_client 123 42 --get-state --request-state 13
+state_client 123 42 --monitor-state
 ```
 
 `--get-state` 打印机器人信息、切换状态和当前 FSM 状态；
@@ -62,6 +62,9 @@ state_client 123 sdk_debug --monitor-state
 - `MotionStateSubscriber`
 - `EstimatorDataSubscriber`
 - `MotionCommandPublisher`
+- `ManageLeaseService`
+
+工具会在发布命令前注册 `motion_cmd` 租约；注册失败时不会发布命令。
 
 读取参数：
 
@@ -102,11 +105,12 @@ state_client 123 sdk_debug --monitor-state
 
 - `ControlGroupStateSubscriber`
 - `ControlGroupCommandPublisher`
+- `ManageLeaseService`
 
 ```bash
-control_group_client 123 sdk_debug --get-state
-control_group_client 123 sdk_debug --monitor-state
-control_group_client 123 sdk_debug \
+control_group_client 123 42 --get-state
+control_group_client 123 42 --monitor-state
+control_group_client 123 42 \
   --position left_manipulator 0.0 0.2 0.0 -0.7 \
   --position right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100
@@ -118,4 +122,4 @@ control_group_client 123 sdk_debug \
 `--rate` 默认 100 Hz。
 
 SDK 会转发可表示的 group 名称、向量长度、控制模式和数值。具体机器人上的
-语义合法性仍由 Aurora 校验。
+语义合法性仍由 Aurora 校验。发布前，工具会为命令中的全部关节组注册一份租约。

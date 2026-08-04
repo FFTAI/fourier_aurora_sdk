@@ -1,6 +1,6 @@
 # Fourier Aurora SDK
 
-Fourier Aurora SDK 2.0 是通过 FourierDDS 控制单台 Aurora 机器人的 C++/Python
+Fourier Aurora SDK 2.0.1 是通过 FourierDDS 控制单台 Aurora 机器人的 C++/Python
 内部预览版客户端。
 
 - C++ 主实现位于 `fourier::aurora_sdk`
@@ -14,7 +14,8 @@ Fourier Aurora SDK 2.0 是通过 FourierDDS 控制单台 Aurora 机器人的 C++
 ## 生命周期
 
 `AuroraClient::getInstance()` 只返回稳定单例，不启动 DDS。默认 domain 为
-`123`，默认 SDK 本地用户标签为 `aurora_client`，默认启用全部 endpoint。
+`123`。启用租约能力时必须配置部署分配的非零 `source_id`；未填写 Source Name
+时使用 `aurora_sdk_{source_id}`。
 
 配置和 C++ 回调覆盖只能在 `Stopped` 状态修改。`start()` 用冻结后的配置创建
 一次 transport session；同步 `stop()` 等待已进入的操作和回调结束，销毁
@@ -25,9 +26,8 @@ using namespace fourier::aurora_sdk;
 
 auto& client = AuroraClient::getInstance();
 client.setDomainId(123);
-client.setUserId("my_controller");
-
 auto options = client.config();  // 返回副本。
+options.source_id = 42;          // 部署分配的稳定模块标识。
 options.enabled_endpoints = {
     Endpoint::AuroraStateSubscriber,
     Endpoint::FsmService,
@@ -41,6 +41,28 @@ if (client.waitForEndpoints(std::chrono::seconds(5))) {
 }
 client.stop();
 ```
+
+## 控制租约
+
+运动、控制组和临时电机配置命令只有在当前租约覆盖全部目标资源时才会发布。
+用户显式注册租约，SDK 自动续租；替换是原子的，替换被拒绝时旧租约在截止时间
+前仍可用。
+
+```cpp
+auto lease = client.registerLease({
+    AuroraResource::MotionCommand,
+    AuroraResource::LeftLeg,
+});
+if (lease.usable()) {
+    client.publishMotionCommand(command);
+}
+lease = client.replaceLease({AuroraResource::RightLeg});
+client.releaseLease();
+```
+
+SDK 不把租约状态写入本地文件。进程重启后重新注册；如果旧租约仍在，等待其
+短暂过期后重试。
+部署方还应维护经过评审的 [Source ID 分配表](docs/source_id_registry.md)。
 
 Python 使用相同生命周期和 snake_case API：
 
@@ -77,6 +99,7 @@ getter、setter、publish 和 RPC 都返回 `OperationResult`。C++ getter 使�
 - `0`：成功
 - `100-199`：SDK 客户端返回值
 - `200-299`：Aurora 返回值
+- `300-339`：SDK 租约与子控制器结构化返回值
 
 Aurora RPC code/message 原样返回，包括迁移期 FSM code `1` 和 `2`。普通非零
 返回值不会由 SDK 自动记录，是否打印由调用方决定。API 误用抛出明确异常；
