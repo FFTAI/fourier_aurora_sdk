@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <charconv>
 #include <chrono>
 #include <csignal>
 #include <exception>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <thread>
 
 #include "fourier_aurora_sdk/aurora_client.hpp"
@@ -29,6 +31,13 @@ void printResult(
               << " message=\"" << result.message << "\"\n";
 }
 
+bool parseSourceId(std::string_view text, uint32_t& source_id) {
+    const auto result = std::from_chars(
+        text.data(), text.data() + text.size(), source_id);
+    return result.ec == std::errc{} &&
+           result.ptr == text.data() + text.size() && source_id != 0;
+}
+
 void stopAfterFailure(sdk::AuroraClient& client) {
     try {
         client.stop();
@@ -39,7 +48,13 @@ void stopAfterFailure(sdk::AuroraClient& client) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    uint32_t source_id = 0;
+    if (argc != 2 || !parseSourceId(argv[1], source_id)) {
+        std::cerr << "Usage: " << argv[0] << " <nonzero_source_id>\n";
+        return 2;
+    }
+
     std::cout
         << "GR3 walk_forward will request Walk (FSM 3), command "
         << kForwardVelocityMps
@@ -58,8 +73,10 @@ int main() {
     auto& client = sdk::AuroraClient::getInstance();
     try {
         auto options = client.config();
+        options.source_id = source_id;
         options.enabled_endpoints = {
             sdk::Endpoint::FsmService,
+            sdk::Endpoint::ManageLeaseService,
             sdk::Endpoint::AuroraStateSubscriber,
             sdk::Endpoint::MotionCommandPublisher,
         };
@@ -74,6 +91,14 @@ int main() {
         if (interrupted) {
             client.stop();
             return 130;
+        }
+
+        const auto lease = client.registerLease(
+            {sdk::AuroraResource::MotionCommand});
+        if (!lease.usable()) {
+            printResult("registerLease(MotionCommand)", lease.operation);
+            client.stop();
+            return 1;
         }
 
         auto result = client.requestFsmState(kGr3WalkState);
@@ -108,6 +133,10 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
 
+        const auto release = client.releaseLease();
+        if (!release.success()) {
+            printResult("releaseLease", release.operation);
+        }
         client.stop();
         return interrupted ? 130 : 0;
     } catch (const std::exception& error) {

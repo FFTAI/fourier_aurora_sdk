@@ -52,7 +52,7 @@ doc_prefix="${sdk_prefix}/share/doc/fourier_aurora_sdk"
 required_files=(
     "${sdk_prefix}/include/fourier_aurora_sdk/aurora_client.hpp"
     "${sdk_prefix}/include/fourier_aurora_sdk/transport/fourierdds_transport.hpp"
-    "${sdk_prefix}/lib/libfourier_aurora_sdk.so.2.0.0"
+    "${sdk_prefix}/lib/libfourier_aurora_sdk.so.${version}"
     "${sdk_prefix}/lib/cmake/fourier_aurora_sdk/fourier_aurora_sdkConfig.cmake"
     "${sdk_prefix}/lib/cmake/fourier_aurora_sdk/fourier_aurora_sdkConfigVersion.cmake"
     "${sdk_prefix}/bin/client/state_client"
@@ -62,6 +62,14 @@ required_files=(
     "${doc_prefix}/README.md"
     "${doc_prefix}/README_CN.md"
     "${doc_prefix}/CHANGELOG"
+    "${doc_prefix}/docs/overview.md"
+    "${doc_prefix}/docs/overview_CN.md"
+    "${doc_prefix}/docs/cpp_api.md"
+    "${doc_prefix}/docs/cpp_api_CN.md"
+    "${doc_prefix}/docs/python_api.md"
+    "${doc_prefix}/docs/python_api_CN.md"
+    "${doc_prefix}/docs/examples_and_clients.md"
+    "${doc_prefix}/docs/examples_and_clients_CN.md"
     "${doc_prefix}/examples/gr3/cpp/get_info.cpp"
     "${doc_prefix}/examples/gr3/cpp/walk_forward.cpp"
     "${doc_prefix}/examples/gr3/cpp/swing_arms.cpp"
@@ -90,7 +98,7 @@ if grep -ERq 'find_dependency\(fourier_dds|FOURIER_AURORA_SDK_TESTING|mock_trans
     exit 1
 fi
 
-sdk_library="${sdk_prefix}/lib/libfourier_aurora_sdk.so.2.0.0"
+sdk_library="${sdk_prefix}/lib/libfourier_aurora_sdk.so.${version}"
 dynamic_section="$(readelf -d "${sdk_library}")"
 grep -Fq '(RUNPATH)' <<< "${dynamic_section}"
 grep -Fq '$ORIGIN' <<< "${dynamic_section}"

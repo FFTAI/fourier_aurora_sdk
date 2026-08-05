@@ -186,6 +186,17 @@ if(NOT SKBUILD)
         CHANGELOG
         DESTINATION ${CMAKE_INSTALL_DOCDIR}
     )
+    install(FILES
+        docs/overview.md
+        docs/overview_CN.md
+        docs/cpp_api.md
+        docs/cpp_api_CN.md
+        docs/python_api.md
+        docs/python_api_CN.md
+        docs/examples_and_clients.md
+        docs/examples_and_clients_CN.md
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}/docs
+    )
 
     write_basic_package_version_file(
         "${CMAKE_CURRENT_BINARY_DIR}/fourier_aurora_sdkConfigVersion.cmake"
