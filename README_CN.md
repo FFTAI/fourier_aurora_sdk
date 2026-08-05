@@ -1,164 +1,144 @@
 # Fourier Aurora SDK
 
-Fourier Aurora SDK 2.0 是通过 FourierDDS 控制单台 Aurora 机器人的 C++/Python
-内部预览版客户端。
+[English](README.md)
 
-- C++ 主实现位于 `fourier::aurora_sdk`
-- Python 包为 `fourier_aurora_client`，由 pybind11 绑定
-- 高层客户端是可重启的进程级单例
-- 可选择创建 endpoint，并查询实际匹配状态
-- 公开 C++ `FourierDdsTransport` 供直接使用传输层
+Fourier Aurora SDK 2.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
+命令的 C++17/Python 客户端库。应用只接触 SDK 自有类型，生成的 DDS 消息类型
+不会暴露到 SDK 边界之外。
 
-生成的 DDS 消息类仍由独立消息模块管理；高层 API 只使用 SDK 自有类型。
+## 选择安装包
 
-## 生命周期
+- C++ 用户安装 `fourier-aurora-sdk` Debian 包，其中包含头文件、动态库、CMake
+  包配置、诊断客户端和 GR3 示例。
+- Python 用户安装 `fourier-aurora-client` wheel，并导入
+  `fourier_aurora_client`。
+- 开发 SDK 或为部署环境制作安装包时，从源码构建。详见
+  [SDK 总览与构建指南](docs/overview_CN.md)。
 
-`AuroraClient::getInstance()` 只返回稳定单例，不启动 DDS。默认 domain 为
-`123`，默认 SDK 本地用户标签为 `aurora_client`，默认启用全部 endpoint。
+使用前必须先安装匹配的 `fourier_dds` 与 `fourier-dds-msgs` runtime 包；当前
+支持的精确版本记录在 `REVISIONS.yaml`。
 
-配置和 C++ 回调覆盖只能在 `Stopped` 状态修改。`start()` 用冻结后的配置创建
-一次 transport session；同步 `stop()` 等待已进入的操作和回调结束，销毁
-transport，清理本次 session 缓存，并回到可重新配置、重新启动的 `Stopped`。
+## Python 快速开始：读取机器人状态
 
-```cpp
-using namespace fourier::aurora_sdk;
+安装与你的平台匹配的 wheel，并且只创建程序实际需要的 endpoint：
 
-auto& client = AuroraClient::getInstance();
-client.setDomainId(123);
-client.setUserId("my_controller");
-
-auto options = client.config();  // 返回副本。
-options.enabled_endpoints = {
-    Endpoint::AuroraStateSubscriber,
-    Endpoint::FsmService,
-};
-client.configure(options);       // 替换完整配置。
-
-client.start();
-if (client.waitForEndpoints(std::chrono::seconds(5))) {
-    AuroraState state;
-    const OperationResult result = client.getAuroraState(state);
-}
-client.stop();
+```bash
+python3 -m pip install fourier_aurora_client-2.0.1-*.whl
 ```
-
-Python 使用相同生命周期和 snake_case API：
 
 ```python
 from fourier_aurora_client import AuroraClient, Endpoint
 
 client = AuroraClient.get_instance()
 options = client.config()
-options.enabled_endpoints = [
-    Endpoint.AURORA_STATE_SUBSCRIBER,
-    Endpoint.FSM_SERVICE,
-]
+options.enabled_endpoints = [Endpoint.AURORA_STATE_SUBSCRIBER]
 client.configure(options)
 
-client.start()
-if client.wait_for_endpoints(5.0):
+try:
+    client.start()
+    if not client.wait_for_endpoints(5.0):
+        raise RuntimeError("Aurora state endpoint did not match")
+
     result, state = client.get_aurora_state()
-client.stop()
+    if not result.success():
+        raise RuntimeError(f"[{result.code}] {result.message}")
+    print(state.robot_info.robot_type, state.current_state.name)
+finally:
+    client.stop()
 ```
 
-程序正常结束前必须显式调用 `stop()`。否则只能依赖进程析构清理；尚未返回的
-service 请求或阻塞的 C++ 回调可能延迟甚至卡住退出。C++ 回调在线程内直接由
-DDS 调用，必须在有限时间内返回，也不能在回调里直接调用 `stop()`。Stage 1
-不提供 Python 回调 API。
+Python 的 timeout 单位是秒。`Running` 仅表示本地 transport 已启动；使用
+`wait_for_endpoints()` 判断 DDS 是否完成发现。Endpoint 已匹配也不代表机器人
+已经可以执行命令。
 
-`Running` 只表示本地 transport 已启动。endpoint 匹配状态不等于机器人已准备
-执行命令。
+## C++ 快速开始：读取机器人状态
 
-## 返回值与命令约定
+安装 Debian 包后，链接导出的 CMake target：
 
-getter、setter、publish 和 RPC 都返回 `OperationResult`。C++ getter 使用输出
-参数，失败时不修改输出；Python getter 返回 `(OperationResult, value)`。
-
-- `0`：成功
-- `100-199`：SDK 客户端返回值
-- `200-299`：Aurora 返回值
-
-Aurora RPC code/message 原样返回，包括迁移期 FSM code `1` 和 `2`。普通非零
-返回值不会由 SDK 自动记录，是否打印由调用方决定。API 误用抛出明确异常；
-致命连接错误会记录日志并抛出 `ConnectionError`。
-
-除特别说明外，所有数值使用 SI 单位。运动线速度/角速度和只读笛卡尔状态使用
-机器人机身坐标系；运动位置使用世界坐标系。本地 DDS 发布成功不表示 Aurora
-已接受或执行命令。参见[命令约定](docs/command_contract.md)和
-[返回码](docs/result_codes.md)。
-
-## 依赖
-
-Stage 1 与指定依赖版本绑定：
-
-- `fourier_dds 1.2.0-1`，源码 commit
-  `d209ad3c339540ae737ae8f24722186c1631bba2`
-- `fourier-dds-msgs 0.1.0-1`，源码 commit
-  `18a24585984e04be401cf1acc0151d5b5e95b2cd`
-- 消息包对应的 FastDDS/FastCDR runtime
-- 启用 Python 时需要 pybind11
-
-CMake 只接收一个依赖前缀：
-
-```bash
--DFOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai
+```cmake
+find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
+target_compile_features(my_app PRIVATE cxx_std_17)
 ```
 
-验证环境为 `docker.fftaicorp.com/base/aurora_medium:latest`。详见
-[依赖发现](docs/dependency_discovery.md)。
+```cpp
+#include <chrono>
+#include <iostream>
+#include "fourier_aurora_sdk/aurora_client.hpp"
 
-## 构建
+namespace sdk = fourier::aurora_sdk;
 
-原生 Release 默认启用 DDS transport、Python 绑定、诊断工具和 C++ recipe，
-测试默认关闭：
+int main() {
+    auto& client = sdk::AuroraClient::getInstance();
+    auto options = client.config();
+    options.enabled_endpoints = {sdk::Endpoint::AuroraStateSubscriber};
+    client.configure(options);
 
-```bash
-cmake -S . -B build \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DFOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai
-cmake --build build -j4
+    try {
+        client.start();
+        if (!client.waitForEndpoints(std::chrono::seconds(5))) {
+            client.stop();
+            return 1;
+        }
+        sdk::AuroraState state;
+        const auto result = client.getAuroraState(state);
+        if (result.success()) {
+            std::cout << state.robot_info.robot_type << " "
+                      << state.current_state.name << "\n";
+        }
+        client.stop();
+        return result.success() ? 0 : 1;
+    } catch (...) {
+        try { client.stop(); } catch (...) {}
+        throw;
+    }
+}
 ```
 
-可独立设置：
+C++ timeout 使用 `std::chrono`。程序正常退出时必须显式调用 `stop()`。
 
-```text
-FOURIER_AURORA_SDK_BUILD_PYTHON
-FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS
-FOURIER_AURORA_SDK_BUILD_EXAMPLES
-FOURIER_AURORA_SDK_BUILD_TESTS
-FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT
+## 发送受保护命令
+
+运动、控制组和临时电机配置 publisher 必须持有控制租约。部署管理者需要为每个
+模块分配非零 `source_id`；多客户端部署中不要自行随意选择 ID。
+
+```cpp
+options.source_id = 42;
+options.enabled_endpoints = {
+    sdk::Endpoint::ManageLeaseService,
+    sdk::Endpoint::MotionCommandPublisher,
+};
+client.configure(options);
+client.start();
+client.waitForEndpoints(std::chrono::seconds(5));
+
+const auto lease = client.registerLease({sdk::AuroraResource::MotionCommand});
+if (lease.usable()) {
+    const auto result = client.setVelocity(0.1, 0.0, 0.0, 1.0);
+}
+client.releaseLease();
+client.stop();
 ```
 
-完整测试方式见[测试文档](docs/testing.md)。
+SDK 会自动续租有效租约。`replaceLease()` 会原子地申请一组新的完整资源；如果
+请求被明确拒绝，只要旧租约仍在有效期内，就继续保留旧租约。租约状态只存在于
+内存，进程重启后不会恢复。
 
-## 工具与 Recipe
+本地 publish 成功只表示 DDS 接受了 sample，不表示 Aurora 已接受或执行命令。
+应结合 Aurora 状态与错误遥测判断机器人结果。测试控制改动时，应支撑机器人、
+清空工作区域并使用保守的速度和幅度限制。
 
-原生包把诊断工具安装到
-`/opt/fftai/fourier_aurora_sdk/bin/client/`。参数、固定 endpoint、monitor
-行为和退出码见[诊断工具参考](docs/client_tools_CN.md)。
+## 文档
 
-独立 GR3 recipe 位于：
+- [SDK 总览、架构、依赖与构建指南](docs/overview_CN.md)
+- [C++ API 参考](docs/cpp_api_CN.md)
+- [Python API 参考](docs/python_api_CN.md)
+- [示例与诊断客户端](docs/examples_and_clients_CN.md)
+- [English documentation](README.md)
 
-- [C++ recipe](examples/gr3/cpp)
-- [Python recipe](examples/gr3/python)
-
-其中包含单次信息读取、限时向前行走和限时摆臂流程。运动 recipe 执行前要求
-操作员确认，并且必须先在指定型号机器人上审核。GR3 Mini recipe 是公开前
-必须完成的 TODO；不同机器人即使流程一致，也不会共享 recipe 源码。
-
-直接使用 C++ transport 前请阅读
-[FourierDDS transport 参考](docs/fourierdds_transport.md)。机器人控制仍推荐
-使用高层单例。
-
-## 发布范围
-
-Stage 1 在本地验证 Linux amd64 的 C++ Debian 和 CPython 3.10 wheel。
-Linux arm64 留给 CI 集成验证。最终公开矩阵计划为 Linux amd64/arm64 C++
-Debian，以及 amd64/arm64 上标准 GIL 的 CPython 3.9-3.13 wheel。
-
-面向外部开发者的教程、机器人能力表、治理、`SECURITY.md` 和完整第三方许可
-清单属于公开发布 TODO。本仓库当前覆盖内部开发者需要的接口和示例。完整的
-延后矩阵和发布门禁见 [发布检查表](docs/release_checklist.md)。
+设计记录、实现约定、测试 profile 和发布工作统一保存在源码树的
+`docs/internal/`，供维护者使用，不属于应用层受支持 API，也不会随二进制安装包
+安装。
 
 ## 许可证
 

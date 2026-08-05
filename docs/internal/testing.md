@@ -106,7 +106,7 @@ After the final source commits, rerun builds with the default
 `INCLUDE_COMMIT_HASH=ON`. Hash-on mode rejects any tracked, staged, or untracked
 worktree content and embeds exactly the current eight-character `HEAD` in both
 artifact names. `INCLUDE_COMMIT_HASH=OFF` remains available for eventual clean
-public names, subject to `docs/release_checklist.md`.
+public names, subject to `release_checklist.md`.
 
 ## Coverage Limits
 

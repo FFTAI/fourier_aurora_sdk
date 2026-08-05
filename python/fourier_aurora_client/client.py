@@ -45,17 +45,9 @@ class AuroraClient:
         """[Client] Set the DDS domain used by the next transport session."""
         return self._native.set_domain_id(domain_id)
 
-    def set_user_id(self, user_id):
-        """[Client] Set the SDK-local diagnostic label for the next session."""
-        return self._native.set_user_id(user_id)
-
     def domain_id(self):
         """[Client] Return the configured DDS domain."""
         return self._native.domain_id()
-
-    def user_id(self):
-        """[Client] Return the configured SDK-local diagnostic label."""
-        return self._native.user_id()
 
     def state(self):
         """[Client] Return local lifecycle state, not robot readiness."""
@@ -96,6 +88,10 @@ class AuroraClient:
     def get_control_group_state(self):
         """[Atomic getter] Return the latest complete control-group snapshot."""
         return self._native.get_control_group_state()
+
+    def get_motor_configuration_state(self):
+        """Return the temporary Aurora motor-configuration state."""
+        return self._native.get_motor_configuration_state()
 
     def get_estimator_data(self):
         """[Atomic getter] Return the latest complete estimator snapshot."""
@@ -145,6 +141,9 @@ class AuroraClient:
         """[Client getter] Return the last locally published control-group command."""
         return self._native.get_last_control_group_command()
 
+    def get_last_motor_configuration_command(self):
+        return self._native.get_last_motor_configuration_command()
+
     def get_last_sub_controller_command(self):
         """[Client getter] Return the last locally published sub-controller command."""
         return self._native.get_last_sub_controller_command()
@@ -157,9 +156,35 @@ class AuroraClient:
         """[Atomic setter] Publish one complete control-group command."""
         return self._native.publish_control_group_command(command)
 
-    def publish_sub_controller_command(self, command):
-        """[Atomic setter] Publish one complete sub-controller command."""
-        return self._native.publish_sub_controller_command(command)
+    def publish_motor_configuration_command(self, command):
+        """Publish temporary customized motor gains through Aurora."""
+        return self._native.publish_motor_configuration_command(command)
+
+    def set_sub_controller(self, command):
+        """Ask Aurora to apply a sub-controller configuration."""
+        return self._native.set_sub_controller(command)
+
+    def register_lease(self, resources, option=None):
+        """Register the module lease; protected commands require success."""
+        return (self._native.register_lease(resources) if option is None
+                else self._native.register_lease(resources, option))
+
+    def replace_lease(self, resources, option=None):
+        """Atomically replace the complete resource set of the current lease."""
+        return (self._native.replace_lease(resources) if option is None
+                else self._native.replace_lease(resources, option))
+
+    def release_lease(self):
+        """Release the module lease; repeated release is safe."""
+        return self._native.release_lease()
+
+    def get_lease(self):
+        """Return an instantaneous snapshot of the module lease."""
+        return self._native.get_lease()
+
+    def on_lease_changed(self, callback):
+        """Set the native lease-change callback while the client is stopped."""
+        return self._native.on_lease_changed(callback)
 
     def request_fsm_state(self, state_id):
         """[Atomic RPC] Request one FSM state ID and return Aurora's result."""

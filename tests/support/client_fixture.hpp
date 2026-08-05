@@ -14,11 +14,14 @@ inline AuroraClient& resetClientFixture() {
     client.onAuroraState({});
     client.onMotionState({});
     client.onControlGroupState({});
+    client.onMotorConfigurationState({});
     client.onEstimatorData({});
     client.onErrorCodes({});
+    client.onLeaseChanged({});
     client.setDomainId(123);
-    client.setUserId("aurora_client");
-    client.configure(ConnectionOptions{});
+    ConnectionOptions options;
+    options.source_id = 42;
+    client.configure(options);
     resetMockTransportFixture();
     return client;
 }

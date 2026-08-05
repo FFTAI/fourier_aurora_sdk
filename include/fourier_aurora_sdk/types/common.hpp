@@ -16,12 +16,15 @@ enum class ClientState : uint8_t {
 
 enum class Endpoint : uint8_t {
     FsmService,
+    ManageLeaseService,
     MotionCommandPublisher,
     ControlGroupCommandPublisher,
-    SubControllerCommandPublisher,
+    MotorConfigurationCommandPublisher,
+    SubControllerService,
     AuroraStateSubscriber,
     MotionStateSubscriber,
     ControlGroupStateSubscriber,
+    MotorConfigurationStateSubscriber,
     EstimatorDataSubscriber,
     ErrorCodesSubscriber,
 };
@@ -33,12 +36,15 @@ struct EndpointStatus {
 
 struct EndpointMatchStatus {
     EndpointStatus fsm_service;
+    EndpointStatus manage_lease_service;
     EndpointStatus motion_command_publisher;
     EndpointStatus control_group_command_publisher;
-    EndpointStatus sub_controller_command_publisher;
+    EndpointStatus motor_configuration_command_publisher;
+    EndpointStatus sub_controller_service;
     EndpointStatus aurora_state_subscriber;
     EndpointStatus motion_state_subscriber;
     EndpointStatus control_group_state_subscriber;
+    EndpointStatus motor_configuration_state_subscriber;
     EndpointStatus estimator_data_subscriber;
     EndpointStatus error_codes_subscriber;
 };
@@ -55,6 +61,26 @@ inline constexpr uint32_t SERVICE_TIMEOUT = 105;
 inline constexpr uint32_t TRANSPORT_ERROR = 106;
 inline constexpr uint32_t INVALID_AURORA_RESPONSE = 107;
 inline constexpr uint32_t STATE_NOT_RECEIVED = 108;
+
+inline constexpr uint32_t LEASE_INVALID_REQUEST = 300;
+inline constexpr uint32_t LEASE_UNKNOWN_RESOURCE = 301;
+inline constexpr uint32_t LEASE_PRIORITY_NOT_ALLOWED = 302;
+inline constexpr uint32_t LEASE_RESOURCE_BUSY = 303;
+inline constexpr uint32_t LEASE_NOT_FOUND = 304;
+inline constexpr uint32_t LEASE_EXPIRED = 305;
+inline constexpr uint32_t LEASE_OPERATION_ID_CONFLICT = 306;
+inline constexpr uint32_t LEASE_AUTHORITY_ERROR = 307;
+inline constexpr uint32_t LEASE_SOURCE_ALREADY_ACTIVE = 308;
+inline constexpr uint32_t LEASE_AUTHORITY_BUSY = 309;
+inline constexpr uint32_t LEASE_NOT_ACTIVE = 310;
+inline constexpr uint32_t LEASE_RESOURCE_NOT_COVERED = 311;
+inline constexpr uint32_t LEASE_OPERATION_IN_PROGRESS = 312;
+inline constexpr uint32_t LEASE_LOST = 313;
+inline constexpr uint32_t LEASE_OPERATION_TIMEOUT = 314;
+inline constexpr uint32_t SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER = 320;
+inline constexpr uint32_t SUB_CONTROLLER_STATE_SWITCH_BUSY = 321;
+inline constexpr uint32_t SUB_CONTROLLER_INVALID_REQUEST = 322;
+inline constexpr uint32_t SUB_CONTROLLER_INTERNAL_ERROR = 323;
 
 }  // namespace result_codes
 
@@ -80,6 +106,25 @@ inline constexpr uint32_t STATE_NOT_RECEIVED = 108;
             return "INVALID_AURORA_RESPONSE";
         case result_codes::STATE_NOT_RECEIVED:
             return "STATE_NOT_RECEIVED";
+        case result_codes::LEASE_INVALID_REQUEST: return "LEASE_INVALID_REQUEST";
+        case result_codes::LEASE_UNKNOWN_RESOURCE: return "LEASE_UNKNOWN_RESOURCE";
+        case result_codes::LEASE_PRIORITY_NOT_ALLOWED: return "LEASE_PRIORITY_NOT_ALLOWED";
+        case result_codes::LEASE_RESOURCE_BUSY: return "LEASE_RESOURCE_BUSY";
+        case result_codes::LEASE_NOT_FOUND: return "LEASE_NOT_FOUND";
+        case result_codes::LEASE_EXPIRED: return "LEASE_EXPIRED";
+        case result_codes::LEASE_OPERATION_ID_CONFLICT: return "LEASE_OPERATION_ID_CONFLICT";
+        case result_codes::LEASE_AUTHORITY_ERROR: return "LEASE_AUTHORITY_ERROR";
+        case result_codes::LEASE_SOURCE_ALREADY_ACTIVE: return "LEASE_SOURCE_ALREADY_ACTIVE";
+        case result_codes::LEASE_AUTHORITY_BUSY: return "LEASE_AUTHORITY_BUSY";
+        case result_codes::LEASE_NOT_ACTIVE: return "LEASE_NOT_ACTIVE";
+        case result_codes::LEASE_RESOURCE_NOT_COVERED: return "LEASE_RESOURCE_NOT_COVERED";
+        case result_codes::LEASE_OPERATION_IN_PROGRESS: return "LEASE_OPERATION_IN_PROGRESS";
+        case result_codes::LEASE_LOST: return "LEASE_LOST";
+        case result_codes::LEASE_OPERATION_TIMEOUT: return "LEASE_OPERATION_TIMEOUT";
+        case result_codes::SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER: return "SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER";
+        case result_codes::SUB_CONTROLLER_STATE_SWITCH_BUSY: return "SUB_CONTROLLER_STATE_SWITCH_BUSY";
+        case result_codes::SUB_CONTROLLER_INVALID_REQUEST: return "SUB_CONTROLLER_INVALID_REQUEST";
+        case result_codes::SUB_CONTROLLER_INTERNAL_ERROR: return "SUB_CONTROLLER_INTERNAL_ERROR";
         default:
             return "UNKNOWN_RESULT_CODE";
     }
@@ -107,6 +152,25 @@ inline constexpr uint32_t STATE_NOT_RECEIVED = 108;
             return "Aurora returned a malformed response";
         case result_codes::STATE_NOT_RECEIVED:
             return "state has not been received";
+        case result_codes::LEASE_INVALID_REQUEST: return "lease request is invalid";
+        case result_codes::LEASE_UNKNOWN_RESOURCE: return "lease resource is unknown";
+        case result_codes::LEASE_PRIORITY_NOT_ALLOWED: return "lease priority is not allowed";
+        case result_codes::LEASE_RESOURCE_BUSY: return "lease resource is busy";
+        case result_codes::LEASE_NOT_FOUND: return "lease was not found";
+        case result_codes::LEASE_EXPIRED: return "lease has expired";
+        case result_codes::LEASE_OPERATION_ID_CONFLICT: return "lease operation id conflicts";
+        case result_codes::LEASE_AUTHORITY_ERROR: return "lease authority failed";
+        case result_codes::LEASE_SOURCE_ALREADY_ACTIVE: return "source already has an active lease";
+        case result_codes::LEASE_AUTHORITY_BUSY: return "lease authority is busy";
+        case result_codes::LEASE_NOT_ACTIVE: return "no active lease";
+        case result_codes::LEASE_RESOURCE_NOT_COVERED: return "active lease does not cover command resources";
+        case result_codes::LEASE_OPERATION_IN_PROGRESS: return "lease operation is in progress";
+        case result_codes::LEASE_LOST: return "lease was lost";
+        case result_codes::LEASE_OPERATION_TIMEOUT: return "lease operation timed out";
+        case result_codes::SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER: return "no active universal controller";
+        case result_codes::SUB_CONTROLLER_STATE_SWITCH_BUSY: return "Aurora state switch is busy";
+        case result_codes::SUB_CONTROLLER_INVALID_REQUEST: return "sub-controller request is invalid";
+        case result_codes::SUB_CONTROLLER_INTERNAL_ERROR: return "sub-controller service failed";
         default:
             return "unknown result code";
     }

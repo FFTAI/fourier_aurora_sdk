@@ -11,8 +11,11 @@ def test_singleton_wrapper_identity_and_defaults():
     assert client is sdk.AuroraClient.get_instance()
     assert client.state() == sdk.ClientState.STOPPED
     assert client.domain_id() == 123
-    assert client.user_id() == "aurora_client"
-    assert len(client.config().enabled_endpoints) == 9
+    # The test fixture installs a valid module identity so lifecycle tests can
+    # start the default protected endpoints.  ConnectionOptions itself still
+    # defaults to source_id == 0 and is rejected on protected start.
+    assert client.config().source_id == 42
+    assert len(client.config().enabled_endpoints) == 12
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         wrappers = list(

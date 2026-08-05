@@ -8,11 +8,11 @@ revisions:
   fourierdds:
     branch: feature/client-server-match-status
     base_version: 1.2.0
-    commit: d209ad3c339540ae737ae8f24722186c1631bba2
+    commit: 1aec6d3307c3f64c1210b4d26d113fe0979c29c3
     package: fourier_dds
     package_version: 1.2.0-1
-    artifact: fourierdds-1.2.0-d209ad3c-amd64.deb
-    sha256: 3767a594d985e466019f64212ca7585b950d322fbf72f8bb31845317144bab90
+    artifact: fourierdds-1.2.0-1aec6d33-amd64.deb
+    sha256: 8e340b3f008b65b308cd0c802fde294c1583f971e1953cc04f21e3dc3acb3b27
   fourierddsmsgs:
     branch: feature/aurora_config
     commit: 18a24585984e04be401cf1acc0151d5b5e95b2cd
@@ -21,10 +21,10 @@ revisions:
     artifact: fourierddsmsgs-0.1.0-18a24585-0e930b.deb
     sha256: b594b0d74a4d4962233e16a5d8004f843d8319712fb5c1c0927fb9c08e89bd00
 compatibility:
-  - aurora_sdk: 2.0.0
+  - aurora_sdk: 2.0.1
     fourierdds_package: fourier_dds
     fourierdds_package_version: 1.2.0-1
-    fourierdds_commit: d209ad3c339540ae737ae8f24722186c1631bba2
+    fourierdds_commit: 1aec6d3307c3f64c1210b4d26d113fe0979c29c3
     message_package: fourier-dds-msgs
     message_package_version: 0.1.0-1
     message_commit: 18a24585984e04be401cf1acc0151d5b5e95b2cd

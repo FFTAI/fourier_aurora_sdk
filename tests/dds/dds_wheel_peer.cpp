@@ -14,6 +14,8 @@
 
 #include "AuroraState/AuroraState.hpp"
 #include "AuroraState/AuroraStatePubSubTypes.hpp"
+#include "ManageLease/ManageLease.hpp"
+#include "ManageLease/ManageLeasePubSubTypes.hpp"
 #include "RobotMotionCmd/RobotMotionCmd.hpp"
 #include "RobotMotionCmd/RobotMotionCmdPubSubTypes.hpp"
 #include "SetInt/SetInt.hpp"
@@ -31,6 +33,11 @@ constexpr const char* kNamespace = "aurora_sdk_wheel_loopback";
 
 void publishState(
     fourier_dds::DdsPublisher<dds_msg::AuroraStatePubSubType>& publisher) {
+    static constexpr const char* kResources[] = {
+        "left_leg", "right_leg", "waist", "head", "left_manipulator",
+        "right_manipulator", "left_end_effector", "right_end_effector",
+        "motion_cmd",
+    };
     dds_msg::AuroraState state;
     state.robot_info().robot_type("wheel_loopback_robot");
     state.robot_info().hardware_type("wheel_loopback_hardware");
@@ -38,6 +45,15 @@ void publishState(
     state.current_state().id(13);
     state.current_state().name("Standing");
     state.current_state().active(true);
+    for (const auto* name : kResources) {
+        dds_msg::AuthorityResourceState resource;
+        resource.resource(name);
+        resource.acquired(false);
+        resource.holder_source_id(0);
+        resource.holder_source_name("");
+        resource.holder_priority(0);
+        state.authority_resources().push_back(std::move(resource));
+    }
     publisher.publish(state);
 }
 
@@ -80,6 +96,27 @@ int main() {
                 response.message("state=" + std::to_string(request.data()));
             });
     fsm_server.run();
+
+    fourier_dds::DdsServer<
+        dds_srv::ManageLease_RequestPubSubType,
+        dds_srv::ManageLease_ResponsePubSubType>
+        lease_server(
+            node,
+            "ManageLease",
+            [](const dds_srv::ManageLease_Request& request,
+               dds_srv::ManageLease_Response& response) {
+                response.header(request.header());
+                response.result(dds_srv::LEASE_RESULT_OK);
+                response.lease_id(request.action() == dds_srv::LEASE_ACTION_RELEASE
+                                      ? request.lease_id()
+                                      : 9001);
+                response.renew_duration(
+                    request.action() == dds_srv::LEASE_ACTION_RELEASE
+                        ? 0.0
+                        : request.renew_duration());
+                response.message("ok");
+            });
+    lease_server.run();
 
     const auto deadline = std::chrono::steady_clock::now() + 20s;
     while (std::chrono::steady_clock::now() < deadline) {

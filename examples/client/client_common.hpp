@@ -135,16 +135,20 @@ inline void printResult(
 inline void configureClient(
     fourier::aurora_sdk::AuroraClient& client,
     uint32_t domain_id,
-    const std::string& user_id,
+    const std::string& source_id_text,
     std::vector<fourier::aurora_sdk::Endpoint> endpoints) {
+    uint32_t source_id = 0;
+    if (!parseUint32(source_id_text, source_id) || source_id == 0) {
+        throw fourier::aurora_sdk::InvalidArgumentError(
+            "source_id must be a nonzero uint32");
+    }
     client.setDomainId(domain_id);
-    client.setUserId(user_id);
     auto options = client.config();
+    options.source_id = source_id;
     options.enabled_endpoints = std::move(endpoints);
     client.configure(options);
     std::cout << "domain_id=" << client.domainId()
-              << " user_id=" << client.userId()
-              << " (SDK-local diagnostic label)\n";
+              << " source_id=" << client.config().source_id << "\n";
 }
 
 inline void sleepInterruptibly(std::chrono::milliseconds duration) {

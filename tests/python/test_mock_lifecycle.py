@@ -14,7 +14,9 @@ native = importlib.import_module(
 def test_mock_lifecycle_getter_and_restart():
     client = sdk.AuroraClient.get_instance()
     options = client.config()
+    options.source_id = 42
     options.enabled_endpoints = [
+        sdk.Endpoint.MANAGE_LEASE_SERVICE,
         sdk.Endpoint.MOTION_STATE_SUBSCRIBER,
         sdk.Endpoint.MOTION_COMMAND_PUBLISHER,
     ]
@@ -23,6 +25,8 @@ def test_mock_lifecycle_getter_and_restart():
     client.start()
     assert client.state() == sdk.ClientState.RUNNING
     assert client.wait_for_endpoints(0.0)
+    lease = client.register_lease([sdk.AuroraResource.MOTION_COMMAND])
+    assert lease.usable()
 
     result, state = client.get_motion_state()
     assert result.code == sdk.STATE_NOT_RECEIVED
@@ -90,6 +94,9 @@ def test_blocking_bindings_release_gil_in_bounded_subprocess():
         )
         native._testing_reset()
         client = AuroraClient.get_instance()
+        initial_options = client.config()
+        initial_options.source_id = 42
+        client.configure(initial_options)
 
         native._testing_block_create()
         starter = threading.Thread(target=client.start)

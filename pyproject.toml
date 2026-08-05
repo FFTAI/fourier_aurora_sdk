@@ -20,6 +20,7 @@ sdist.include = [
   "README.md",
   "README_CN.md",
   "CHANGELOG",
+  "docs/*.md",
 ]
 
 [tool.scikit-build.metadata.version]

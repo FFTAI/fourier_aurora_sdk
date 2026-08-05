@@ -9,14 +9,17 @@ namespace fourier::aurora_sdk::detail {
 
 namespace {
 
-constexpr std::array<Endpoint, 9> kAllEndpoints{
+constexpr std::array<Endpoint, 12> kAllEndpoints{
     Endpoint::FsmService,
+    Endpoint::ManageLeaseService,
     Endpoint::MotionCommandPublisher,
     Endpoint::ControlGroupCommandPublisher,
-    Endpoint::SubControllerCommandPublisher,
+    Endpoint::MotorConfigurationCommandPublisher,
+    Endpoint::SubControllerService,
     Endpoint::AuroraStateSubscriber,
     Endpoint::MotionStateSubscriber,
     Endpoint::ControlGroupStateSubscriber,
+    Endpoint::MotorConfigurationStateSubscriber,
     Endpoint::EstimatorDataSubscriber,
     Endpoint::ErrorCodesSubscriber,
 };
@@ -32,6 +35,10 @@ void validateBoundedString(const std::string& value, const char* field_name) {
         throw InvalidArgumentError(
             std::string(field_name) + " must not contain embedded NUL bytes");
     }
+}
+
+bool endpointEnabled(const std::vector<Endpoint>& endpoints, Endpoint endpoint) {
+    return std::find(endpoints.begin(), endpoints.end(), endpoint) != endpoints.end();
 }
 
 bool isDeclaredEndpoint(Endpoint endpoint) {
@@ -87,6 +94,38 @@ NormalizedConnectionOptions normalizeConnectionOptions(
         normalized.enabled[endpointIndex(endpoint)] = true;
     }
 
+    const auto& endpoints = normalized.public_options.enabled_endpoints;
+    const bool has_manage = endpointEnabled(endpoints, Endpoint::ManageLeaseService);
+    const bool has_protected_publisher =
+        endpointEnabled(endpoints, Endpoint::MotionCommandPublisher) ||
+        endpointEnabled(endpoints, Endpoint::ControlGroupCommandPublisher) ||
+        endpointEnabled(endpoints, Endpoint::MotorConfigurationCommandPublisher);
+    if (has_protected_publisher && !has_manage) {
+        throw InvalidArgumentError(
+            "protected command publishers require ManageLeaseService");
+    }
+    if ((has_manage || has_protected_publisher) && options.source_id == 0) {
+        throw InvalidArgumentError(
+            "source_id must be nonzero when lease management is enabled");
+    }
+    if (options.source_name.has_value()) {
+        if (options.source_id == 0) {
+            throw InvalidArgumentError("source_name requires a nonzero source_id");
+        }
+        validateBoundedString(*options.source_name, "source_name");
+        if (options.source_name->size() > 64) {
+            throw InvalidArgumentError("source_name must be 64 bytes or less");
+        }
+        if (std::any_of(options.source_name->begin(), options.source_name->end(),
+                        [](unsigned char c) { return c < 0x20 || c == 0x7f; })) {
+            throw InvalidArgumentError("source_name must not contain control characters");
+        }
+    }
+    if (options.allow_emergency_lease_priority && (!has_manage || options.source_id == 0)) {
+        throw InvalidArgumentError(
+            "Emergency lease opt-in requires ManageLeaseService and source_id");
+    }
+
     if (options.namespace_name.has_value()) {
         validateBoundedString(*options.namespace_name, "namespace_name");
         normalized.namespace_name = *options.namespace_name;
@@ -103,8 +142,13 @@ NormalizedConnectionOptions normalizeConnectionOptions(
     return normalized;
 }
 
-void validateUserId(const std::string& user_id) {
-    validateBoundedString(user_id, "user_id");
+std::string effectiveSourceName(const ConnectionOptions& options) {
+    if (options.source_name.has_value()) {
+        return *options.source_name;
+    }
+    return options.source_id == 0
+               ? std::string{}
+               : "aurora_sdk_" + std::to_string(options.source_id);
 }
 
 }  // namespace fourier::aurora_sdk::detail

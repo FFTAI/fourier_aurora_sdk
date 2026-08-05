@@ -35,7 +35,7 @@ struct Arguments {
 
 void printUsage(const char* program) {
     std::cerr
-        << "Usage: " << program << " <domain_id> <user_id> <operation>\n"
+        << "Usage: " << program << " <domain_id> <source_id> <operation>\n"
         << "Operations:\n"
         << "  --get-state\n"
         << "  --monitor-state\n"
@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
     uint32_t domain_id = 0;
     if (!client_example::parseUint32(argv[1], domain_id) ||
         std::string(argv[2]).empty()) {
-        std::cerr << "domain_id must be uint32 and user_id must be nonempty.\n";
+        std::cerr << "domain_id and source_id must be uint32 values.\n";
         return client_example::kUsageError;
     }
 
@@ -340,9 +340,35 @@ int main(int argc, char** argv) {
             client,
             domain_id,
             argv[2],
-            {sdk::Endpoint::ControlGroupStateSubscriber,
+            {sdk::Endpoint::ManageLeaseService,
+             sdk::Endpoint::ControlGroupStateSubscriber,
              sdk::Endpoint::ControlGroupCommandPublisher});
         client.start();
+        if (parsed.operation == Operation::SetPosition) {
+            std::vector<sdk::AuroraResource> resources;
+            const auto convert = [](const std::string& group) {
+                if (group == "left_leg") return sdk::AuroraResource::LeftLeg;
+                if (group == "right_leg") return sdk::AuroraResource::RightLeg;
+                if (group == "waist") return sdk::AuroraResource::Waist;
+                if (group == "head") return sdk::AuroraResource::Head;
+                if (group == "left_manipulator") return sdk::AuroraResource::LeftManipulator;
+                if (group == "right_manipulator") return sdk::AuroraResource::RightManipulator;
+                if (group == "left_end_effector") return sdk::AuroraResource::LeftEndEffector;
+                if (group == "right_end_effector") return sdk::AuroraResource::RightEndEffector;
+                throw sdk::InvalidArgumentError("unsupported control group: " + group);
+            };
+            for (const auto& target : parsed.targets) {
+                const auto resource = convert(target.group_name);
+                if (std::find(resources.begin(), resources.end(), resource) == resources.end()) {
+                    resources.push_back(resource);
+                }
+            }
+            const auto lease = client.registerLease(resources);
+            if (!lease.success()) {
+                client_example::printResult("registerLease", lease.operation);
+                return client_example::stopClient(client, client_example::kRuntimeFailure);
+            }
+        }
         client_example::sleepInterruptibly(std::chrono::milliseconds(500));
 
         int exit_code = client_example::kSuccess;

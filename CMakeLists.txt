@@ -122,7 +122,12 @@ if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT)
         ErrorCodes
         RobotMotionCmd
         RobotControlGroupCmd
+        MotorCfgCmd
+        MotorCfgState
         SubControllerCmd
+        SubControllerService
+        LeaseInfo
+        ManageLease
         SetInt
         TracerHeader
         Header
@@ -180,6 +185,17 @@ if(NOT SKBUILD)
         README_CN.md
         CHANGELOG
         DESTINATION ${CMAKE_INSTALL_DOCDIR}
+    )
+    install(FILES
+        docs/overview.md
+        docs/overview_CN.md
+        docs/cpp_api.md
+        docs/cpp_api_CN.md
+        docs/python_api.md
+        docs/python_api_CN.md
+        docs/examples_and_clients.md
+        docs/examples_and_clients_CN.md
+        DESTINATION ${CMAKE_INSTALL_DOCDIR}/docs
     )
 
     write_basic_package_version_file(
@@ -357,6 +373,10 @@ if(FOURIER_AURORA_SDK_BUILD_TESTS)
     add_aurora_sdk_test(
         client_concurrency
         tests/cpp/test_client_concurrency.cpp
+    )
+    add_aurora_sdk_test(
+        lease_contract
+        tests/cpp/test_lease_contract.cpp
     )
     add_aurora_sdk_test(
         teardown_coordinator

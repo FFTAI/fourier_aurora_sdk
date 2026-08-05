@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Request the GR3 Walk state and walk forward for three seconds."""
 
+import sys
 import time
 
-from fourier_aurora_client import AuroraClient, Endpoint
+from fourier_aurora_client import AuroraClient, AuroraResource, Endpoint
 
 GR3_WALK_STATE = 3
 FORWARD_VELOCITY_MPS = 0.3
@@ -15,6 +16,17 @@ def print_result(operation, result):
 
 
 def main():
+    if len(sys.argv) != 2:
+        print(f"Usage: {sys.argv[0]} <nonzero_source_id>")
+        return 2
+    try:
+        source_id = int(sys.argv[1])
+    except ValueError:
+        source_id = 0
+    if source_id <= 0 or source_id > 0xFFFFFFFF:
+        print(f"Usage: {sys.argv[0]} <nonzero_source_id>")
+        return 2
+
     print(
         "GR3 walk_forward will request Walk (FSM 3), command "
         f"{FORWARD_VELOCITY_MPS} m/s in the base-frame forward direction "
@@ -29,10 +41,13 @@ def main():
 
     client = AuroraClient.get_instance()
     interrupted = False
+    lease_registered = False
     try:
         options = client.config()
+        options.source_id = source_id
         options.enabled_endpoints = [
             Endpoint.FSM_SERVICE,
+            Endpoint.MANAGE_LEASE_SERVICE,
             Endpoint.AURORA_STATE_SUBSCRIBER,
             Endpoint.MOTION_COMMAND_PUBLISHER,
         ]
@@ -42,6 +57,12 @@ def main():
         if not client.wait_for_endpoints(5.0):
             print("GR3 walk endpoints were not ready within 5 s.")
             return 1
+
+        lease = client.register_lease([AuroraResource.MOTION_COMMAND])
+        if not lease.usable():
+            print_result("register_lease(MOTION_COMMAND)", lease.operation)
+            return 1
+        lease_registered = True
 
         result = client.request_fsm_state(GR3_WALK_STATE)
         if not result.success():
@@ -73,6 +94,10 @@ def main():
         return 1
     finally:
         try:
+            if lease_registered:
+                release = client.release_lease()
+                if not release.success():
+                    print_result("release_lease", release.operation)
             client.stop()
         except Exception as error:  # noqa: BLE001
             print(f"stop failed: {error}")

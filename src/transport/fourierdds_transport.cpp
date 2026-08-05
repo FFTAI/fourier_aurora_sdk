@@ -33,6 +33,13 @@
 #include "ErrorCodes/ErrorCodesPubSubTypes.hpp"
 #include "EstimatorData/EstimatorData.hpp"
 #include "EstimatorData/EstimatorDataPubSubTypes.hpp"
+#include "LeaseInfo/LeaseInfo.hpp"
+#include "ManageLease/ManageLease.hpp"
+#include "ManageLease/ManageLeasePubSubTypes.hpp"
+#include "MotorCfgCmd/MotorCfgCmd.hpp"
+#include "MotorCfgCmd/MotorCfgCmdPubSubTypes.hpp"
+#include "MotorCfgState/MotorCfgState.hpp"
+#include "MotorCfgState/MotorCfgStatePubSubTypes.hpp"
 #include "RobotControlGroupCmd/RobotControlGroupCmd.hpp"
 #include "RobotControlGroupCmd/RobotControlGroupCmdPubSubTypes.hpp"
 #include "RobotControlGroupState/RobotControlGroupState.hpp"
@@ -45,6 +52,8 @@
 #include "SetInt/SetIntPubSubTypes.hpp"
 #include "SubControllerCmd/SubControllerCmd.hpp"
 #include "SubControllerCmd/SubControllerCmdPubSubTypes.hpp"
+#include "SubControllerService/SubControllerService.hpp"
+#include "SubControllerService/SubControllerServicePubSubTypes.hpp"
 #endif
 
 namespace fourier::aurora_sdk {
@@ -54,6 +63,10 @@ namespace dds_msg = fourier_msgs::msg;
 namespace dds_srv = fourier_msgs::srv;
 
 namespace {
+
+constexpr std::array<const char*, 9> kResourceNames{
+    "left_leg", "right_leg", "waist", "head", "left_manipulator",
+    "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd"};
 
 template <size_t N>
 std::array<double, N> toArray(const std::vector<double>& values, const char* field_name) {
@@ -146,6 +159,26 @@ AuroraState convertAuroraState(const dds_msg::AuroraState& msg) {
     out.available_states.reserve(msg.available_states().size());
     for (const auto& state : msg.available_states()) {
         out.available_states.push_back(convertStateInfo(state));
+    }
+    if (msg.authority_resources().size() != 9) {
+        throw std::runtime_error("AuroraState.authority_resources must contain 9 entries");
+    }
+    out.authority_resources.reserve(9);
+    for (std::size_t index = 0; index < 9; ++index) {
+        const auto& resource = msg.authority_resources()[index];
+        const std::string holder_name = resource.holder_source_name().to_string();
+        if (resource.resource() != kResourceNames[index] ||
+            (resource.holder_priority() != 0 && resource.holder_priority() != 9) ||
+            (resource.acquired() &&
+             (resource.holder_source_id() == 0 || holder_name.empty())) ||
+            (!resource.acquired() &&
+             (resource.holder_source_id() != 0 || !holder_name.empty()))) {
+            throw std::runtime_error("malformed Aurora authority resource snapshot");
+        }
+        out.authority_resources.push_back(AuthorityResourceStatus{
+            static_cast<AuroraResource>(index), resource.acquired(),
+            resource.holder_source_id(), holder_name,
+            static_cast<LeasePriority>(resource.holder_priority())});
     }
     return out;
 }
@@ -242,9 +275,39 @@ ErrorCodes convertErrorCodes(const dds_msg::ErrorCodes& msg) {
     return out;
 }
 
-dds_msg::RobotMotionCmd convertMotionCommand(const MotionCommand& command) {
+MotorConfigurationState convertMotorConfigurationState(
+    const dds_msg::RobotMotorCfgGroupState& msg) {
+    MotorConfigurationState out;
+    out.header = convertHeader(msg.header(), std::chrono::system_clock::now());
+    out.groups.reserve(msg.group_state().size());
+    for (const auto& group : msg.group_state()) {
+        MotorConfigurationGroupState value;
+        value.group_name = group.group_name();
+        value.mode = static_cast<MotorConfigurationMode>(group.mode());
+        value.motor_error = group.motor_error();
+        value.position_kp = group.pos_kp();
+        value.position_ki = group.pos_ki();
+        value.position_kd = group.pos_kd();
+        value.pd_kp = group.pd_kp();
+        value.pd_kd = group.pd_kd();
+        out.groups.push_back(std::move(value));
+    }
+    return out;
+}
+
+dds_msg::LeaseInfo convertLease(const detail::LeaseToken& lease) {
+    dds_msg::LeaseInfo out;
+    out.source_id(lease.source_id);
+    out.lease_id(lease.lease_id);
+    out.sequence_id(lease.sequence_id);
+    return out;
+}
+
+dds_msg::RobotMotionCmd convertMotionCommand(
+    const MotionCommand& command, const detail::LeaseToken& lease) {
     dds_msg::RobotMotionCmd msg;
     msg.header(makeTracerHeader(command.header.send_time));
+    msg.lease(convertLease(lease));
     msg.position(toVector(command.position));
     msg.lin_velocity(toVector(command.lin_velocity));
     msg.attitude(toVector(command.attitude));
@@ -256,9 +319,11 @@ dds_msg::RobotMotionCmd convertMotionCommand(const MotionCommand& command) {
     return msg;
 }
 
-dds_msg::RobotControlGroupCmd convertControlGroupCommand(const ControlGroupCommand& command) {
+dds_msg::RobotControlGroupCmd convertControlGroupCommand(
+    const ControlGroupCommand& command, const detail::LeaseToken& lease) {
     dds_msg::RobotControlGroupCmd msg;
     msg.header(makeTracerHeader(command.header.send_time));
+    msg.lease(convertLease(lease));
     std::vector<dds_msg::JointCmd> joint_cmds;
     joint_cmds.reserve(command.joint_cmd.size());
     for (const auto& command_entry : command.joint_cmd) {
@@ -274,6 +339,31 @@ dds_msg::RobotControlGroupCmd convertControlGroupCommand(const ControlGroupComma
     msg.joint_cmd(std::move(joint_cmds));
 
     msg.cartesian_cmd({});
+    return msg;
+}
+
+dds_msg::RobotMotorCfgGroupCmd convertMotorConfigurationCommand(
+    const MotorConfigurationCommand& command, const detail::LeaseToken& lease) {
+    dds_msg::RobotMotorCfgGroupCmd msg;
+    std_msgs::msg::Header header;
+    header.stamp(toDdsTime(command.header.send_time));
+    header.frame_id("");
+    msg.header(std::move(header));
+    msg.lease(convertLease(lease));
+    std::vector<dds_msg::MotorCfgGroupCmd> groups;
+    groups.reserve(command.groups.size());
+    for (const auto& group : command.groups) {
+        dds_msg::MotorCfgGroupCmd value;
+        value.group_name(group.group_name);
+        value.mode(static_cast<dds_msg::MotorMode>(group.mode));
+        value.pos_kp(group.position_kp);
+        value.pos_ki(group.position_ki);
+        value.pos_kd(group.position_kd);
+        value.pd_kp(group.pd_kp);
+        value.pd_kd(group.pd_kd);
+        groups.push_back(std::move(value));
+    }
+    msg.group_cmd(std::move(groups));
     return msg;
 }
 
@@ -332,18 +422,24 @@ const char* endpointName(Endpoint endpoint) {
     switch (endpoint) {
         case Endpoint::FsmService:
             return "fsm_service";
+        case Endpoint::ManageLeaseService:
+            return "manage_lease_service";
         case Endpoint::MotionCommandPublisher:
             return "motion_command_publisher";
         case Endpoint::ControlGroupCommandPublisher:
             return "control_group_command_publisher";
-        case Endpoint::SubControllerCommandPublisher:
-            return "sub_controller_command_publisher";
+        case Endpoint::MotorConfigurationCommandPublisher:
+            return "motor_configuration_command_publisher";
+        case Endpoint::SubControllerService:
+            return "sub_controller_service";
         case Endpoint::AuroraStateSubscriber:
             return "aurora_state_subscriber";
         case Endpoint::MotionStateSubscriber:
             return "motion_state_subscriber";
         case Endpoint::ControlGroupStateSubscriber:
             return "control_group_state_subscriber";
+        case Endpoint::MotorConfigurationStateSubscriber:
+            return "motor_configuration_state_subscriber";
         case Endpoint::EstimatorDataSubscriber:
             return "estimator_data_subscriber";
         case Endpoint::ErrorCodesSubscriber:
@@ -358,18 +454,24 @@ EndpointStatus& endpointStatus(
     switch (endpoint) {
         case Endpoint::FsmService:
             return status.fsm_service;
+        case Endpoint::ManageLeaseService:
+            return status.manage_lease_service;
         case Endpoint::MotionCommandPublisher:
             return status.motion_command_publisher;
         case Endpoint::ControlGroupCommandPublisher:
             return status.control_group_command_publisher;
-        case Endpoint::SubControllerCommandPublisher:
-            return status.sub_controller_command_publisher;
+        case Endpoint::MotorConfigurationCommandPublisher:
+            return status.motor_configuration_command_publisher;
+        case Endpoint::SubControllerService:
+            return status.sub_controller_service;
         case Endpoint::AuroraStateSubscriber:
             return status.aurora_state_subscriber;
         case Endpoint::MotionStateSubscriber:
             return status.motion_state_subscriber;
         case Endpoint::ControlGroupStateSubscriber:
             return status.control_group_state_subscriber;
+        case Endpoint::MotorConfigurationStateSubscriber:
+            return status.motor_configuration_state_subscriber;
         case Endpoint::EstimatorDataSubscriber:
             return status.estimator_data_subscriber;
         case Endpoint::ErrorCodesSubscriber:
@@ -391,14 +493,18 @@ struct FourierDdsTransport::Impl
     using Node = fourier_dds::DdsNode;
     using MotionCommandPublisher = fourier_dds::DdsPublisher<dds_msg::RobotMotionCmdPubSubType>;
     using ControlGroupCommandPublisher = fourier_dds::DdsPublisher<dds_msg::RobotControlGroupCmdPubSubType>;
-    using SubControllerCommandPublisher = fourier_dds::DdsPublisher<dds_msg::SubControllerCmdPubSubType>;
+    using MotorConfigurationCommandPublisher = fourier_dds::DdsPublisher<dds_msg::RobotMotorCfgGroupCmdPubSubType>;
     using AuroraStateSubscription = fourier_dds::DdsSubscription<dds_msg::AuroraStatePubSubType>;
     using MotionStateSubscription = fourier_dds::DdsSubscription<dds_msg::RobotMotionStatePubSubType>;
     using ControlGroupStateSubscription =
         fourier_dds::DdsSubscription<dds_msg::RobotControlGroupStatePubSubType>;
+    using MotorConfigurationStateSubscription =
+        fourier_dds::DdsSubscription<dds_msg::RobotMotorCfgGroupStatePubSubType>;
     using EstimatorDataSubscription = fourier_dds::DdsSubscription<dds_msg::EstimatorDataPubSubType>;
     using ErrorCodesSubscription = fourier_dds::DdsSubscription<dds_msg::ErrorCodesPubSubType>;
     using FsmClient = fourier_dds::DdsClient<dds_srv::SetInt_RequestPubSubType, dds_srv::SetInt_ResponsePubSubType>;
+    using ManageLeaseClient = fourier_dds::DdsClient<dds_srv::ManageLease_RequestPubSubType, dds_srv::ManageLease_ResponsePubSubType>;
+    using SubControllerClient = fourier_dds::DdsClient<dds_srv::SubControllerService_RequestPubSubType, dds_srv::SubControllerService_ResponsePubSubType>;
 
     class OperationAdmission {
     public:
@@ -505,6 +611,8 @@ struct FourierDdsTransport::Impl
               std::move(initial_handlers.callbacks.motion_state)),
           control_group_state_handler(
               std::move(initial_handlers.callbacks.control_group_state)),
+          motor_configuration_state_handler(
+              std::move(initial_handlers.callbacks.motor_configuration_state)),
           estimator_data_handler(
               std::move(initial_handlers.callbacks.estimator_data)),
           error_codes_handler(
@@ -541,10 +649,10 @@ struct FourierDdsTransport::Impl
                     node, "robot_control_group_cmd");
         }
         if (options.endpointEnabled(
-                Endpoint::SubControllerCommandPublisher)) {
-            sub_controller_command_pub =
-                std::make_unique<SubControllerCommandPublisher>(
-                    node, "sub_controller_cmd");
+                Endpoint::MotorConfigurationCommandPublisher)) {
+            motor_configuration_command_pub =
+                std::make_unique<MotorConfigurationCommandPublisher>(
+                    node, "robot_motor_cfg_group_cmd");
         }
 
         const std::weak_ptr<Impl> weak = shared_from_this();
@@ -597,6 +705,24 @@ struct FourierDdsTransport::Impl
                     false,
                     fourier_dds::SubscriptionDurability::Volatile);
         }
+        if (options.endpointEnabled(Endpoint::MotorConfigurationStateSubscriber)) {
+            motor_configuration_state_sub =
+                std::make_unique<MotorConfigurationStateSubscription>(
+                    node,
+                    "robot_motor_cfg_group_state",
+                    [weak](const dds_msg::RobotMotorCfgGroupState& message) {
+                        if (const auto session = weak.lock()) {
+                            session->dispatch(
+                                Endpoint::MotorConfigurationStateSubscriber,
+                                &Impl::motor_configuration_state_handler,
+                                [&message] {
+                                    return convertMotorConfigurationState(message);
+                                });
+                        }
+                    },
+                    false,
+                    fourier_dds::SubscriptionDurability::Volatile);
+        }
         if (options.endpointEnabled(Endpoint::EstimatorDataSubscriber)) {
             estimator_data_sub = std::make_unique<EstimatorDataSubscription>(
                 node,
@@ -630,6 +756,16 @@ struct FourierDdsTransport::Impl
         if (options.endpointEnabled(Endpoint::FsmService)) {
             fsm_service = std::make_unique<FsmClient>(
                 node, "whole_body_fsm_state_change_service");
+        }
+        if (options.endpointEnabled(Endpoint::ManageLeaseService)) {
+            fourier_dds::ClientOptions client_options;
+            client_options.log_requests = false;
+            manage_lease_service = std::make_unique<ManageLeaseClient>(
+                node, "ManageLease", client_options);
+        }
+        if (options.endpointEnabled(Endpoint::SubControllerService)) {
+            sub_controller_service = std::make_unique<SubControllerClient>(
+                node, "sub_controller_cmd");
         }
     }
 
@@ -863,19 +999,117 @@ struct FourierDdsTransport::Impl
         };
     }
 
+    detail::LeaseManagementResponse manageLease(
+        const detail::LeaseManagementRequest& value,
+        uint32_t timeout_ms) {
+        detail::LeaseManagementResponse out;
+        OperationResult failure;
+        auto admission = beginOperation(Endpoint::ManageLeaseService, failure);
+        if (!admission) {
+            out.operation = failure;
+            return out;
+        }
+        if (!manage_lease_service || !matched(Endpoint::ManageLeaseService)) {
+            out.operation = makeResult(result_codes::ENDPOINT_UNMATCHED);
+            return out;
+        }
+        dds_srv::ManageLease_Request request;
+        request.header(makeTracerHeader(std::chrono::system_clock::now()));
+        request.source_id(value.source_id);
+        request.source_name(value.source_name);
+        request.client_instance_id(value.client_instance_id);
+        request.action(value.action);
+        request.operation_id(value.operation_id);
+        request.lease_id(value.lease_id);
+        std::vector<dds_srv::LeaseResourceName> resources;
+        resources.reserve(value.resources.size());
+        for (const auto& name : value.resources) {
+            dds_srv::LeaseResourceName resource;
+            resource.name(name);
+            resources.push_back(std::move(resource));
+        }
+        request.requested_resources(std::move(resources));
+        request.priority(value.priority);
+        request.renew_duration(value.renew_duration);
+
+        dds_srv::ManageLease_Response response;
+        try {
+            if (!manage_lease_service->send_request(request, response, timeout_ms)) {
+                out.operation = matched(Endpoint::ManageLeaseService)
+                    ? makeResult(result_codes::SERVICE_TIMEOUT)
+                    : makeResult(result_codes::ENDPOINT_UNMATCHED);
+                return out;
+            }
+        } catch (const std::exception& error) {
+            out.operation = makeResult(result_codes::TRANSPORT_ERROR, error.what());
+            return out;
+        } catch (...) {
+            out.operation = makeResult(result_codes::TRANSPORT_ERROR);
+            return out;
+        }
+        out.operation = makeResult(result_codes::SUCCESS);
+        out.wire_result = response.result();
+        out.lease_id = response.lease_id();
+        out.renew_duration = response.renew_duration();
+        out.message = response.message().to_string();
+        return out;
+    }
+
+    OperationResult setSubController(const SubControllerCommand& command) {
+        OperationResult failure;
+        auto admission = beginOperation(Endpoint::SubControllerService, failure);
+        if (!admission) {
+            return failure;
+        }
+        if (!sub_controller_service || !matched(Endpoint::SubControllerService)) {
+            return makeResult(result_codes::ENDPOINT_UNMATCHED);
+        }
+        dds_srv::SubControllerService_Request request;
+        request.command(convertSubControllerCommand(command));
+        dds_srv::SubControllerService_Response response;
+        try {
+            if (!sub_controller_service->send_request(
+                    request, response, options.public_options.service_timeout_ms)) {
+                return matched(Endpoint::SubControllerService)
+                    ? makeResult(result_codes::SERVICE_TIMEOUT)
+                    : makeResult(result_codes::ENDPOINT_UNMATCHED);
+            }
+        } catch (const std::exception& error) {
+            return makeResult(result_codes::TRANSPORT_ERROR, error.what());
+        } catch (...) {
+            return makeResult(result_codes::TRANSPORT_ERROR);
+        }
+        switch (response.result()) {
+            case 0: return makeResult(result_codes::SUCCESS);
+            case 1: return makeResult(result_codes::SUB_CONTROLLER_NO_ACTIVE_UNICONTROLLER,
+                                      response.message().to_string());
+            case 2: return makeResult(result_codes::SUB_CONTROLLER_STATE_SWITCH_BUSY,
+                                      response.message().to_string());
+            case 3: return makeResult(result_codes::SUB_CONTROLLER_INVALID_REQUEST,
+                                      response.message().to_string());
+            case 4: return makeResult(result_codes::SUB_CONTROLLER_INTERNAL_ERROR,
+                                      response.message().to_string());
+            default: return makeResult(result_codes::INVALID_AURORA_RESPONSE);
+        }
+    }
+
     bool matched(Endpoint endpoint) const {
         switch (endpoint) {
             case Endpoint::FsmService:
                 return fsm_service && fsm_service->is_server_matched();
+            case Endpoint::ManageLeaseService:
+                return manage_lease_service && manage_lease_service->is_server_matched();
             case Endpoint::MotionCommandPublisher:
                 return motion_command_pub &&
                        motion_command_pub->get_matched() > 0;
             case Endpoint::ControlGroupCommandPublisher:
                 return control_group_command_pub &&
                        control_group_command_pub->get_matched() > 0;
-            case Endpoint::SubControllerCommandPublisher:
-                return sub_controller_command_pub &&
-                       sub_controller_command_pub->get_matched() > 0;
+            case Endpoint::MotorConfigurationCommandPublisher:
+                return motor_configuration_command_pub &&
+                       motor_configuration_command_pub->get_matched() > 0;
+            case Endpoint::SubControllerService:
+                return sub_controller_service && sub_controller_service->is_server_matched();
             case Endpoint::AuroraStateSubscriber:
                 return aurora_state_sub && aurora_state_sub->get_matched() > 0;
             case Endpoint::MotionStateSubscriber:
@@ -883,6 +1117,9 @@ struct FourierDdsTransport::Impl
             case Endpoint::ControlGroupStateSubscriber:
                 return control_group_state_sub &&
                        control_group_state_sub->get_matched() > 0;
+            case Endpoint::MotorConfigurationStateSubscriber:
+                return motor_configuration_state_sub &&
+                       motor_configuration_state_sub->get_matched() > 0;
             case Endpoint::EstimatorDataSubscriber:
                 return estimator_data_sub &&
                        estimator_data_sub->get_matched() > 0;
@@ -955,15 +1192,19 @@ struct FourierDdsTransport::Impl
     void teardownNow() {
         std::shared_ptr<Node> detached_node;
         std::unique_ptr<FsmClient> detached_fsm_service;
+        std::unique_ptr<ManageLeaseClient> detached_manage_lease_service;
+        std::unique_ptr<SubControllerClient> detached_sub_controller_service;
         std::unique_ptr<MotionCommandPublisher> detached_motion_command_pub;
         std::unique_ptr<ControlGroupCommandPublisher>
             detached_control_group_command_pub;
-        std::unique_ptr<SubControllerCommandPublisher>
-            detached_sub_controller_command_pub;
+        std::unique_ptr<MotorConfigurationCommandPublisher>
+            detached_motor_configuration_command_pub;
         std::unique_ptr<AuroraStateSubscription> detached_aurora_state_sub;
         std::unique_ptr<MotionStateSubscription> detached_motion_state_sub;
         std::unique_ptr<ControlGroupStateSubscription>
             detached_control_group_state_sub;
+        std::unique_ptr<MotorConfigurationStateSubscription>
+            detached_motor_configuration_state_sub;
         std::unique_ptr<EstimatorDataSubscription> detached_estimator_data_sub;
         std::unique_ptr<ErrorCodesSubscription> detached_error_codes_sub;
 
@@ -975,6 +1216,7 @@ struct FourierDdsTransport::Impl
             aurora_state_handler = nullptr;
             motion_state_handler = nullptr;
             control_group_state_handler = nullptr;
+            motor_configuration_state_handler = nullptr;
             estimator_data_handler = nullptr;
             error_codes_handler = nullptr;
 
@@ -982,26 +1224,33 @@ struct FourierDdsTransport::Impl
             detached_estimator_data_sub = std::move(estimator_data_sub);
             detached_control_group_state_sub =
                 std::move(control_group_state_sub);
+            detached_motor_configuration_state_sub =
+                std::move(motor_configuration_state_sub);
             detached_motion_state_sub = std::move(motion_state_sub);
             detached_aurora_state_sub = std::move(aurora_state_sub);
-            detached_sub_controller_command_pub =
-                std::move(sub_controller_command_pub);
+            detached_motor_configuration_command_pub =
+                std::move(motor_configuration_command_pub);
             detached_control_group_command_pub =
                 std::move(control_group_command_pub);
             detached_motion_command_pub = std::move(motion_command_pub);
             detached_fsm_service = std::move(fsm_service);
+            detached_manage_lease_service = std::move(manage_lease_service);
+            detached_sub_controller_service = std::move(sub_controller_service);
             detached_node = std::move(node);
         }
 
         detached_error_codes_sub.reset();
         detached_estimator_data_sub.reset();
         detached_control_group_state_sub.reset();
+        detached_motor_configuration_state_sub.reset();
         detached_motion_state_sub.reset();
         detached_aurora_state_sub.reset();
-        detached_sub_controller_command_pub.reset();
+        detached_motor_configuration_command_pub.reset();
         detached_control_group_command_pub.reset();
         detached_motion_command_pub.reset();
         detached_fsm_service.reset();
+        detached_manage_lease_service.reset();
+        detached_sub_controller_service.reset();
         detached_node.reset();
 
         detail::TransportTerminalObserver observer;
@@ -1036,18 +1285,22 @@ struct FourierDdsTransport::Impl
 
     std::shared_ptr<Node> node;
     std::unique_ptr<FsmClient> fsm_service;
+    std::unique_ptr<ManageLeaseClient> manage_lease_service;
+    std::unique_ptr<SubControllerClient> sub_controller_service;
     std::unique_ptr<MotionCommandPublisher> motion_command_pub;
     std::unique_ptr<ControlGroupCommandPublisher> control_group_command_pub;
-    std::unique_ptr<SubControllerCommandPublisher> sub_controller_command_pub;
+    std::unique_ptr<MotorConfigurationCommandPublisher> motor_configuration_command_pub;
     std::unique_ptr<AuroraStateSubscription> aurora_state_sub;
     std::unique_ptr<MotionStateSubscription> motion_state_sub;
     std::unique_ptr<ControlGroupStateSubscription> control_group_state_sub;
+    std::unique_ptr<MotorConfigurationStateSubscription> motor_configuration_state_sub;
     std::unique_ptr<EstimatorDataSubscription> estimator_data_sub;
     std::unique_ptr<ErrorCodesSubscription> error_codes_sub;
 
     AuroraStateHandler aurora_state_handler;
     MotionStateHandler motion_state_handler;
     ControlGroupStateHandler control_group_state_handler;
+    MotorConfigurationStateHandler motor_configuration_state_handler;
     EstimatorDataHandler estimator_data_handler;
     ErrorCodesHandler error_codes_handler;
     detail::TransportTerminalObserver terminal_observer;
@@ -1113,6 +1366,14 @@ void FourierDdsTransport::setControlGroupStateHandler(ControlGroupStateHandler h
         std::move(handler));
 }
 
+void FourierDdsTransport::setMotorConfigurationStateHandler(
+    MotorConfigurationStateHandler handler) {
+    impl_->setHandler(
+        Endpoint::MotorConfigurationStateSubscriber,
+        &Impl::motor_configuration_state_handler,
+        std::move(handler));
+}
+
 void FourierDdsTransport::setEstimatorDataHandler(EstimatorDataHandler handler) {
     impl_->setHandler(
         Endpoint::EstimatorDataSubscriber,
@@ -1128,27 +1389,39 @@ void FourierDdsTransport::setErrorCodesHandler(ErrorCodesHandler handler) {
 }
 
 OperationResult FourierDdsTransport::publishMotionCommand(
-    const MotionCommand& command) {
+    const MotionCommand& command, const detail::LeaseToken& lease) {
     return impl_->publish(
         Endpoint::MotionCommandPublisher,
         impl_->motion_command_pub.get(),
-        [&command] { return convertMotionCommand(command); });
+        [&command, &lease] { return convertMotionCommand(command, lease); });
 }
 
 OperationResult FourierDdsTransport::publishControlGroupCommand(
-    const ControlGroupCommand& command) {
+    const ControlGroupCommand& command, const detail::LeaseToken& lease) {
     return impl_->publish(
         Endpoint::ControlGroupCommandPublisher,
         impl_->control_group_command_pub.get(),
-        [&command] { return convertControlGroupCommand(command); });
+        [&command, &lease] { return convertControlGroupCommand(command, lease); });
 }
 
-OperationResult FourierDdsTransport::publishSubControllerCommand(
-    const SubControllerCommand& command) {
+OperationResult FourierDdsTransport::publishMotorConfigurationCommand(
+    const MotorConfigurationCommand& command, const detail::LeaseToken& lease) {
     return impl_->publish(
-        Endpoint::SubControllerCommandPublisher,
-        impl_->sub_controller_command_pub.get(),
-        [&command] { return convertSubControllerCommand(command); });
+        Endpoint::MotorConfigurationCommandPublisher,
+        impl_->motor_configuration_command_pub.get(),
+        [&command, &lease] {
+            return convertMotorConfigurationCommand(command, lease);
+        });
+}
+
+OperationResult FourierDdsTransport::setSubController(
+    const SubControllerCommand& command) {
+    return impl_->setSubController(command);
+}
+
+detail::LeaseManagementResponse FourierDdsTransport::manageLease(
+    const detail::LeaseManagementRequest& request, uint32_t timeout_ms) {
+    return impl_->manageLease(request, timeout_ms);
 }
 
 OperationResult FourierDdsTransport::requestFsmState(uint32_t state_id) {
@@ -1171,8 +1444,16 @@ bool FourierDdsTransport::isControlGroupCommandPublisherMatched() const {
     return endpointMatchStatus().control_group_command_publisher.matched;
 }
 
-bool FourierDdsTransport::isSubControllerCommandPublisherMatched() const {
-    return endpointMatchStatus().sub_controller_command_publisher.matched;
+bool FourierDdsTransport::isMotorConfigurationCommandPublisherMatched() const {
+    return endpointMatchStatus().motor_configuration_command_publisher.matched;
+}
+
+bool FourierDdsTransport::isSubControllerServiceMatched() const {
+    return endpointMatchStatus().sub_controller_service.matched;
+}
+
+bool FourierDdsTransport::isManageLeaseServiceMatched() const {
+    return endpointMatchStatus().manage_lease_service.matched;
 }
 
 bool FourierDdsTransport::isAuroraStateSubscriberMatched() const {
@@ -1185,6 +1466,10 @@ bool FourierDdsTransport::isMotionStateSubscriberMatched() const {
 
 bool FourierDdsTransport::isControlGroupStateSubscriberMatched() const {
     return endpointMatchStatus().control_group_state_subscriber.matched;
+}
+
+bool FourierDdsTransport::isMotorConfigurationStateSubscriberMatched() const {
+    return endpointMatchStatus().motor_configuration_state_subscriber.matched;
 }
 
 bool FourierDdsTransport::isEstimatorDataSubscriberMatched() const {
@@ -1245,6 +1530,10 @@ void FourierDdsTransport::setControlGroupStateHandler(
     ControlGroupStateHandler) {
     throw InvalidStateError("transport session is stopped");
 }
+void FourierDdsTransport::setMotorConfigurationStateHandler(
+    MotorConfigurationStateHandler) {
+    throw InvalidStateError("transport session is stopped");
+}
 void FourierDdsTransport::setEstimatorDataHandler(EstimatorDataHandler) {
     throw InvalidStateError("transport session is stopped");
 }
@@ -1253,25 +1542,41 @@ void FourierDdsTransport::setErrorCodesHandler(ErrorCodesHandler) {
 }
 
 OperationResult FourierDdsTransport::publishMotionCommand(
-    const MotionCommand&) {
+    const MotionCommand&, const detail::LeaseToken&) {
     return OperationResult{
         result_codes::CLIENT_NOT_RUNNING,
         std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
     };
 }
 OperationResult FourierDdsTransport::publishControlGroupCommand(
-    const ControlGroupCommand&) {
+    const ControlGroupCommand&, const detail::LeaseToken&) {
     return OperationResult{
         result_codes::CLIENT_NOT_RUNNING,
         std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
     };
 }
-OperationResult FourierDdsTransport::publishSubControllerCommand(
+OperationResult FourierDdsTransport::publishMotorConfigurationCommand(
+    const MotorConfigurationCommand&, const detail::LeaseToken&) {
+    return OperationResult{
+        result_codes::CLIENT_NOT_RUNNING,
+        std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
+    };
+}
+OperationResult FourierDdsTransport::setSubController(
     const SubControllerCommand&) {
     return OperationResult{
         result_codes::CLIENT_NOT_RUNNING,
         std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
     };
+}
+detail::LeaseManagementResponse FourierDdsTransport::manageLease(
+    const detail::LeaseManagementRequest&, uint32_t) {
+    detail::LeaseManagementResponse response;
+    response.operation = OperationResult{
+        result_codes::CLIENT_NOT_RUNNING,
+        std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
+    };
+    return response;
 }
 OperationResult FourierDdsTransport::requestFsmState(uint32_t) {
     return OperationResult{
@@ -1291,7 +1596,13 @@ bool FourierDdsTransport::isMotionCommandPublisherMatched() const {
 bool FourierDdsTransport::isControlGroupCommandPublisherMatched() const {
     return false;
 }
-bool FourierDdsTransport::isSubControllerCommandPublisherMatched() const {
+bool FourierDdsTransport::isMotorConfigurationCommandPublisherMatched() const {
+    return false;
+}
+bool FourierDdsTransport::isSubControllerServiceMatched() const {
+    return false;
+}
+bool FourierDdsTransport::isManageLeaseServiceMatched() const {
     return false;
 }
 bool FourierDdsTransport::isAuroraStateSubscriberMatched() const {
@@ -1301,6 +1612,9 @@ bool FourierDdsTransport::isMotionStateSubscriberMatched() const {
     return false;
 }
 bool FourierDdsTransport::isControlGroupStateSubscriberMatched() const {
+    return false;
+}
+bool FourierDdsTransport::isMotorConfigurationStateSubscriberMatched() const {
     return false;
 }
 bool FourierDdsTransport::isEstimatorDataSubscriberMatched() const {
@@ -1344,18 +1658,28 @@ public:
         : transport_(std::move(transport)) {}
 
     OperationResult publishMotionCommand(
-        const MotionCommand& command) override {
-        return transport_->publishMotionCommand(command);
+        const MotionCommand& command, const LeaseToken& lease) override {
+        return transport_->publishMotionCommand(command, lease);
     }
 
     OperationResult publishControlGroupCommand(
-        const ControlGroupCommand& command) override {
-        return transport_->publishControlGroupCommand(command);
+        const ControlGroupCommand& command, const LeaseToken& lease) override {
+        return transport_->publishControlGroupCommand(command, lease);
     }
 
-    OperationResult publishSubControllerCommand(
+    OperationResult publishMotorConfigurationCommand(
+        const MotorConfigurationCommand& command, const LeaseToken& lease) override {
+        return transport_->publishMotorConfigurationCommand(command, lease);
+    }
+
+    OperationResult setSubController(
         const SubControllerCommand& command) override {
-        return transport_->publishSubControllerCommand(command);
+        return transport_->setSubController(command);
+    }
+
+    LeaseManagementResponse manageLease(
+        const LeaseManagementRequest& request, uint32_t timeout_ms) override {
+        return transport_->manageLease(request, timeout_ms);
     }
 
     OperationResult requestFsmState(uint32_t state_id) override {
