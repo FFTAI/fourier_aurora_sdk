@@ -161,7 +161,8 @@ Available `AuroraResource` values are `LEFT_LEG`, `RIGHT_LEG`, `WAIST`, `HEAD`,
 `RIGHT_END_EFFECTOR`, and `MOTION_COMMAND`.
 
 `LeaseOption.duration` and `.timeout` are `datetime.timedelta` values because
-they map to C++ chrono durations. Defaults are two seconds and 500 ms.
+they map to C++ chrono durations. Defaults are four seconds and 500 ms. An
+active default grant renews after one quarter of its period, or one second.
 
 ```python
 from datetime import timedelta

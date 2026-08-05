@@ -758,7 +758,10 @@ struct FourierDdsTransport::Impl
                 node, "whole_body_fsm_state_change_service");
         }
         if (options.endpointEnabled(Endpoint::ManageLeaseService)) {
-            manage_lease_service = std::make_unique<ManageLeaseClient>(node, "ManageLease");
+            fourier_dds::ClientOptions client_options;
+            client_options.log_requests = false;
+            manage_lease_service = std::make_unique<ManageLeaseClient>(
+                node, "ManageLease", client_options);
         }
         if (options.endpointEnabled(Endpoint::SubControllerService)) {
             sub_controller_service = std::make_unique<SubControllerClient>(

@@ -45,7 +45,7 @@ enum class LeaseLossReason : uint8_t {
 };
 
 struct LeaseOption {
-    std::chrono::milliseconds duration{2000};
+    std::chrono::milliseconds duration{4000};
     std::optional<LeasePriority> priority;
     std::chrono::milliseconds timeout{500};
 };

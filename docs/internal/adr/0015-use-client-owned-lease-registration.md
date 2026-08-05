@@ -23,5 +23,5 @@ with it. A failed replacement can therefore report operation failure while the
 old lease remains usable. Documentation and examples must explain this
 distinction and show complete resource registration before protected commands.
 
-`LeaseOption` defaults requested duration to 2000 ms and the total synchronous
+`LeaseOption` defaults requested duration to 4000 ms and the total synchronous
 operation timeout to 500 ms. The two durations have independent meanings.

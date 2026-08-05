@@ -159,7 +159,7 @@ and `MotionCommand`.
 
 | Field | Default | Meaning |
 |---|---:|---|
-| `duration` | `2000ms` | Requested lease period; active leases renew automatically |
+| `duration` | `4000ms` | Requested lease period; active leases renew automatically after one quarter of the granted period (1 s for the default grant) |
 | `priority` | unset (`Normal`) | Optional `Normal` or `Emergency` request |
 | `timeout` | `500ms` | Overall public register/replace operation deadline |
 

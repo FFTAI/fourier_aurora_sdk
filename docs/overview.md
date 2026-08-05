@@ -93,7 +93,9 @@ releases it when control is no longer needed. The SDK renews active leases
 using a steady clock and rejects a protected publish locally when no usable
 lease covers every target resource.
 
-The lease is intentionally memory-only. After a client restart, register a new
+With the default four-second lease period, renewal is scheduled after one
+quarter of the granted period (one second). The lease is intentionally
+memory-only. After a client restart, register a new
 lease. If Aurora still holds the former lease, registration may wait for that
 short lease to expire and then retry within the caller's operation timeout.
 

@@ -9,6 +9,9 @@ namespace testing = fourier::aurora_sdk::testing;
 
 int main() {
     testing::TestHarness test;
+    SDK_CHECK(
+        test,
+        sdk::LeaseOption{}.duration == std::chrono::milliseconds{4000});
     auto& client = testing::resetClientFixture();
     auto options = client.config();
     options.source_id = 1234;

@@ -153,7 +153,8 @@ result = client.publish_control_group_command(command)
 `RIGHT_END_EFFECTOR`、`MOTION_COMMAND`。
 
 `LeaseOption.duration` 与 `.timeout` 使用 `datetime.timedelta`，因为它们映射
-C++ chrono duration；默认值分别为两秒和 500 ms。
+C++ chrono duration；默认值分别为四秒和 500 ms。有效的默认 grant 会在周期的
+四分之一处续租，即一秒后续租。
 
 ```python
 from datetime import timedelta

@@ -5,7 +5,7 @@ status: accepted
 # Use chrono for requested lease duration
 
 C++ registration and replacement options represent requested lease duration as
-`std::chrono::milliseconds`, defaulting to `2000 ms`. Python accepts a finite
+`std::chrono::milliseconds`, defaulting to `4000 ms`. Python accepts a finite
 positive number of seconds and converts it to the native duration.
 
 ## Consequences

@@ -156,7 +156,7 @@ hardware-level SDK。机器人相关的 group 名称、向量长度、mode、FSM
 
 | 字段 | 默认值 | 含义 |
 |---|---:|---|
-| `duration` | `2000ms` | 请求的租约周期；有效租约自动续租 |
+| `duration` | `4000ms` | 请求的租约周期；有效租约在实际周期的四分之一处自动续租（默认 grant 对应 1 秒） |
 | `priority` | 未设置（`Normal`） | 可选 `Normal` 或 `Emergency` |
 | `timeout` | `500ms` | register/replace 公开操作的总 deadline |
 
