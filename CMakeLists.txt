@@ -443,7 +443,7 @@ if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND FOURIER_AURORA_SDK_BUILD_CLIENT_T
 endif()
 
 if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND FOURIER_AURORA_SDK_BUILD_EXAMPLES)
-    foreach(recipe_name get_info walk_forward swing_arms)
+    foreach(recipe_name get_info walk_forward swing_arms aurora_state_callback)
         add_executable(
             gr3_${recipe_name}
             examples/gr3/cpp/${recipe_name}.cpp

@@ -73,6 +73,7 @@ required_files=(
     "${doc_prefix}/examples/gr3/cpp/get_info.cpp"
     "${doc_prefix}/examples/gr3/cpp/walk_forward.cpp"
     "${doc_prefix}/examples/gr3/cpp/swing_arms.cpp"
+    "${doc_prefix}/examples/gr3/cpp/aurora_state_callback.cpp"
     "${doc_prefix}/examples/gr3/python/get_info.py"
     "${doc_prefix}/examples/gr3/python/walk_forward.py"
     "${doc_prefix}/examples/gr3/python/swing_arms.py"

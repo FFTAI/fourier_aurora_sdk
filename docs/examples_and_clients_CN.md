@@ -17,7 +17,7 @@
 | 程序 | 源码 | 原生构建结果 | Debian 安装结果 |
 |---|---|---|---|
 | 诊断客户端 | `examples/client/` | `build/{state_client,motion_client,control_group_client}` | `/opt/fftai/fourier_aurora_sdk/bin/client/` |
-| C++ GR3 recipe | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms}` | 源码位于 `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
+| C++ GR3 recipe | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms,aurora_state_callback}` | 源码位于 `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
 | Python GR3 recipe | `examples/gr3/python/` | 从源码运行 | 源码位于 `share/doc/fourier_aurora_sdk/examples/gr3/python/` |
 
 Python wheel 只包含 client package，不包含示例或诊断 executable。
@@ -138,7 +138,26 @@ control_group_client 123 42 \
 Python recipe 要求已安装 `fourier_aurora_client` wheel，或者在 `PYTHONPATH`
 中提供等价开发 package。
 
+### `aurora_state_callback`
+
+用途：展示不获取控制权的只读 callback 订阅。示例只创建
+`AuroraStateSubscriber`，统计每个状态 sample，并在每 10 次 callback 时打印
+消息发送时间、本地 SDK 接收时间和累计数量。两个时间都使用
+`HH:MM:SS:ffffff` 格式。
+
+```bash
+cmake --build build --target gr3_aurora_state_callback
+./build/gr3_aurora_state_callback
+./build/gr3_aurora_state_callback 5  # 5 秒后自动停止
+```
+
+可选的正数 duration 适合有界诊断和 CI；不传参数时使用 Ctrl+C 停止。实现位于
+`examples/gr3/cpp/aurora_state_callback.cpp`；callback signature 见
+[C++ API](cpp_api_CN.md#callback-handler-type)。
+
 ### `get_info`
+
+用途：在不获取控制权的情况下验证 GR3 基础连接并检查机器人公布的配置。
 
 这个只读 recipe 选择三个 subscriber，等待最多五秒，然后打印机器人型号、
 hardware/end-effector 类型、当前 FSM、机身姿态和速度、stable level 及控制组名称。
@@ -152,6 +171,8 @@ python3 examples/gr3/python/get_info.py
 
 ### `walk_forward`
 
+用途：展示完整的有界运动流程，包括租约注册、FSM 切换、运动指令和租约释放。
+
 这个有界 recipe 接收模块 source ID，注册 `MotionCommand` 资源，请求 GR3 Walk
 （FSM `3`），等待状态切换，然后以 `0.3 m/s` 向前运动三秒。获取控制前必须精确
 输入 `YES` 确认。
@@ -164,6 +185,8 @@ python3 examples/gr3/python/walk_forward.py 42
 运行前检查源码中的常量。不要假设 FSM ID 或限制可以直接用于其他机器人型号。
 
 ### `swing_arms`
+
+用途：展示从单个测量快照开始插值的、带租约多控制组 Joint 控制。
 
 这个有界 recipe 接收模块 source ID，租用左右 manipulator 资源，请求 GR3
 PdStandStanding（FSM `13`），从同一份快照读取双臂位置，在三秒内插值到中心姿态，

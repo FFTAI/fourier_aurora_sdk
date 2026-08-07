@@ -18,7 +18,7 @@ work area, verify the robot model and FSM IDs, and be ready to stop it.
 | Program | Source tree | Native build | Debian installation |
 |---|---|---|---|
 | Diagnostic clients | `examples/client/` | `build/{state_client,motion_client,control_group_client}` | `/opt/fftai/fourier_aurora_sdk/bin/client/` |
-| C++ GR3 recipes | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms}` | Source under `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
+| C++ GR3 recipes | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms,aurora_state_callback}` | Source under `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
 | Python GR3 recipes | `examples/gr3/python/` | Run from source | Source under `share/doc/fourier_aurora_sdk/examples/gr3/python/` |
 
 Python wheels contain only the client package; they do not contain examples or
@@ -146,7 +146,28 @@ Build the native recipes with `FOURIER_AURORA_SDK_BUILD_EXAMPLES=ON` (the native
 default). Python recipes require an installed `fourier_aurora_client` wheel or
 an equivalent development package on `PYTHONPATH`.
 
+### `aurora_state_callback`
+
+Purpose: demonstrate read-only callback subscription without acquiring control.
+It creates only `AuroraStateSubscriber`, counts every state sample, and prints
+the message send time, local SDK receive time, and total count every tenth
+callback. Both timestamps use `HH:MM:SS:ffffff`.
+
+```bash
+cmake --build build --target gr3_aurora_state_callback
+./build/gr3_aurora_state_callback
+./build/gr3_aurora_state_callback 5  # stop automatically after 5 seconds
+```
+
+The optional positive duration is useful for bounded diagnostics and CI. With
+no argument, press Ctrl+C to stop. The implementation is in
+`examples/gr3/cpp/aurora_state_callback.cpp`; callback signatures are listed in
+the [C++ API](cpp_api.md#callback-handler-types).
+
 ### `get_info`
+
+Purpose: verify basic GR3 connectivity and inspect its advertised configuration
+without acquiring control.
 
 This read-only recipe selects three subscribers, waits up to five seconds, and
 prints robot type, hardware/end-effector type, current FSM, base orientation
@@ -160,6 +181,9 @@ python3 examples/gr3/python/get_info.py
 Start here to verify connectivity without acquiring control.
 
 ### `walk_forward`
+
+Purpose: demonstrate the complete bounded motion workflow: lease registration,
+FSM transition, motion command, and lease release.
 
 This bounded recipe accepts the module source ID, registers the
 `MotionCommand` resource, requests GR3 Walk (FSM `3`), waits for the transition,
@@ -175,6 +199,9 @@ Review the constants in the source before use. Do not assume FSM IDs or limits
 are portable to another robot type.
 
 ### `swing_arms`
+
+Purpose: demonstrate leased multi-group joint control with interpolation from
+one measured state snapshot.
 
 This bounded recipe accepts the module source ID, leases both manipulator
 resources, requests GR3 PdStandStanding (FSM `13`), reads both arm positions
