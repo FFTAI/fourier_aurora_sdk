@@ -3,242 +3,947 @@
 [中文](python_api_CN.md) · [Quick start](../README.md) ·
 [Overview](overview.md) · [C++ API](cpp_api.md)
 
-The Python package wraps the same native client as the C++ API and presents
-snake-case method names:
+This page documents the user-facing `fourier_aurora_client` API. It begins
+with the exported types and functions, then specifies every client method and
+writable attribute used by applications.
 
 ```python
 import fourier_aurora_client as aurora
 client = aurora.AuroraClient.get_instance()
 ```
 
-Do not construct `AuroraClient` directly. The package requires a standard-GIL
-CPython build; the current stage-one wheel is built for CPython 3.10 x86_64.
+Do not construct `AuroraClient` directly. The current stage-one wheel targets
+standard-GIL CPython 3.10 x86_64.
 
-## Calling conventions
+## API index
 
-- Configure the singleton only while `ClientState.STOPPED`.
-- Always use `try/finally` and call `stop()`.
-- Wait timeouts (`wait_for_endpoints`, `wait_for_fsm_state`) are finite,
-  nonnegative numbers in seconds.
-- State getters return `(OperationResult, value)`.
-- Commands and services return `OperationResult`; lease functions return
+### Types
+
+| Category | Exported types |
+|---|---|
+| Client and lifecycle | [`AuroraClient`](#auroraclient), [`ConnectionOptions`](#connectionoptions), [`ClientState`](#clientstate), [`Endpoint`](#endpoint), [`EndpointStatus`](#endpointstatus), [`EndpointMatchStatus`](#endpointmatchstatus) |
+| Results and errors | [`OperationResult`](#operationresult), [`AuroraSdkError`](#exceptions), [`ConnectionError`](#exceptions), [`InvalidArgumentError`](#exceptions), [`InvalidStateError`](#exceptions) |
+| Common and robot state | [`MessageHeader`](#messageheader), [`RobotInfo`](#robotinfo), [`StateInfo`](#stateinfo), [`AuroraState`](#aurorastate) |
+| Motion | [`MotionState`](#motionstate), [`MotionCommand`](#motioncommand) |
+| Control groups | [`JointControlType`](#jointcontroltype), [`MotorMode`](#motormode), [`JointField`](#jointfield), [`ControlGroupStateEntry`](#controlgroupstateentry), [`CartesianStateEntry`](#cartesianstateentry), [`ControlGroupState`](#controlgroupstate), [`JointCommand`](#jointcommand), [`ControlGroupCommand`](#controlgroupcommand) |
+| Estimator | [`BaseData`](#basedata), [`ContactData`](#contactdata), [`EstimatorData`](#estimatordata) |
+| Sub-controller | [`GroupOverrideParam`](#groupoverrideparam), [`ControllerParam`](#controllerparam), [`SubControllerCommand`](#subcontrollercommand) |
+| Errors | [`ErrorCodeEntry`](#errorcodeentry), [`ErrorCodes`](#errorcodes) |
+| Leases | [`AuroraResource`](#auroraresource), [`LeasePriority`](#leasepriority), [`LeaseState`](#leasestate), [`LeaseLossReason`](#leaselossreason), [`LeaseOption`](#leaseoption), [`LeaseResult`](#leaseresult) |
+| Motor configuration | [`MotorConfigurationMode`](#motorconfigurationmode), [`MotorConfigurationGroupCommand`](#motorconfigurationgroupcommand), [`MotorConfigurationCommand`](#motorconfigurationcommand), [`MotorConfigurationGroupState`](#motorconfigurationgroupstate), [`MotorConfigurationState`](#motorconfigurationstate) |
+
+### Functions
+
+| Category | Public functions |
+|---|---|
+| Client lifecycle | [`AuroraClient.get_instance`](#get_instance), [`config`](#config), [`configure`](#configure), [`set_domain_id`](#set_domain_id), [`domain_id`](#domain_id), [`state`](#state), [`start`](#start), [`stop`](#stop) |
+| Endpoint readiness | [`endpoint_match_status`](#endpoint_match_status), [`is_fsm_service_matched`](#is_fsm_service_matched), [`wait_for_endpoints`](#wait_for_endpoints) |
+| State access | [`get_aurora_state`](#get_aurora_state), [`get_motion_state`](#get_motion_state), [`get_control_group_state`](#get_control_group_state), [`get_motor_configuration_state`](#get_motor_configuration_state), [`get_estimator_data`](#get_estimator_data), [`get_error_codes`](#get_error_codes), [`get_base_data`](#get_base_data), [`get_contact_data`](#get_contact_data), [`get_stable_level`](#get_stable_level), [`get_stand_pose`](#get_stand_pose), [`get_joint_state`](#get_joint_state), [`get_joint_command`](#get_joint_command), [`get_cartesian_state`](#get_cartesian_state), [`get_cartesian_command`](#get_cartesian_command), [`wait_for_fsm_state`](#wait_for_fsm_state) |
+| Local command caches | [`get_last_motion_command`](#get_last_motion_command), [`get_last_control_group_command`](#get_last_control_group_command), [`get_last_motor_configuration_command`](#get_last_motor_configuration_command), [`get_last_sub_controller_command`](#get_last_sub_controller_command) |
+| Commands and services | [`publish_motion_command`](#publish_motion_command), [`publish_control_group_command`](#publish_control_group_command), [`publish_motor_configuration_command`](#publish_motor_configuration_command), [`set_sub_controller`](#set_sub_controller), [`request_fsm_state`](#request_fsm_state), [`set_velocity`](#set_velocity), [`set_stand_pose`](#set_stand_pose), [`reset_unicontroller`](#reset_unicontroller) |
+| Lease management | [`register_lease`](#register_lease), [`replace_lease`](#replace_lease), [`release_lease`](#release_lease), [`get_lease`](#get_lease), [`on_lease_changed`](#on_lease_changed) |
+| Result helpers | [`result_code_name`, `default_result_message`, `OperationResult.success`, `LeaseResult.success`, `LeaseResult.usable`](#result-helpers) |
+
+## Conventions
+
+- Configure the process singleton only while `ClientState.STOPPED`.
+- Use `try/finally` and call `stop()` explicitly.
+- Wait timeouts are finite, nonnegative numbers in seconds.
+- State/cache getters return `(OperationResult, value)`.
+- Commands and services return `OperationResult`; lease calls return
   `LeaseResult`.
-- Check results explicitly. Publish success is not robot execution
-  acknowledgement.
+- Returned operation failures are not exceptions. Check them explicitly.
+- `datetime.datetime` represents C++ time points; `datetime.timedelta`
+  represents C++ durations.
+- Numeric robot values use SI units unless stated otherwise.
+- Fixed Cartesian pose arrays are `[x, y, z, qx, qy, qz, qw]`.
 
-## Configuration and lifecycle functions
+## Client and lifecycle types
 
-| Function | Return | Purpose |
+### `AuroraClient`
+
+Process-wide Python wrapper around the native singleton. Use
+`AuroraClient.get_instance()`; direct construction raises `TypeError`. See
+[Client functions](#client-functions) for all methods.
+
+### `ConnectionOptions`
+
+Construct with `aurora.ConnectionOptions()`. Every attribute is writable while
+the object is local; `configure()` copies and validates it.
+
+| Attribute | Python type | Default | Description |
+|---|---|---:|---|
+| `namespace_name` | `str | None` | `None` | Explicit DDS namespace. |
+| `dds_mode` | `int` | `0` | FourierDDS mode; only `0..3` is accepted. |
+| `is_ros_compatible` | `bool | None` | `None` | Optional ROS-compatible naming override. |
+| `use_namespace` | `bool` | `True` | Enables namespaced endpoints. |
+| `use_discovery_server` | `bool | None` | `None` | Optional discovery-server override. |
+| `service_timeout_ms` | `int` | `1000` | Default synchronous service timeout. |
+| `source_id` | `int` | `0` | Deployment-assigned module identity. Must fit `uint32`. |
+| `source_name` | `str | None` | `None` | Diagnostic name; defaults to `aurora_sdk_<source_id>`. |
+| `allow_emergency_lease_priority` | `bool` | `False` | Allows emergency-priority requests; Aurora still authorizes them. |
+| `enabled_endpoints` | `list[Endpoint]` | all endpoints | Exact endpoint set created by `start()`. |
+
+`source_id` must be nonzero when lease management or a protected publisher is
+enabled. Protected publishers also require `MANAGE_LEASE_SERVICE`.
+
+### `ClientState`
+
+| Value | Description |
+|---|---|
+| `STOPPED` | No session; configuration is mutable. |
+| `STARTING` | Transport startup is running. |
+| `RUNNING` | Local transport is active. |
+| `STOPPING` | Work is draining and shutdown is running. |
+
+### `Endpoint`
+
+| Value | Endpoint |
+|---|---|
+| `FSM_SERVICE` | FSM request service client. |
+| `MANAGE_LEASE_SERVICE` | Lease-management client. |
+| `MOTION_COMMAND_PUBLISHER` | Motion command publisher. |
+| `CONTROL_GROUP_COMMAND_PUBLISHER` | Joint command publisher. |
+| `MOTOR_CONFIGURATION_COMMAND_PUBLISHER` | Temporary motor-config publisher. |
+| `SUB_CONTROLLER_SERVICE` | Universal Controller service client. |
+| `AURORA_STATE_SUBSCRIBER` | Aurora/FSM/authority state. |
+| `MOTION_STATE_SUBSCRIBER` | Motion state. |
+| `CONTROL_GROUP_STATE_SUBSCRIBER` | Joint and Cartesian state. |
+| `MOTOR_CONFIGURATION_STATE_SUBSCRIBER` | Motor-config state. |
+| `ESTIMATOR_DATA_SUBSCRIBER` | Base/contact estimator state. |
+| `ERROR_CODES_SUBSCRIBER` | Error-code state. |
+
+### `EndpointStatus`
+
+| Attribute | Description |
+|---|---|
+| `enabled` | Whether this endpoint was selected before startup. |
+| `matched` | Whether DDS currently reports a compatible peer. |
+
+### `EndpointMatchStatus`
+
+Every attribute is an `EndpointStatus`: `fsm_service`,
+`manage_lease_service`, `motion_command_publisher`,
+`control_group_command_publisher`, `motor_configuration_command_publisher`,
+`sub_controller_service`, `aurora_state_subscriber`,
+`motion_state_subscriber`, `control_group_state_subscriber`,
+`motor_configuration_state_subscriber`, `estimator_data_subscriber`, and
+`error_codes_subscriber`.
+
+## Result and error types
+
+### `OperationResult`
+
+| Attribute/method | Description |
+|---|---|
+| `code` | Writable integer SDK or Aurora result code; defaults to `CLIENT_ERROR`. |
+| `message` | Writable human-readable detail. |
+| `success()` | True only when `code == SUCCESS`. |
+
+### Exceptions
+
+| Type | Base | Description |
 |---|---|---|
-| `AuroraClient.get_instance()` | `AuroraClient` | Return the process singleton without starting DDS |
-| `config()` | `ConnectionOptions` | Return a copy of current configuration |
-| `configure(options)` | `None` | Replace the complete stopped-stage configuration |
-| `set_domain_id(domain_id)` | `None` | Set the next session's DDS domain; default is `123` |
-| `domain_id()` | `int` | Read configured DDS domain |
-| `state()` | `ClientState` | Read local lifecycle state |
-| `start()` | `None` | Freeze configuration and start transport |
-| `stop()` | `None` | Drain work and synchronously stop transport |
-| `endpoint_match_status()` | `EndpointMatchStatus` | Return all enabled/matched flags |
-| `is_fsm_service_matched()` | `bool` | Check the enabled FSM service match |
-| `wait_for_endpoints(timeout)` | `bool` | Wait for every enabled endpoint to match |
-| `wait_for_fsm_state(state_id, timeout)` | `bool` | Wait for the cached Aurora FSM ID |
+| `AuroraSdkError` | `RuntimeError` | Base thrown SDK failure. |
+| `ConnectionError` | `AuroraSdkError` | Fatal transport startup/teardown failure. |
+| `InvalidArgumentError` | `AuroraSdkError` | Invalid type, value, range, or combination. |
+| `InvalidStateError` | `AuroraSdkError` | Lifecycle misuse. |
 
-`ConnectionOptions` fields are `namespace_name`, `dds_mode`,
-`is_ros_compatible`, `use_namespace`, `use_discovery_server`,
-`service_timeout_ms`, `source_id`, `source_name`,
-`allow_emergency_lease_priority`, and `enabled_endpoints`. See the
-[C++ configuration table](cpp_api.md#connectionoptions) for defaults and
-semantics; the Python fields have the same values.
+## State and command types
+
+All data types below have a zero/default constructor and writable attributes.
+
+### `MessageHeader`
+
+| Attribute | Type | Description |
+|---|---|---|
+| `send_time` | `datetime.datetime` | Sender timestamp. |
+| `frame_id` | `str` | Coordinate frame or source label. |
+| `received_time` | `datetime.datetime` | Local SDK receive timestamp. |
+
+### `RobotInfo`
+
+`robot_type` identifies the robot family, `hardware_type` the revision, and
+`end_effector_type` the installed end effector. All are strings.
+
+### `StateInfo`
+
+| Attribute | Description |
+|---|---|
+| `id` | FSM state ID. |
+| `version` | State contract/configuration version. |
+| `name` | User-facing state name. |
+| `description` | Short state description. |
+| `active` | Whether this entry is active. |
+
+### `AuroraState`
+
+| Attribute | Description |
+|---|---|
+| `header` | `MessageHeader`. |
+| `robot_info` | Connected `RobotInfo`. |
+| `switch_status` | Aurora state-switch status integer. |
+| `current_state` | Current `StateInfo`. |
+| `available_states` | List of reported `StateInfo` objects. |
+| `authority_resources` | Advisory per-resource authority objects with `resource`, `acquired`, `holder_source_id`, `holder_source_name`, and `holder_priority`. |
+
+### `MotionState`
+
+| Attribute | Description |
+|---|---|
+| `header` | Message timing metadata. |
+| `position`, `position_cmd` | Three-element measured/commanded base position. |
+| `lin_velocity`, `lin_velocity_cmd` | Three-element measured/commanded linear velocity. |
+| `attitude`, `attitude_cmd` | Three-element measured/commanded roll, pitch, yaw. |
+| `ang_velocity`, `ang_velocity_cmd` | Three-element measured/commanded angular velocity. |
+| `delta_height`, `delta_height_cmd` | Measured/commanded height offset. |
+| `progress` | Motion progress integer. |
+| `stable_level` | Stability level integer. |
+
+### `MotionCommand`
+
+| Attribute | Description |
+|---|---|
+| `header` | Outgoing metadata. |
+| `position` | Three-element requested base position. |
+| `lin_velocity` | Three-element base-frame linear velocity. |
+| `attitude` | Three-element requested roll, pitch, yaw. |
+| `ang_velocity` | Three-element angular velocity. |
+| `delta_height` | Requested stand-height offset. |
+| `gait_type` | Robot-specific integer gait selector. |
+| `skills` | Eight robot-specific skill bytes. |
+| `duration` | Command validity in seconds; defaults to 1.0. |
+
+### `JointControlType`
+
+`JOINT` uses logical-joint indexing; `MOTOR` uses hardware-motor indexing.
+
+### `MotorMode`
+
+Values: `PD`, `POSITION`, and `EFFORT`.
+
+### `JointField`
+
+Values: `POSITION`, `VELOCITY`, and `EFFORT`.
+
+### `ControlGroupStateEntry`
+
+`group_name` identifies the control group. `joint_position`,
+`joint_velocity`, and `joint_effort` are numeric lists for that group.
+
+### `CartesianStateEntry`
+
+| Attribute | Description |
+|---|---|
+| `link_name` | URDF link name. |
+| `pose` | Seven-element position and XYZW quaternion. |
+| `twist` | Six-element linear/angular velocity. |
+| `wrench` | Six-element force/torque. |
+
+### `ControlGroupState`
+
+| Attribute | Description |
+|---|---|
+| `header` | Message timing metadata. |
+| `joint_state` | Measured `ControlGroupStateEntry` list. |
+| `joint_cmd` | Observed commanded entry list. |
+| `cartesian_state` | Measured `CartesianStateEntry` list. |
+| `cartesian_cmd` | Observed Cartesian command list; read-only in this release. |
+
+### `JointCommand`
+
+| Attribute | Description |
+|---|---|
+| `group_name` | Target Aurora control group. |
+| `control_type` | `JointControlType`. |
+| `motor_mode` | `MotorMode`. |
+| `position` | Position command list. |
+| `velocity` | Velocity command list. |
+| `effort` | Feed-forward effort list. |
+
+### `ControlGroupCommand`
+
+`header` is outgoing metadata; `joint_cmd` is a list of `JointCommand` values.
+
+### `BaseData`
+
+| Attribute | Description |
+|---|---|
+| `header` | Message timing metadata. |
+| `quat_xyzw`, `quat_wxyz` | Four-element base orientation in both orderings. |
+| `rpy` | Roll, pitch, yaw. |
+| `omega_W`, `acc_W` | World-frame angular velocity and acceleration. |
+| `omega_B`, `acc_B` | Base-frame angular velocity and acceleration. |
+| `vel_W`, `pos_W` | World-frame base velocity and position. |
+| `vel_B` | Base-frame velocity. |
+| `stable_level` | Estimator stability level. |
+
+### `ContactData`
+
+`header` is message metadata; `contact_force` and `contact_prob` are
+per-contact numeric lists.
+
+### `EstimatorData`
+
+Attributes: `header`, `quat_xyzw`, `quat_wxyz`, `rpy`, `omega_W`, `acc_W`,
+`omega_B`, `acc_B`, `vel_W`, `pos_W`, `vel_B`, `contact_force`,
+`contact_prob`, and `stable_level`. Their meanings match `BaseData` and
+`ContactData` above.
+
+### `GroupOverrideParam`
+
+`group_name` selects a control group; `control_param` stores the
+controller-specific numeric override vector.
+
+### `ControllerParam`
+
+`controller_name` selects a Universal Controller sub-controller, `rate` is its
+global activation/blend rate, and `group_override_params` contains
+`GroupOverrideParam` entries.
+
+### `SubControllerCommand`
+
+`header` is outgoing metadata, `reset` requests reset, and
+`controller_params` contains settings applied when reset is false.
+
+### `ErrorCodeEntry`
+
+`high32` and `low32` are the two 32-bit halves of one Aurora error code.
+
+### `ErrorCodes`
+
+`header` is message metadata, `source` is the error-source integer, and
+`error_codes` is a list of `ErrorCodeEntry` values.
+
+## Lease types
+
+### `AuroraResource`
+
+Values: `LEFT_LEG`, `RIGHT_LEG`, `WAIST`, `HEAD`, `LEFT_MANIPULATOR`,
+`RIGHT_MANIPULATOR`, `LEFT_END_EFFECTOR`, `RIGHT_END_EFFECTOR`, and
+`MOTION_COMMAND`.
+
+### `LeasePriority`
+
+Values: `NORMAL` and `EMERGENCY`. Emergency priority requires client opt-in
+and Aurora authority permission.
+
+### `LeaseState`
+
+| Value | Description |
+|---|---|
+| `UNREGISTERED` | No lease. |
+| `REGISTERING` | Registration in progress. |
+| `ACTIVE` | Lease is locally usable until its deadline. |
+| `REPLACING` | Atomic resource replacement in progress. |
+| `RELEASING` | Release/publication drain in progress. |
+| `LOST` | Former lease cannot be trusted. |
+
+### `LeaseLossReason`
+
+Values: `NONE`, `DEADLINE_EXPIRED`, `AUTHORITY_REJECTED`, `OPERATION_TIMEOUT`,
+`INVALID_AUTHORITY_RESPONSE`, `PUBLICATION_DRAIN_TIMEOUT`, and
+`INTERNAL_ERROR`.
+
+### `LeaseOption`
+
+| Attribute | Type | Default | Description |
+|---|---|---:|---|
+| `duration` | `datetime.timedelta` | 4 seconds | Requested lease period. |
+| `priority` | `LeasePriority | None` | `None` | Optional explicit priority; none means normal. |
+| `timeout` | `datetime.timedelta` | 500 ms | Public register/replace deadline. |
+
+### `LeaseResult`
+
+| Attribute/method | Description |
+|---|---|
+| `operation` | `OperationResult` for the call. |
+| `state` | Current `LeaseState`. |
+| `source_id`, `source_name` | Module identity. |
+| `lease_id` | Authority-issued ID. |
+| `resources` | Complete `AuroraResource` list. |
+| `priority` | Lease priority. |
+| `granted_duration` | Granted `datetime.timedelta`. |
+| `remaining_duration` | Instantaneous remaining `datetime.timedelta`. |
+| `loss_reason` | `LeaseLossReason`. |
+| `success()` | Delegates to `operation.success()`. |
+| `usable()` | Active with positive remaining duration. |
+
+## Motor-configuration types
+
+This surface is temporary and will move to the hardware-level SDK.
+
+### `MotorConfigurationMode`
+
+Values: `DISABLE`, `POSITION`, `VELOCITY`, `TORQUE`, and `PD`.
+
+### `MotorConfigurationGroupCommand`
+
+Attributes: `group_name`, `mode`, `position_kp`, `position_ki`,
+`position_kd`, `pd_kp`, and `pd_kd`. Gain fields are numeric lists sized for
+the target group.
+
+### `MotorConfigurationCommand`
+
+`header` is outgoing metadata; `groups` is a list of group commands.
+
+### `MotorConfigurationGroupState`
+
+Attributes: `group_name`, `mode`, `motor_error`, `position_kp`,
+`position_ki`, `position_kd`, `pd_kp`, and `pd_kd`.
+
+### `MotorConfigurationState`
+
+`header` is message metadata; `groups` is a list of group states.
+
+## Client functions
+
+### Client lifecycle
+
+#### `get_instance`
+
+Declaration:
 
 ```python
-options = client.config()
-options.namespace_name = "robot_1"
-options.source_id = 42
-options.enabled_endpoints = [
-    aurora.Endpoint.MANAGE_LEASE_SERVICE,
-    aurora.Endpoint.MOTION_COMMAND_PUBLISHER,
-]
+AuroraClient.get_instance()
+```
+
+- Description: Gets the process-wide singleton without starting DDS.
+- Parameters: None.
+- Returns: The process-wide `AuroraClient`.
+
+#### `config`
+
+Declaration:
+
+```python
+client.config()
+```
+
+- Description: Reads the canonical connection configuration.
+- Parameters: None.
+- Returns: A copy of `ConnectionOptions`.
+
+#### `configure`
+
+Declaration:
+
+```python
 client.configure(options)
 ```
 
-Python endpoint values use upper snake case:
+- Description: Replaces the complete connection configuration while stopped.
+- Parameters: `options` — `ConnectionOptions` copied into the client.
+- Returns: `None`; invalid options or lifecycle state raise an SDK exception.
 
-```text
-FSM_SERVICE                    MANAGE_LEASE_SERVICE
-MOTION_COMMAND_PUBLISHER       CONTROL_GROUP_COMMAND_PUBLISHER
-MOTOR_CONFIGURATION_COMMAND_PUBLISHER
-SUB_CONTROLLER_SERVICE
-AURORA_STATE_SUBSCRIBER        MOTION_STATE_SUBSCRIBER
-CONTROL_GROUP_STATE_SUBSCRIBER MOTOR_CONFIGURATION_STATE_SUBSCRIBER
-ESTIMATOR_DATA_SUBSCRIBER      ERROR_CODES_SUBSCRIBER
+#### `set_domain_id`
+
+Declaration:
+
+```python
+client.set_domain_id(domain_id)
 ```
 
-## State getter functions
+- Description: Sets the DDS domain for the next session; the initial domain is 123.
+- Parameters: `domain_id` — integer in the `uint32` range.
+- Returns: `None`; the client must be stopped.
 
-Every function in this section returns `(result, value)`. When the result is
-not successful, ignore the default-constructed value.
+#### `domain_id`
 
-| Function | Value | Required endpoint |
-|---|---|---|
-| `get_aurora_state()` | `AuroraState` | `AURORA_STATE_SUBSCRIBER` |
-| `get_motion_state()` | `MotionState` | `MOTION_STATE_SUBSCRIBER` |
-| `get_control_group_state()` | `ControlGroupState` | `CONTROL_GROUP_STATE_SUBSCRIBER` |
-| `get_motor_configuration_state()` | `MotorConfigurationState` | `MOTOR_CONFIGURATION_STATE_SUBSCRIBER` |
-| `get_estimator_data()` | `EstimatorData` | `ESTIMATOR_DATA_SUBSCRIBER` |
-| `get_error_codes()` | `ErrorCodes` | `ERROR_CODES_SUBSCRIBER` |
-| `get_base_data()` | `BaseData` projected from estimator | `ESTIMATOR_DATA_SUBSCRIBER` |
-| `get_contact_data()` | `ContactData` projected from estimator | `ESTIMATOR_DATA_SUBSCRIBER` |
-| `get_stable_level()` | `int` from motion state | `MOTION_STATE_SUBSCRIBER` |
-| `get_stand_pose()` | `[height, pitch, yaw, stable_level]` | `MOTION_STATE_SUBSCRIBER` |
-| `get_joint_state(group_name, field)` | Selected measured joint list | `CONTROL_GROUP_STATE_SUBSCRIBER` |
-| `get_joint_command(group_name, field)` | Selected observed command list | `CONTROL_GROUP_STATE_SUBSCRIBER` |
-| `get_cartesian_state(link_name)` | `CartesianStateEntry` | `CONTROL_GROUP_STATE_SUBSCRIBER` |
-| `get_cartesian_command(link_name)` | `CartesianStateEntry` | `CONTROL_GROUP_STATE_SUBSCRIBER` |
+Declaration:
 
-`JointField` values are `POSITION`, `VELOCITY`, and `EFFORT`. Cartesian state
-entries identify links by their URDF link name. Cartesian command is observed
-state only; the SDK does not publish Cartesian commands in this release.
+```python
+client.domain_id()
+```
 
-The following functions return this client's last local command cache:
+- Description: Reads the configured DDS domain.
+- Parameters: None.
+- Returns: Domain identifier as `int`.
 
-| Function | Value |
+#### `state`
+
+Declaration:
+
+```python
+client.state()
+```
+
+- Description: Reads the local client lifecycle state.
+- Parameters: None.
+- Returns: The current `ClientState`.
+
+#### `start`
+
+Declaration:
+
+```python
+client.start()
+```
+
+- Description: Validates and freezes configuration, then starts enabled endpoints.
+- Parameters: None.
+- Returns: `None`; fatal startup failures raise an SDK exception.
+
+#### `stop`
+
+Declaration:
+
+```python
+client.stop()
+```
+
+- Description: Drains work, stops DDS, and clears session caches. Repeated calls are safe.
+- Parameters: None.
+- Returns: `None`; fatal shutdown failures raise an SDK exception.
+
+### Endpoint readiness
+
+#### `endpoint_match_status`
+
+Declaration:
+
+```python
+client.endpoint_match_status()
+```
+
+- Description: Snapshots enabled and matched status for every endpoint.
+- Parameters: None.
+- Returns: `EndpointMatchStatus`.
+
+#### `is_fsm_service_matched`
+
+Declaration:
+
+```python
+client.is_fsm_service_matched()
+```
+
+- Description: Checks whether the enabled FSM service has a server match.
+- Parameters: None.
+- Returns: `True` when matched.
+
+#### `wait_for_endpoints`
+
+Declaration:
+
+```python
+client.wait_for_endpoints(timeout)
+```
+
+- Description: Waits until every enabled endpoint is matched.
+- Parameters: `timeout` — finite, nonnegative seconds.
+- Returns: `True` when all endpoints match, otherwise `False` on timeout.
+
+### State access
+
+Except for the wait, each function returns `(OperationResult, value)`.
+
+Ignore the returned value when its `OperationResult` is not successful.
+
+#### `get_aurora_state`
+
+Declaration:
+
+```python
+client.get_aurora_state()
+```
+
+- Description: Reads the latest complete Aurora/FSM/authority snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, AuroraState)`.
+
+#### `get_motion_state`
+
+Declaration:
+
+```python
+client.get_motion_state()
+```
+
+- Description: Reads the latest complete motion-state snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, MotionState)`.
+
+#### `get_control_group_state`
+
+Declaration:
+
+```python
+client.get_control_group_state()
+```
+
+- Description: Reads the latest complete joint and Cartesian snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, ControlGroupState)`.
+
+#### `get_motor_configuration_state`
+
+Declaration:
+
+```python
+client.get_motor_configuration_state()
+```
+
+- Description: Reads the latest temporary motor-configuration state.
+- Parameters: None.
+- Returns: `(OperationResult, MotorConfigurationState)`.
+
+#### `get_estimator_data`
+
+Declaration:
+
+```python
+client.get_estimator_data()
+```
+
+- Description: Reads the latest complete estimator snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, EstimatorData)`.
+
+#### `get_error_codes`
+
+Declaration:
+
+```python
+client.get_error_codes()
+```
+
+- Description: Reads the latest asynchronous error-code snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, ErrorCodes)`.
+
+#### `get_base_data`
+
+Declaration:
+
+```python
+client.get_base_data()
+```
+
+- Description: Projects base data from one estimator snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, BaseData)`.
+
+#### `get_contact_data`
+
+Declaration:
+
+```python
+client.get_contact_data()
+```
+
+- Description: Projects contact data from one estimator snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, ContactData)`.
+
+#### `get_stable_level`
+
+Declaration:
+
+```python
+client.get_stable_level()
+```
+
+- Description: Projects stability level from one motion snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, int)`.
+
+#### `get_stand_pose`
+
+Declaration:
+
+```python
+client.get_stand_pose()
+```
+
+- Description: Projects `[height, pitch, yaw, stable_level]` from one motion snapshot.
+- Parameters: None.
+- Returns: `(OperationResult, list[float])` with four values.
+
+#### `get_joint_state`
+
+Declaration:
+
+```python
+client.get_joint_state(group_name, field)
+```
+
+- Description: Selects one measured joint field from a named control group.
+- Parameters: `group_name` — control-group string; `field` — `JointField` selector.
+- Returns: `(OperationResult, list[float])`.
+
+#### `get_joint_command`
+
+Declaration:
+
+```python
+client.get_joint_command(group_name, field)
+```
+
+- Description: Selects one commanded joint field observed by Aurora.
+- Parameters: `group_name` — control-group string; `field` — `JointField` selector.
+- Returns: `(OperationResult, list[float])`.
+
+#### `get_cartesian_state`
+
+Declaration:
+
+```python
+client.get_cartesian_state(link_name)
+```
+
+- Description: Selects measured Cartesian state by URDF link name.
+- Parameters: `link_name` — requested URDF link.
+- Returns: `(OperationResult, CartesianStateEntry)`.
+
+#### `get_cartesian_command`
+
+Declaration:
+
+```python
+client.get_cartesian_command(link_name)
+```
+
+- Description: Selects an observed Cartesian command by URDF link name.
+- Parameters: `link_name` — requested URDF link.
+- Returns: `(OperationResult, CartesianStateEntry)`.
+
+#### `wait_for_fsm_state`
+
+Declaration:
+
+```python
+client.wait_for_fsm_state(state_id, timeout)
+```
+
+- Description: Waits until cached Aurora state reports the requested FSM ID.
+- Parameters: `state_id` — `uint32` FSM ID; `timeout` — finite, nonnegative seconds.
+- Returns: `True` when observed, otherwise `False` on timeout.
+
+### Local command caches
+
+These values are local intent, not execution feedback, and are cleared by
+`stop()`.
+
+#### `get_last_motion_command`
+
+Declaration:
+
+```python
+client.get_last_motion_command()
+```
+
+- Description: Reads the last motion command published by this client.
+- Parameters: None.
+- Returns: `(OperationResult, MotionCommand)`.
+
+#### `get_last_control_group_command`
+
+Declaration:
+
+```python
+client.get_last_control_group_command()
+```
+
+- Description: Reads the last control-group command published by this client.
+- Parameters: None.
+- Returns: `(OperationResult, ControlGroupCommand)`.
+
+#### `get_last_motor_configuration_command`
+
+Declaration:
+
+```python
+client.get_last_motor_configuration_command()
+```
+
+- Description: Reads the last motor-configuration command published by this client.
+- Parameters: None.
+- Returns: `(OperationResult, MotorConfigurationCommand)`.
+
+#### `get_last_sub_controller_command`
+
+Declaration:
+
+```python
+client.get_last_sub_controller_command()
+```
+
+- Description: Reads the last successfully sent sub-controller command.
+- Parameters: None.
+- Returns: `(OperationResult, SubControllerCommand)`.
+
+### Commands and services
+
+Publish success means DDS accepted the sample, not that the robot executed it.
+
+#### `publish_motion_command`
+
+Declaration:
+
+```python
+client.publish_motion_command(command)
+```
+
+- Description: Publishes one complete motion command using the active motion lease.
+- Parameters: `command` — `MotionCommand` to publish.
+- Returns: `OperationResult` for publication and lease checks.
+
+#### `publish_control_group_command`
+
+Declaration:
+
+```python
+client.publish_control_group_command(command)
+```
+
+- Description: Publishes joint commands after checking all targeted resources.
+- Parameters: `command` — `ControlGroupCommand` to publish.
+- Returns: `OperationResult` for publication and lease checks.
+
+#### `publish_motor_configuration_command`
+
+Declaration:
+
+```python
+client.publish_motor_configuration_command(command)
+```
+
+- Description: Publishes temporary motor gains after checking targeted resources.
+- Parameters: `command` — `MotorConfigurationCommand` to publish.
+- Returns: `OperationResult` for publication and lease checks.
+
+#### `set_sub_controller`
+
+Declaration:
+
+```python
+client.set_sub_controller(command)
+```
+
+- Description: Requests a Universal Controller sub-controller update without a lease.
+- Parameters: `command` — `SubControllerCommand` reset or parameter request.
+- Returns: Aurora's `OperationResult`; fails without an active Universal Controller task.
+
+#### `request_fsm_state`
+
+Declaration:
+
+```python
+client.request_fsm_state(state_id)
+```
+
+- Description: Requests one Aurora FSM state without a lease.
+- Parameters: `state_id` — integer in the `uint32` range.
+- Returns: Aurora's FSM-service `OperationResult`.
+
+#### `set_velocity`
+
+Declaration:
+
+```python
+client.set_velocity(vx, vy, yaw, duration, gait_type=0)
+```
+
+- Description: Builds and publishes a base-frame velocity `MotionCommand`.
+- Parameters: `vx`, `vy` — m/s; `yaw` — rad/s; `duration` — validity in seconds; `gait_type` — robot-specific gait selector.
+- Returns: `OperationResult` for publication and lease checks.
+
+#### `set_stand_pose`
+
+Declaration:
+
+```python
+client.set_stand_pose(delta_height, delta_pitch, delta_yaw, duration=1.0)
+```
+
+- Description: Builds and publishes nominal-stand pose offsets.
+- Parameters: `delta_height` — metres; `delta_pitch`, `delta_yaw` — radians; `duration` — validity in seconds.
+- Returns: `OperationResult` for publication and lease checks.
+
+#### `reset_unicontroller`
+
+Declaration:
+
+```python
+client.reset_unicontroller()
+```
+
+- Description: Sends a sub-controller request with `reset=True`.
+- Parameters: None.
+- Returns: Aurora's sub-controller `OperationResult`.
+
+### Lease management
+
+Active leases renew automatically and are not persisted. Keep lease callbacks
+short and do not call `stop()` from them.
+
+#### `register_lease`
+
+Declaration:
+
+```python
+client.register_lease(resources, option=None)
+```
+
+- Description: Registers the module's first complete leased resource set.
+- Parameters: `resources` — unique `AuroraResource` values; `option` — optional `LeaseOption`.
+- Returns: `LeaseResult` containing Aurora's decision and local lease state.
+
+#### `replace_lease`
+
+Declaration:
+
+```python
+client.replace_lease(resources, option=None)
+```
+
+- Description: Atomically requests a new complete resource set and lease ID. Definitive rejection retains a still-valid old lease.
+- Parameters: `resources` — replacement resources; `option` — optional `LeaseOption`.
+- Returns: `LeaseResult` for the replacement and resulting local state.
+
+#### `release_lease`
+
+Declaration:
+
+```python
+client.release_lease()
+```
+
+- Description: Releases the active module lease; repeated release is safe.
+- Parameters: None.
+- Returns: The resulting `LeaseResult`.
+
+#### `get_lease`
+
+Declaration:
+
+```python
+client.get_lease()
+```
+
+- Description: Reads the current module lease without contacting Aurora.
+- Parameters: None.
+- Returns: An instantaneous local `LeaseResult` snapshot.
+
+#### `on_lease_changed`
+
+Declaration:
+
+```python
+client.on_lease_changed(callback)
+```
+
+- Description: Sets the serialized lease-change callback while stopped.
+- Parameters: `callback` — callable receiving `LeaseResult`, or `None` to clear it.
+- Returns: `None`.
+
+## Result helpers
+
+| Function | Description |
 |---|---|
-| `get_last_motion_command()` | `MotionCommand` |
-| `get_last_control_group_command()` | `ControlGroupCommand` |
-| `get_last_motor_configuration_command()` | `MotorConfigurationCommand` |
-| `get_last_sub_controller_command()` | `SubControllerCommand` |
-
-These values are not robot execution feedback and are cleared at `stop()`.
-
-## Command and service functions
-
-| Function | Required endpoint / lease | Purpose |
-|---|---|---|
-| `publish_motion_command(command)` | Motion publisher; `MOTION_COMMAND` lease | Publish a complete `MotionCommand` |
-| `publish_control_group_command(command)` | Control-group publisher; every targeted joint resource | Publish named joint-group commands |
-| `publish_motor_configuration_command(command)` | Motor-config publisher; every targeted joint resource | Publish temporary customized motor gains |
-| `set_sub_controller(command)` | Sub-controller service; no lease | Apply/reset Universal Controller sub-controller parameters |
-| `request_fsm_state(state_id)` | FSM service; no lease | Request an Aurora FSM state |
-| `set_velocity(vx, vy, yaw, duration, gait_type=0)` | Motion publisher and lease | Build a base-frame motion command |
-| `set_stand_pose(height, pitch, yaw, duration=1.0)` | Motion publisher and lease | Build a stand-offset motion command |
-| `reset_unicontroller()` | Sub-controller service; no lease | Send `SubControllerCommand(reset=True)` |
-
-`set_sub_controller()` returns a failure when the active task does not contain
-a Universal Controller. Motor configuration is temporary and will move to the
-hardware-level SDK.
-
-### Build a control-group command
-
-```python
-joint = aurora.JointCommand()
-joint.group_name = "left_manipulator"
-joint.control_type = aurora.JointControlType.JOINT
-joint.motor_mode = aurora.MotorMode.PD
-joint.position = [0.0, 0.2, 0.0, -0.7]
-joint.velocity = [0.0] * len(joint.position)
-joint.effort = [0.0] * len(joint.position)
-
-command = aurora.ControlGroupCommand()
-command.joint_cmd = [joint]
-result = client.publish_control_group_command(command)
-```
-
-Aurora validates robot-specific group names, vector sizes, modes, active FSM,
-and capabilities.
-
-## Control lease functions
-
-| Function | Return | Purpose |
-|---|---|---|
-| `register_lease(resources, option=None)` | `LeaseResult` | Register the first complete resource set |
-| `replace_lease(resources, option=None)` | `LeaseResult` | Atomically replace the complete resource set |
-| `release_lease()` | `LeaseResult` | Idempotently release the module lease |
-| `get_lease()` | `LeaseResult` | Read an instantaneous local lease snapshot |
-| `on_lease_changed(callback)` | `None` | Set a lease-change callback while stopped; pass `None` to clear |
-
-Available `AuroraResource` values are `LEFT_LEG`, `RIGHT_LEG`, `WAIST`, `HEAD`,
-`LEFT_MANIPULATOR`, `RIGHT_MANIPULATOR`, `LEFT_END_EFFECTOR`,
-`RIGHT_END_EFFECTOR`, and `MOTION_COMMAND`.
-
-`LeaseOption.duration` and `.timeout` are `datetime.timedelta` values because
-they map to C++ chrono durations. Defaults are four seconds and 500 ms. An
-active default grant renews after one quarter of its period, or one second.
-
-```python
-from datetime import timedelta
-
-option = aurora.LeaseOption()
-option.duration = timedelta(seconds=2)
-option.timeout = timedelta(milliseconds=500)
-option.priority = aurora.LeasePriority.NORMAL
-
-lease = client.register_lease(
-    [aurora.AuroraResource.LEFT_MANIPULATOR], option
-)
-if not lease.usable():
-    raise RuntimeError(
-        f"lease failed [{lease.operation.code}] {lease.operation.message}"
-    )
-```
-
-`LeaseResult` fields are `operation`, `state`, `source_id`, `source_name`,
-`lease_id`, `resources`, `priority`, `granted_duration`, `remaining_duration`,
-and `loss_reason`. `success()` describes the API operation; `usable()` means the
-returned snapshot can authorize commands now. The SDK automatically renews an
-active lease and stores no lease data on disk.
-
-Only lease-change callback registration is exposed in Python in this release.
-Keep the callback short, exception-safe, and free of calls to `stop()`.
-
-## Exported types
-
-All data classes use construct-and-assign semantics:
-
-```python
-command = aurora.MotionCommand()
-command.lin_velocity = [0.1, 0.0, 0.0]
-command.duration = 1.0
-```
-
-| Area | Exported types |
-|---|---|
-| Lifecycle | `ConnectionOptions`, `ClientState`, `Endpoint`, `EndpointStatus`, `EndpointMatchStatus` |
-| Results | `OperationResult`; result constants and helper functions |
-| Robot/FSM | `MessageHeader`, `RobotInfo`, `StateInfo`, `AuroraState` |
-| Motion | `MotionCommand`, `MotionState` |
-| Control group | `JointField`, `JointControlType`, `MotorMode`, `ControlGroupStateEntry`, `CartesianStateEntry`, `JointCommand`, `ControlGroupState`, `ControlGroupCommand` |
-| Estimator | `BaseData`, `ContactData`, `EstimatorData` |
-| Motor configuration | `MotorConfigurationMode`, group command/state and command/state container types |
-| Sub-controller | `GroupOverrideParam`, `ControllerParam`, `SubControllerCommand` |
-| Errors | `ErrorCodeEntry`, `ErrorCodes` |
-| Lease | `AuroraResource`, `LeasePriority`, `LeaseState`, `LeaseLossReason`, `LeaseOption`, `LeaseResult` |
-
-See the [C++ data-type summary](cpp_api.md#data-types) for field meanings; the
-Python attributes have the same snake-case names already used by the C++
-struct fields. Native `std::chrono::system_clock::time_point` fields appear as
-Python `datetime.datetime`; duration fields appear as `datetime.timedelta`.
-
-## Results, helpers, and exceptions
-
-`OperationResult` has writable `code` and `message` fields and a `success()`
-method. The package exports `SUCCESS` and the local client constants
-`CLIENT_ERROR`, `CLIENT_NOT_RUNNING`, `ENDPOINT_DISABLED`,
-`ENDPOINT_UNMATCHED`, `PUBLISH_FAILED`, `SERVICE_TIMEOUT`, `TRANSPORT_ERROR`,
-`INVALID_AURORA_RESPONSE`, and `STATE_NOT_RECEIVED`.
-
-Use `result_code_name(code)` and `default_result_message(code)` for all
-SDK-known result numbers, including lease and sub-controller results. Aurora
-service result codes and messages are returned unchanged.
-
-The exported exception hierarchy mirrors C++:
-
-```text
-RuntimeError
-└── AuroraSdkError
-    ├── ConnectionError
-    ├── InvalidArgumentError
-    └── InvalidStateError
-```
-
-Catch returned operation failures where they happen, and reserve exceptions
-for invalid API use or fatal transport lifecycle failures.
+| `result_code_name(code)` | Returns a stable symbolic name or `UNKNOWN_RESULT_CODE`. |
+| `default_result_message(code)` | Returns the default English message. |
+| `OperationResult.success()` | Tests `code == SUCCESS`. |
+| `LeaseResult.success()` | Tests the embedded operation. |
+| `LeaseResult.usable()` | Tests active state and remaining duration. |

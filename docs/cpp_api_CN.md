@@ -3,275 +3,994 @@
 [English](cpp_api.md) · [快速开始](../README_CN.md) ·
 [总览](overview_CN.md) · [Python API](python_api_CN.md)
 
-受支持的高层 C++ API 由以下头文件声明：
+本文说明 Fourier Aurora SDK 面向应用用户的 C++ API。页面先给出紧凑索引，
+随后说明应用会使用的公开 Client type 和 function。
 
 ```cpp
 #include "fourier_aurora_sdk/aurora_client.hpp"
 namespace sdk = fourier::aurora_sdk;
 ```
 
-所有公开类型都位于 `fourier::aurora_sdk`，动态库要求 C++17。
+所有名称位于 `fourier::aurora_sdk`，编译要求 C++17。
 
-## 调用约定
+## API 索引
 
-- `AuroraClient` 是进程级单例，使用 `getInstance()` 获取。
-- 只能在 `Stopped` 状态配置 client 和 callback。
-- `start()`/`stop()` 管理本地 transport；必须显式调用 `stop()`。
-- Getter 与命令返回 `OperationResult`；正常操作失败不使用异常。
-- Getter 失败时不会修改输出参数。
-- Timeout 使用 `std::chrono::milliseconds`，可以传入
-  `std::chrono::seconds(5)` 等兼容 duration。
-- 除字段另有说明外，机器人数值使用 SI 单位。
+### Types
 
-## Client 配置与生命周期
+| 类别 | 公共类型 |
+|---|---|
+| Client 与生命周期 | [`AuroraClient`](#auroraclient)、[`ConnectionOptions`](#connectionoptions)、[`ClientState`](#clientstate)、[`Endpoint`](#endpoint)、[`EndpointStatus`](#endpointstatus)、[`EndpointMatchStatus`](#endpointmatchstatus) |
+| 返回值与异常 | [`OperationResult`](#operationresult)、[`AuroraSdkError`](#异常)、[`ConnectionError`](#异常)、[`InvalidArgumentError`](#异常)、[`InvalidStateError`](#异常) |
+| 通用与机器人状态 | [`MessageHeader`](#messageheader)、[`RobotInfo`](#robotinfo)、[`StateInfo`](#stateinfo)、[`AuroraState`](#aurorastate) |
+| 运动 | [`MotionState`](#motionstate)、[`MotionCommand`](#motioncommand) |
+| 控制组 | [`JointControlType`](#jointcontroltype)、[`MotorMode`](#motormode)、[`JointField`](#jointfield)、[`ControlGroupStateEntry`](#controlgroupstateentry)、[`CartesianStateEntry`](#cartesianstateentry)、[`ControlGroupState`](#controlgroupstate)、[`JointCommand`](#jointcommand)、[`ControlGroupCommand`](#controlgroupcommand) |
+| 估计器 | [`BaseData`](#basedata)、[`ContactData`](#contactdata)、[`EstimatorData`](#estimatordata) |
+| 子控制器 | [`GroupOverrideParam`](#groupoverrideparam)、[`ControllerParam`](#controllerparam)、[`SubControllerCommand`](#subcontrollercommand) |
+| 错误 | [`ErrorCodeEntry`](#errorcodeentry)、[`ErrorCodes`](#errorcodes) |
+| 租约 | [`AuroraResource`](#auroraresource)、[`LeasePriority`](#leasepriority)、[`LeaseState`](#leasestate)、[`LeaseLossReason`](#leaselossreason)、[`LeaseOption`](#leaseoption)、[`LeaseResult`](#leaseresult)、[`AuthorityResourceStatus`](#authorityresourcestatus) |
+| 电机配置 | [`MotorConfigurationMode`](#motorconfigurationmode)、[`MotorConfigurationGroupCommand`](#motorconfigurationgroupcommand)、[`MotorConfigurationCommand`](#motorconfigurationcommand)、[`MotorConfigurationGroupState`](#motorconfigurationgroupstate)、[`MotorConfigurationState`](#motorconfigurationstate) |
+| Callback handler | [`AuroraStateHandler`](#callback-handler-type)、[`MotionStateHandler`](#callback-handler-type)、[`ControlGroupStateHandler`](#callback-handler-type)、[`MotorConfigurationStateHandler`](#callback-handler-type)、[`EstimatorDataHandler`](#callback-handler-type)、[`ErrorCodesHandler`](#callback-handler-type)、[`LeaseChangedHandler`](#callback-handler-type) |
 
-| 函数 | 返回值 | 用途 |
-|---|---|---|
-| `AuroraClient::getInstance()` | `AuroraClient&` | 返回单例，不启动 DDS |
-| `config()` | `ConnectionOptions` | 返回当前配置的副本 |
-| `configure(options)` | `void` | 在 stopped 状态替换完整配置 |
-| `setDomainId(id)` | `void` | 设置下一次 session 使用的 DDS domain，默认 `123` |
-| `domainId()` | `uint32_t` | 读取 DDS domain |
-| `state()` | `ClientState` | 读取本地生命周期状态 |
-| `start()` | `void` | 冻结配置并启动 transport |
-| `stop()` | `void` | 等待已进入操作并同步停止 transport |
-| `endpointMatchStatus()` | `EndpointMatchStatus` | 返回所有 endpoint 的 enabled/matched 状态 |
-| `isFsmServiceMatched()` | `bool` | 直接检查已启用 FSM service 的匹配状态 |
-| `waitForEndpoints(timeout)` | `bool` | 等待所有已启用 endpoint 匹配 |
+### Functions
 
-`ClientState` 包含 `Stopped`、`Starting`、`Running`、`Stopping`。
-`Running` 是本地状态，不表示机器人 ready。
+| 类别 | 公共函数 |
+|---|---|
+| 生命周期 | [`getInstance`](#getinstance)、[`config`](#config)、[`configure`](#configure)、[`setDomainId`](#setdomainid)、[`domainId`](#domainid)、[`state`](#state)、[`start`](#start)、[`stop`](#stop) |
+| Endpoint 就绪 | [`endpointMatchStatus`](#endpointmatchstatus-1)、[`isFsmServiceMatched`](#isfsmservicematched)、[`waitForEndpoints`](#waitforendpoints) |
+| 状态读取 | [`getAuroraState`](#getaurorastate)、[`getMotionState`](#getmotionstate)、[`getControlGroupState`](#getcontrolgroupstate)、[`getMotorConfigurationState`](#getmotorconfigurationstate)、[`getEstimatorData`](#getestimatordata)、[`getErrorCodes`](#geterrorcodes)、[`getBaseData`](#getbasedata)、[`getContactData`](#getcontactdata)、[`getStableLevel`](#getstablelevel)、[`getStandPose`](#getstandpose)、[`getJointState`](#getjointstate)、[`getJointCommand`](#getjointcommand)、[`getCartesianState`](#getcartesianstate)、[`getCartesianCommand`](#getcartesiancommand)、[`waitForFsmState`](#waitforfsmstate) |
+| 本地指令缓存 | [`getLastMotionCommand`](#getlastmotioncommand)、[`getLastControlGroupCommand`](#getlastcontrolgroupcommand)、[`getLastMotorConfigurationCommand`](#getlastmotorconfigurationcommand)、[`getLastSubControllerCommand`](#getlastsubcontrollercommand) |
+| 指令与 Service | [`publishMotionCommand`](#publishmotioncommand)、[`publishControlGroupCommand`](#publishcontrolgroupcommand)、[`publishMotorConfigurationCommand`](#publishmotorconfigurationcommand)、[`setSubController`](#setsubcontroller)、[`requestFsmState`](#requestfsmstate)、[`setVelocity`](#setvelocity)、[`setStandPose`](#setstandpose)、[`resetUnicontroller`](#resetunicontroller) |
+| 租约 | [`registerLease`](#registerlease)、[`replaceLease`](#replacelease)、[`releaseLease`](#releaselease)、[`getLease`](#getlease) |
+| Callback | [`onAuroraState`](#onaurorastate)、[`onMotionState`](#onmotionstate)、[`onControlGroupState`](#oncontrolgroupstate)、[`onMotorConfigurationState`](#onmotorconfigurationstate)、[`onEstimatorData`](#onestimatordata)、[`onErrorCodes`](#onerrorcodes)、[`onLeaseChanged`](#onleasechanged) |
+| 返回值辅助 | [`resultCodeName`、`defaultResultMessage`、`OperationResult::success`、`LeaseResult::success`、`LeaseResult::usable`](#返回值辅助函数) |
+
+## 约定
+
+- `AuroraClient` 是进程级单例，只能通过 `getInstance()` 获取。
+- 只能在 `Stopped` 状态修改配置和注册 callback。
+- `Running` 只表示本地 DDS 已启动，不代表机器人已经就绪。
+- 正常业务失败由 `OperationResult`/`LeaseResult` 返回；异常用于非法调用或致命生命周期错误。
+- C++ getter 失败时不修改 output 参数。
+- timeout 与租约周期使用 `std::chrono::milliseconds`。
+- 机器人数值默认使用 SI 单位。
+- Cartesian pose 为 `[x, y, z, qx, qy, qz, qw]`；twist/wrench 为
+  `[x, y, z, rx, ry, rz]`。
+
+## Client 与生命周期类型
+
+### `AuroraClient`
+
+可重启的进程级高层 Client，禁止直接构造、复制和移动。所有成员函数见
+[Client 函数](#client-函数)。
 
 ### `ConnectionOptions`
 
-| 字段 | 默认值 | 含义 |
-|---|---|---|
-| `namespace_name` | 未设置 | 可选 DDS namespace 覆盖 |
-| `dds_mode` | `0` | FourierDDS mode，有效值 `0..3` |
-| `is_ros_compatible` | 未设置 | 可选 ROS compatibility 覆盖 |
-| `use_namespace` | `true` | 使用带 namespace 的 endpoint |
-| `use_discovery_server` | 未设置 | 可选 discovery server 覆盖 |
-| `service_timeout_ms` | `1000` | 同步 service 默认 timeout |
-| `source_id` | `0` | 部署分配的租约模块身份 |
-| `source_name` | 未设置 | 诊断名称，默认 `aurora_sdk_<source_id>` |
-| `allow_emergency_lease_priority` | `false` | 显式允许该 client 申请 emergency 优先级 |
-| `enabled_endpoints` | 全部 endpoint | `start()` 精确创建的 endpoint |
+`start()` 时冻结的完整连接配置。
 
-启用租约管理或受保护 publisher 时，`source_id` 必须非零。受保护 publisher 还
-必须同时启用 `ManageLeaseService`。
+| 成员 | 类型 | 默认值 | 说明 |
+|---|---|---:|---|
+| `namespace_name` | `std::optional<std::string>` | 未设置 | 显式 DDS namespace；未设置时可由 transport 发现。 |
+| `dds_mode` | `uint8_t` | `0` | FourierDDS mode，范围 `0..3`。 |
+| `is_ros_compatible` | `std::optional<bool>` | 未设置 | 可选 ROS-compatible naming override。 |
+| `use_namespace` | `bool` | `true` | 是否给 endpoint 添加 namespace。 |
+| `use_discovery_server` | `std::optional<bool>` | 未设置 | 可选 Discovery Server override。 |
+| `service_timeout_ms` | `uint32_t` | `1000` | 同步 Service 默认超时。 |
+| `source_id` | `uint32_t` | `0` | 部署分配的模块身份，用于租约。 |
+| `source_name` | `std::optional<std::string>` | 未设置 | 诊断名称，默认 `aurora_sdk_<source_id>`。 |
+| `allow_emergency_lease_priority` | `bool` | `false` | 允许提出 Emergency 租约请求；最终仍由 Aurora 授权。 |
+| `enabled_endpoints` | `std::vector<Endpoint>` | 全部 | `start()` 实际创建的 endpoint。 |
 
-`Endpoint` 可选值：
+启用租约或受保护 publisher 时 `source_id` 必须非零；受保护 publisher
+还必须启用 `ManageLeaseService`。
 
-```text
-FsmService                    ManageLeaseService
-MotionCommandPublisher        ControlGroupCommandPublisher
-MotorConfigurationCommandPublisher
-SubControllerService
-AuroraStateSubscriber         MotionStateSubscriber
-ControlGroupStateSubscriber   MotorConfigurationStateSubscriber
-EstimatorDataSubscriber       ErrorCodesSubscriber
-```
+### `ClientState`
 
-## 状态 Getter
+`Stopped`：无 session、配置可修改；`Starting`：正在启动；`Running`：本地
+transport 已运行；`Stopping`：正在 drain 与关闭。
 
-原子 getter 返回一个 DDS 状态 topic 的最新完整缓存：
+### `Endpoint`
 
-| 函数 | 输出 | 所需 endpoint |
-|---|---|---|
-| `getAuroraState(output)` | `AuroraState` | `AuroraStateSubscriber` |
-| `getMotionState(output)` | `MotionState` | `MotionStateSubscriber` |
-| `getControlGroupState(output)` | `ControlGroupState` | `ControlGroupStateSubscriber` |
-| `getMotorConfigurationState(output)` | `MotorConfigurationState` | `MotorConfigurationStateSubscriber` |
-| `getEstimatorData(output)` | `EstimatorData` | `EstimatorDataSubscriber` |
-| `getErrorCodes(output)` | `ErrorCodes` | `ErrorCodesSubscriber` |
-
-下列 getter 从一份 topic 快照中投影所需内容：
-
-| 函数 | 输出/行为 | 来源快照 |
-|---|---|---|
-| `getBaseData(output)` | 机身位置、速度、加速度、姿态、stable level | `EstimatorData` |
-| `getContactData(output)` | 接触力与接触概率 | `EstimatorData` |
-| `getStableLevel(output)` | Stable level | `MotionState` |
-| `getStandPose(output)` | `[delta_height, pitch, yaw, stable_level]` | `MotionState` |
-| `getJointState(group, field, output)` | 实测位置、速度或力矩 | `ControlGroupState.joint_state` |
-| `getJointCommand(group, field, output)` | 观测到的目标位置、速度或力矩 | `ControlGroupState.joint_cmd` |
-| `getCartesianState(link, output)` | URDF link 的实测 pose、twist、wrench | `ControlGroupState.cartesian_state` |
-| `getCartesianCommand(link, output)` | 观测到的 link 笛卡尔命令 | `ControlGroupState.cartesian_cmd` |
-| `waitForFsmState(id, timeout)` | 等待缓存 FSM ID 等于 `id` | `AuroraState` |
-
-`JointField` 为 `Position`、`Velocity` 或 `Effort`。当前版本笛卡尔状态只读，
-没有笛卡尔命令 publisher API。
-
-Client cache getter 返回本 client 最后一次发布或成功发送的内容，不是机器人执行
-状态：
-
-| 函数 | 输出 |
+| 枚举值 | 对应 endpoint |
 |---|---|
-| `getLastMotionCommand(output)` | `MotionCommand` |
-| `getLastControlGroupCommand(output)` | `ControlGroupCommand` |
-| `getLastMotorConfigurationCommand(output)` | `MotorConfigurationCommand` |
-| `getLastSubControllerCommand(output)` | `SubControllerCommand` |
+| `FsmService` | FSM 请求 Client。 |
+| `ManageLeaseService` | 租约管理 Client。 |
+| `MotionCommandPublisher` | 运动指令 Publisher。 |
+| `ControlGroupCommandPublisher` | 关节控制组指令 Publisher。 |
+| `MotorConfigurationCommandPublisher` | 临时电机配置 Publisher。 |
+| `SubControllerService` | Universal Controller 子控制器 Service。 |
+| `AuroraStateSubscriber` | Aurora/FSM/权限状态。 |
+| `MotionStateSubscriber` | 运动状态。 |
+| `ControlGroupStateSubscriber` | 关节与 Cartesian 状态。 |
+| `MotorConfigurationStateSubscriber` | 电机配置状态。 |
+| `EstimatorDataSubscriber` | Base/contact 估计状态。 |
+| `ErrorCodesSubscriber` | 错误码状态。 |
 
-Session 停止时会清空这些 cache。
+### `EndpointStatus`
 
-## 命令与 Service
+`enabled` 表示启动前是否选择该 endpoint；`matched` 表示 DDS 当前是否匹配兼容 peer。
 
-| 函数 | Endpoint | 租约 | 含义 |
-|---|---|---|---|
-| `publishMotionCommand(command)` | `MotionCommandPublisher` | `MotionCommand` | 发布完整机器人运动命令 |
-| `publishControlGroupCommand(command)` | `ControlGroupCommandPublisher` | 所有目标关节资源 | 发布命名 control group 的关节命令 |
-| `publishMotorConfigurationCommand(command)` | `MotorConfigurationCommandPublisher` | 所有目标关节资源 | 发布自定义电机增益/配置 |
-| `setSubController(command)` | `SubControllerService` | 无 | 请求当前 Universal Controller task 应用/复位 sub-controller 配置 |
-| `requestFsmState(state_id)` | `FsmService` | 无 | 请求 Aurora FSM 状态 |
+### `EndpointMatchStatus`
 
-由于 hardware SDK 暂未开放，电机配置临时由 Aurora SDK 提供，后续会移动到
-hardware-level SDK。机器人相关的 group 名称、向量长度、mode、FSM 和能力验证
-仍由 Aurora 完成。
+每个成员都是对应 endpoint 的 `EndpointStatus`：`fsm_service`、
+`manage_lease_service`、`motion_command_publisher`、
+`control_group_command_publisher`、`motor_configuration_command_publisher`、
+`sub_controller_service`、`aurora_state_subscriber`、
+`motion_state_subscriber`、`control_group_state_subscriber`、
+`motor_configuration_state_subscriber`、`estimator_data_subscriber`、
+`error_codes_subscriber`。
 
-便捷 setter 构造完整命令后委托给上表函数：
+## 返回值与异常类型
 
-| 函数 | 构造的命令 |
+### `OperationResult`
+
+| 成员 | 说明 |
 |---|---|
-| `setVelocity(vx, vy, yaw, duration, gait_type=0)` | `MotionCommand` 中机身坐标系 X/Y 线速度与 yaw 角速度 |
-| `setStandPose(delta_height, delta_pitch, delta_yaw, duration=1.0)` | `MotionCommand` 中站立高度/pitch/yaw 偏移 |
-| `resetUnicontroller()` | `reset=true` 的 `SubControllerCommand` |
+| `code` | `uint32_t` 返回码，默认 `CLIENT_ERROR`。 |
+| `message` | 人类可读的详细信息。 |
+| `success()` | 仅在 `code == SUCCESS` 时为 true。 |
 
-当前 active task 不包含 Universal Controller 时，`setSubController()` 会失败。
-命令 publish 成功不表示已经执行。
+### 异常
 
-## 控制租约 API
+| 类型 | 基类 | 说明 |
+|---|---|---|
+| `AuroraSdkError` | `std::runtime_error` | SDK 异常基类。 |
+| `ConnectionError` | `AuroraSdkError` | Transport 启停的致命错误。 |
+| `InvalidArgumentError` | `AuroraSdkError` | 参数值、范围或组合非法。 |
+| `InvalidStateError` | `AuroraSdkError` | 当前生命周期不允许该操作。 |
 
-| 函数 | 用途 |
+每个异常均接受一个 message string。
+
+## 状态与指令类型
+
+### `MessageHeader`
+
+`send_time` 是发送方 `system_clock::time_point`，`frame_id` 是坐标系或来源
+label，`received_time` 是 SDK 本地接收时间。
+
+### `RobotInfo`
+
+`robot_type` 表示机器人系列，`hardware_type` 表示硬件/模型版本，
+`end_effector_type` 表示末端类型。
+
+### `StateInfo`
+
+`id` 为 FSM ID，`version` 为状态协议/配置版本，`name` 和 `description` 为
+用户可读文本，`active` 表示是否为当前状态。
+
+### `AuroraState`
+
+| 成员 | 说明 |
 |---|---|
-| `registerLease(resources, option={})` | 注册模块的第一组完整资源 |
-| `replaceLease(resources, option={})` | 原子替换当前完整资源集合 |
-| `releaseLease()` | 释放当前租约；重复释放是安全的 |
-| `getLease()` | 返回瞬时本地 `LeaseResult` 快照 |
+| `header` | 消息时间元数据。 |
+| `robot_info` | 已连接机器人身份。 |
+| `switch_status` | Aurora 状态切换状态值。 |
+| `current_state` | 当前 `StateInfo`。 |
+| `available_states` | Aurora 当前报告的状态列表。 |
+| `authority_resources` | 每个资源的租约持有者快照。 |
 
-`AuroraResource` 包含 `LeftLeg`、`RightLeg`、`Waist`、`Head`、
-`LeftManipulator`、`RightManipulator`、`LeftEndEffector`、
-`RightEndEffector` 和 `MotionCommand`。
+### `MotionState`
 
-`LeaseOption`：
+成员包括 `header`；测量/指令成对的 `position`/`position_cmd`、
+`lin_velocity`/`lin_velocity_cmd`、`attitude`/`attitude_cmd`、
+`ang_velocity`/`ang_velocity_cmd`；高度 `delta_height`/
+`delta_height_cmd`；以及 `progress` 和 `stable_level`。所有空间向量长度为 3。
 
-| 字段 | 默认值 | 含义 |
-|---|---:|---|
-| `duration` | `4000ms` | 请求的租约周期；有效租约在实际周期的四分之一处自动续租（默认 grant 对应 1 秒） |
-| `priority` | 未设置（`Normal`） | 可选 `Normal` 或 `Emergency` |
-| `timeout` | `500ms` | register/replace 公开操作的总 deadline |
+### `MotionCommand`
 
-Emergency 优先级还要求 `allow_emergency_lease_priority=true`；Aurora 仍有权接受
-或拒绝申请。
+| 成员 | 说明 |
+|---|---|
+| `header` | 出站元数据。 |
+| `position` | 三维 Base position 请求。 |
+| `lin_velocity` | 三维 Base-frame 线速度。 |
+| `attitude` | roll/pitch/yaw 请求。 |
+| `ang_velocity` | 三维角速度请求。 |
+| `delta_height` | 站立高度 offset。 |
+| `gait_type` | 机器人特定 gait selector。 |
+| `skills` | 8 个机器人特定 skill byte。 |
+| `duration` | 指令有效时间，单位秒。 |
 
-`LeaseResult` 包含 `operation`、`state`、`source_id`、`source_name`、
-`lease_id`、`resources`、`priority`、`granted_duration`、
-`remaining_duration` 和 `loss_reason`。`success()` 表示本次操作结果；
-`usable()` 是更严格的发命令条件：状态为 `Active` 且剩余时间大于零。
+### `JointControlType`
+
+`Joint` 表示按逻辑关节索引，`Motor` 表示按硬件电机索引。
+
+### `MotorMode`
+
+`Pd`、`Position`、`Effort` 分别选择 PD、位置和力矩/effort 指令模式。
+
+### `JointField`
+
+`Position`、`Velocity`、`Effort` 用于选择 joint getter 返回的字段。
+
+### `ControlGroupStateEntry`
+
+`group_name` 为控制组名；`joint_position`、`joint_velocity`、
+`joint_effort` 是该组的数值 vector。
+
+### `CartesianStateEntry`
+
+`link_name` 为 URDF link；`pose` 是长度 7 的 position + XYZW quaternion；
+`twist` 是长度 6 的线/角速度；`wrench` 是长度 6 的力/力矩。
+
+### `ControlGroupState`
+
+`header` 为元数据；`joint_state` 为测量关节；`joint_cmd` 为 Aurora 观测到的
+关节指令；`cartesian_state` 为测量 Cartesian 数据；`cartesian_cmd` 为观测到
+的 Cartesian 指令，本版本只读。
+
+### `JointCommand`
+
+`group_name` 指定控制组，`control_type` 指定 joint/motor 索引，`motor_mode`
+指定模式；`position`、`velocity`、`effort` 分别为三个指令 vector。
+
+### `ControlGroupCommand`
+
+`header` 为出站元数据，`joint_cmd` 为 `JointCommand` 列表。所有目标关节资源
+都必须被当前租约覆盖。
+
+### `BaseData`
+
+| 成员 | 说明 |
+|---|---|
+| `header` | 消息元数据。 |
+| `quat_xyzw`、`quat_wxyz` | 两种顺序的 Base quaternion。 |
+| `rpy` | roll、pitch、yaw。 |
+| `omega_W`、`acc_W` | World-frame 角速度与线加速度。 |
+| `omega_B`、`acc_B` | Base-frame 角速度与线加速度。 |
+| `vel_W`、`pos_W` | World-frame 速度与位置。 |
+| `vel_B` | Base-frame 速度。 |
+| `stable_level` | 估计器稳定等级。 |
+
+Quaternion 长度为 4，其他空间 vector 长度为 3。
+
+### `ContactData`
+
+`header` 为元数据，`contact_force` 和 `contact_prob` 分别是各 contact 的估计
+力和概率。
+
+### `EstimatorData`
+
+包含 `BaseData` 与 `ContactData` 的全部 payload 字段：`header`、
+`quat_xyzw`、`quat_wxyz`、`rpy`、`omega_W`、`acc_W`、`omega_B`、
+`acc_B`、`vel_W`、`pos_W`、`vel_B`、`contact_force`、`contact_prob`、
+`stable_level`。
+
+### `GroupOverrideParam`
+
+`group_name` 指定控制组，`control_param` 为控制器特定数值参数。
+
+### `ControllerParam`
+
+`controller_name` 指定 Universal Controller 子控制器，`rate` 为全局激活/
+混合比例，`group_override_params` 为每组 override。
+
+### `SubControllerCommand`
+
+`header` 为元数据，`reset` 请求重置，`controller_params` 在非 reset 请求中
+携带设置。
+
+### `ErrorCodeEntry`
+
+`high32` 和 `low32` 是一个 Aurora 错误码的高、低 32 bit。
+
+### `ErrorCodes`
+
+`header` 为元数据，`source` 为错误来源，`error_codes` 为当前错误列表。
+
+## 租约类型
+
+### `AuroraResource`
+
+取值：`LeftLeg`、`RightLeg`、`Waist`、`Head`、`LeftManipulator`、
+`RightManipulator`、`LeftEndEffector`、`RightEndEffector`、`MotionCommand`。
+
+### `LeasePriority`
+
+`Normal` 为默认值；`Emergency` 同时要求 Client opt-in 与 Aurora 授权。
+
+### `LeaseState`
+
+`Unregistered` 无租约；`Registering` 正在注册；`Active` 可用；`Replacing`
+正在原子替换资源；`Releasing` 正在 drain/释放；`Lost` 表示旧租约不再可信。
+
+### `LeaseLossReason`
+
+| 取值 | 说明 |
+|---|---|
+| `None` | 未丢失。 |
+| `DeadlineExpired` | steady-clock deadline 到期。 |
+| `AuthorityRejected` | Aurora 拒绝租约或 renew。 |
+| `OperationTimeout` | 公共租约操作超时。 |
+| `InvalidAuthorityResponse` | Authority response 无法使用。 |
+| `PublicationDrainTimeout` | 受保护发布未及时 drain。 |
+| `InternalError` | 内部错误。 |
+
+### `LeaseOption`
+
+`duration` 默认为 `4000ms`，表示请求周期；`priority` 为可选优先级，未设置
+即 Normal；`timeout` 默认为 `500ms`，表示 register/replace 的总 deadline。
+
+### `LeaseResult`
+
+| 成员 | 说明 |
+|---|---|
+| `operation` | 本次 API 操作的 `OperationResult`。 |
+| `state` | 当前本地 `LeaseState`。 |
+| `source_id`、`source_name` | 模块身份。 |
+| `lease_id` | Authority 分配的 ID。 |
+| `resources` | 完整资源集合。 |
+| `priority` | 租约优先级。 |
+| `granted_duration` | Aurora 授予周期。 |
+| `remaining_duration` | 当前剩余时间。 |
+| `loss_reason` | Lost 原因。 |
+| `success()` | 等同于 `operation.success()`。 |
+| `usable()` | 仅当 Active 且剩余时间大于零。 |
+
+### `AuthorityResourceStatus`
+
+`resource` 指定资源，`acquired` 表示是否有 holder，`holder_source_id` 与
+`holder_source_name` 标识 holder，`holder_priority` 为其优先级。该数据仅为
+状态快照，实际指令授权使用 SDK 管理的租约。
+
+## 电机配置类型
+
+此接口在硬件 SDK 开放前临时由 Aurora SDK 提供，后续将迁移到硬件层 SDK。
+
+### `MotorConfigurationMode`
+
+取值：`Disable`、`Position`、`Velocity`、`Torque`、`Pd`。
+
+### `MotorConfigurationGroupCommand`
+
+`group_name` 指定组，`mode` 指定模式；`position_kp`、`position_ki`、
+`position_kd` 为位置环参数；`pd_kp`、`pd_kd` 为 PD 参数。
+
+### `MotorConfigurationCommand`
+
+`header` 为出站元数据，`groups` 为每组配置列表。
+
+### `MotorConfigurationGroupState`
+
+成员为 `group_name`、`mode`、`motor_error`、`position_kp`、
+`position_ki`、`position_kd`、`pd_kp`、`pd_kd`。
+
+### `MotorConfigurationState`
+
+`header` 为消息元数据，`groups` 为每组状态列表。
+
+## Callback handler type
+
+下列 alias 定义对应 `AuroraClient::on...` 函数接收的 callback signature。
+
+| Type | 声明 | Payload |
+|---|---|---|
+| `AuroraStateHandler` | `std::function<void(AuroraState)>` | 最新 Aurora/FSM/权限状态。 |
+| `MotionStateHandler` | `std::function<void(MotionState)>` | 最新运动状态。 |
+| `ControlGroupStateHandler` | `std::function<void(ControlGroupState)>` | 最新 Joint/Cartesian 状态。 |
+| `MotorConfigurationStateHandler` | `std::function<void(MotorConfigurationState)>` | 最新电机配置状态。 |
+| `EstimatorDataHandler` | `std::function<void(EstimatorData)>` | 最新 Estimator 数据。 |
+| `ErrorCodesHandler` | `std::function<void(ErrorCodes)>` | 最新异步错误码。 |
+| `LeaseChangedHandler` | `std::function<void(LeaseResult)>` | 更新后的本地租约快照。 |
+
+传入空 handler 可清空 callback。只能在 Client 为 Stopped 时注册、替换或清空。
+
+## Client 函数
+
+### Client 生命周期
+
+#### `getInstance`
+
+声明：
 
 ```cpp
-sdk::LeaseOption lease_option;
-lease_option.duration = std::chrono::seconds(2);
-lease_option.timeout = std::chrono::milliseconds(500);
-
-auto lease = client.registerLease(
-    {sdk::AuroraResource::LeftManipulator,
-     sdk::AuroraResource::RightManipulator},
-    lease_option);
-if (!lease.usable()) {
-    std::cerr << lease.operation.code << ": "
-              << lease.operation.message << "\n";
-}
+static AuroraClient& getInstance();
 ```
 
-Replace 与 release 期间受保护 publisher 会暂停。Replace 被明确拒绝时，如果旧
-租约仍有效就恢复旧租约；结果不确定的 timeout 可能使本地租约进入 `Lost`。
-租约状态不会写入磁盘。
+- 说明：获取进程级单例，不启动 DDS。
+- 参数：无。
+- 返回：进程级 `AuroraClient` 引用。
 
-## Callback
+#### `config`
 
-只能在 client stopped 时注册或替换 callback：
+声明：
 
-| 函数 | Callback 参数 |
-|---|---|
-| `onAuroraState(callback)` | `AuroraState` |
-| `onMotionState(callback)` | `MotionState` |
-| `onControlGroupState(callback)` | `ControlGroupState` |
-| `onMotorConfigurationState(callback)` | `MotorConfigurationState` |
-| `onEstimatorData(callback)` | `EstimatorData` |
-| `onErrorCodes(callback)` | `ErrorCodes` |
-| `onLeaseChanged(callback)` | `LeaseResult` |
-
-状态 callback 在 DDS cache 更新后在线执行。它们必须有界、非阻塞、不会抛出
-异常，也不能在 callback 中调用 `stop()`。租约通知由 SDK notification executor
-串行执行。
-
-## 数据类型
-
-| 领域 | 主要类型与字段 |
-|---|---|
-| 通用 | `MessageHeader{send_time, frame_id, received_time}`、`OperationResult` |
-| 机器人/FSM | `RobotInfo`、`StateInfo`、`AuroraState{robot_info, switch_status, current_state, available_states, authority_resources}` |
-| 运动 | `MotionCommand{position, lin_velocity, attitude, ang_velocity, delta_height, gait_type, skills[8], duration}` 与对应实测/命令 `MotionState` 字段 |
-| 控制组 | `ControlGroupStateEntry`、`CartesianStateEntry{link_name, pose[7], twist[6], wrench[6]}`、`JointCommand`、`ControlGroupCommand` |
-| 估计器 | `BaseData`、`ContactData`、含世界系（`_W`）与机身系（`_B`）字段的 `EstimatorData` |
-| 电机配置 | `MotorConfigurationGroupCommand/State`、`MotorConfigurationCommand/State`、`MotorConfigurationMode` |
-| Sub-controller | `GroupOverrideParam`、`ControllerParam`、`SubControllerCommand` |
-| 错误 | `ErrorCodeEntry{high32, low32}`、`ErrorCodes{source, error_codes}` |
-| 租约 authority | `LeaseOption`、`LeaseResult`、`AuthorityResourceStatus` 与租约 enum |
-
-Pose 固定数组顺序为 `[x, y, z, qx, qy, qz, qw]`。Motion position 使用世界
-坐标系；除 Aurora 的机器人专用 contract 另有说明外，motion velocity 与
-Cartesian state 使用机器人机身坐标系。
-
-## 返回值与异常
-
-只有 code `0` 时 `OperationResult::success()` 为 true。使用
-`resultCodeName(code)` 和 `defaultResultMessage(code)` 查询 SDK 已知 code。
-
-| 范围 | 所有者 |
-|---:|---|
-| `0` | 成功 |
-| `100..199` | 本地 SDK client/transport |
-| `200..299` | Aurora service，原样透传 |
-| `300..319` | 租约 |
-| `320..339` | Sub-controller |
-
-重要本地失败包括 `CLIENT_NOT_RUNNING`、`ENDPOINT_DISABLED`、
-`ENDPOINT_UNMATCHED`、`PUBLISH_FAILED`、`SERVICE_TIMEOUT`、
-`TRANSPORT_ERROR`、`INVALID_AURORA_RESPONSE` 和 `STATE_NOT_RECEIVED`。租约
-失败还会区分非法请求、资源忙、过期、操作 timeout、租约丢失和资源覆盖不足。
-
-异常层级：
-
-```text
-std::runtime_error
-└── AuroraSdkError
-    ├── ConnectionError
-    ├── InvalidArgumentError
-    └── InvalidStateError
+```cpp
+ConnectionOptions config() const;
 ```
 
-非法配置/参数捕获 `InvalidArgumentError`，生命周期误用捕获
-`InvalidStateError`，transport 启停的致命失败捕获 `ConnectionError`。
+- 说明：读取 Client 的标准连接配置。
+- 参数：无。
+- 返回：`ConnectionOptions` 副本。
 
-## 低层 Transport facade
+#### `configure`
 
-安装的 `transport/fourierdds_transport.hpp` 声明具体
-`FourierDdsTransport`。它是集成 SDK 核心的高级 transport 接口，不是推荐的
-应用 client。
+声明：
 
-| 类别 | 函数 |
-|---|---|
-| 构造 | `FourierDdsTransport(domain_id, options={})`、析构函数 |
-| 接收 handler | `setAuroraStateHandler`、`setMotionStateHandler`、`setControlGroupStateHandler`、`setMotorConfigurationStateHandler`、`setEstimatorDataHandler`、`setErrorCodesHandler` |
-| 聚合状态 | `endpointMatchStatus()` |
-| Service 状态 | `isFsmServiceMatched()`、`isManageLeaseServiceMatched()`、`isSubControllerServiceMatched()` |
-| Publisher 状态 | `isMotionCommandPublisherMatched()`、`isControlGroupCommandPublisherMatched()`、`isMotorConfigurationCommandPublisherMatched()` |
-| Subscriber 状态 | `isAuroraStateSubscriberMatched()`、`isMotionStateSubscriberMatched()`、`isControlGroupStateSubscriberMatched()`、`isMotorConfigurationStateSubscriberMatched()`、`isEstimatorDataSubscriberMatched()`、`isErrorCodesSubscriberMatched()` |
-| 无租约 service | `requestFsmState(state_id)`、`setSubController(command)` |
-| 停止 | `stop()` |
-| SDK 核心集成 | `publishMotionCommand`、`publishControlGroupCommand`、`publishMotorConfigurationCommand`、`manageLease` |
+```cpp
+void configure(const ConnectionOptions& options);
+```
 
-SDK 核心集成函数有意要求 `detail` namespace 类型。应用无法安全构造这些租约
-token 或管理 request，必须使用对应的 `AuroraClient` 函数。只有维护 SDK
-transport 集成时才应直接使用这个 facade。
+- 说明：在 Stopped 时替换全部连接配置。
+- 参数：`options` — 复制到 Client 的配置。
+- 返回：无；配置或生命周期非法时抛出 SDK 异常。
+
+#### `setDomainId`
+
+声明：
+
+```cpp
+void setDomainId(uint32_t domain_id);
+```
+
+- 说明：设置下个 session 的 DDS domain，初始值为 123。
+- 参数：`domain_id` — DDS domain ID。
+- 返回：无；Client 必须为 Stopped。
+
+#### `domainId`
+
+声明：
+
+```cpp
+uint32_t domainId() const;
+```
+
+- 说明：读取已配置的 DDS domain。
+- 参数：无。
+- 返回：DDS domain ID。
+
+#### `state`
+
+声明：
+
+```cpp
+ClientState state() const;
+```
+
+- 说明：读取本地 Client 生命周期状态。
+- 参数：无。
+- 返回：当前 `ClientState`。
+
+#### `start`
+
+声明：
+
+```cpp
+void start();
+```
+
+- 说明：校验并冻结配置，然后启动已启用的 DDS endpoint。
+- 参数：无。
+- 返回：无；致命启动失败时抛出 SDK 异常。
+
+#### `stop`
+
+声明：
+
+```cpp
+void stop();
+```
+
+- 说明：Drain 当前工作，停止 DDS 并清空 session cache；可重复调用。
+- 参数：无。
+- 返回：无；致命关闭失败时抛出 SDK 异常。
+
+### Endpoint 就绪
+
+#### `endpointMatchStatus`
+
+声明：
+
+```cpp
+EndpointMatchStatus endpointMatchStatus() const;
+```
+
+- 说明：读取全部 endpoint 的 enabled/matched 快照。
+- 参数：无。
+- 返回：`EndpointMatchStatus` 快照。
+
+#### `isFsmServiceMatched`
+
+声明：
+
+```cpp
+bool isFsmServiceMatched() const;
+```
+
+- 说明：检查已启用的 FSM Service 是否匹配 Server。
+- 参数：无。
+- 返回：匹配时为 `true`。
+
+#### `waitForEndpoints`
+
+声明：
+
+```cpp
+bool waitForEndpoints(std::chrono::milliseconds timeout);
+```
+
+- 说明：等待全部已启用 endpoint 匹配。
+- 参数：`timeout` — 最大等待时间。
+- 返回：全部匹配为 `true`，超时为 `false`。
+
+### 状态读取
+
+除 wait 外均返回 `OperationResult`，atomic getter 读取一个完整 topic snapshot，
+projection getter 只基于同一个 snapshot 派生结果。
+
+#### `getAuroraState`
+
+声明：
+
+```cpp
+OperationResult getAuroraState(AuroraState& output) const;
+```
+
+- 说明：读取最新完整 Aurora/FSM/权限快照。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getMotionState`
+
+声明：
+
+```cpp
+OperationResult getMotionState(MotionState& output) const;
+```
+
+- 说明：读取最新完整 MotionState 快照。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getControlGroupState`
+
+声明：
+
+```cpp
+OperationResult getControlGroupState(ControlGroupState& output) const;
+```
+
+- 说明：读取最新 Joint/Cartesian 状态快照。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getMotorConfigurationState`
+
+声明：
+
+```cpp
+OperationResult getMotorConfigurationState(MotorConfigurationState& output) const;
+```
+
+- 说明：读取最新临时电机配置状态。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getEstimatorData`
+
+声明：
+
+```cpp
+OperationResult getEstimatorData(EstimatorData& output) const;
+```
+
+- 说明：读取最新完整 Estimator 快照。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getErrorCodes`
+
+声明：
+
+```cpp
+OperationResult getErrorCodes(ErrorCodes& output) const;
+```
+
+- 说明：读取最新异步错误码快照。
+- 参数：`output` — 成功时接收快照。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getBaseData`
+
+声明：
+
+```cpp
+OperationResult getBaseData(BaseData& output) const;
+```
+
+- 说明：从单个 Estimator 快照投影 Base 数据。
+- 参数：`output` — 成功时接收投影结果。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getContactData`
+
+声明：
+
+```cpp
+OperationResult getContactData(ContactData& output) const;
+```
+
+- 说明：从单个 Estimator 快照投影 Contact 数据。
+- 参数：`output` — 成功时接收投影结果。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getStableLevel`
+
+声明：
+
+```cpp
+OperationResult getStableLevel(uint8_t& output) const;
+```
+
+- 说明：从单个 MotionState 快照投影稳定等级。
+- 参数：`output` — 成功时接收稳定等级。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getStandPose`
+
+声明：
+
+```cpp
+OperationResult getStandPose(std::vector<double>& output) const;
+```
+
+- 说明：从单个 MotionState 投影 `[height, pitch, yaw, stable_level]`。
+- 参数：`output` — 成功时接收四元素 vector。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getJointState`
+
+声明：
+
+```cpp
+OperationResult getJointState(const std::string& group_name, JointField field, std::vector<double>& output) const;
+```
+
+- 说明：读取指定控制组的一个测量 Joint 字段。
+- 参数：`group_name` — 控制组；`field` — position、velocity 或 effort；`output` — 接收 vector。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getJointCommand`
+
+声明：
+
+```cpp
+OperationResult getJointCommand(const std::string& group_name, JointField field, std::vector<double>& output) const;
+```
+
+- 说明：读取 Aurora 观测到的指定组 Joint 指令字段。
+- 参数：`group_name` — 控制组；`field` — position、velocity 或 effort；`output` — 接收 vector。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getCartesianState`
+
+声明：
+
+```cpp
+OperationResult getCartesianState(const std::string& link_name, CartesianStateEntry& output) const;
+```
+
+- 说明：按 URDF link 名读取测量 Cartesian 状态。
+- 参数：`link_name` — URDF link；`output` — 接收状态。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getCartesianCommand`
+
+声明：
+
+```cpp
+OperationResult getCartesianCommand(const std::string& link_name, CartesianStateEntry& output) const;
+```
+
+- 说明：按 URDF link 名读取观测到的 Cartesian 指令。
+- 参数：`link_name` — URDF link；`output` — 接收指令。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `waitForFsmState`
+
+声明：
+
+```cpp
+bool waitForFsmState(uint32_t state_id, std::chrono::milliseconds timeout);
+```
+
+- 说明：等待 Aurora cache 报告指定 FSM ID。
+- 参数：`state_id` — 目标 FSM ID；`timeout` — 最大等待时间。
+- 返回：观察到目标状态为 `true`，超时为 `false`。
+
+### 本地指令缓存
+
+这些 cache 表示本 Client 的本地意图，不是机器人执行反馈，并会在 `stop()` 时清空。
+
+#### `getLastMotionCommand`
+
+声明：
+
+```cpp
+OperationResult getLastMotionCommand(MotionCommand& output) const;
+```
+
+- 说明：读取最后发布的 MotionCommand。
+- 参数：`output` — 成功时接收 cache。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getLastControlGroupCommand`
+
+声明：
+
+```cpp
+OperationResult getLastControlGroupCommand(ControlGroupCommand& output) const;
+```
+
+- 说明：读取最后发布的 ControlGroupCommand。
+- 参数：`output` — 成功时接收 cache。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getLastMotorConfigurationCommand`
+
+声明：
+
+```cpp
+OperationResult getLastMotorConfigurationCommand(MotorConfigurationCommand& output) const;
+```
+
+- 说明：读取最后发布的 MotorConfigurationCommand。
+- 参数：`output` — 成功时接收 cache。
+- 返回：操作状态；失败时不修改 `output`。
+
+#### `getLastSubControllerCommand`
+
+声明：
+
+```cpp
+OperationResult getLastSubControllerCommand(SubControllerCommand& output) const;
+```
+
+- 说明：读取最后成功发送的 SubControllerCommand。
+- 参数：`output` — 成功时接收 cache。
+- 返回：操作状态；失败时不修改 `output`。
+
+### 指令与 Service
+
+Publish 成功只表示 DDS 接受 sample，不代表机器人已执行。
+
+#### `publishMotionCommand`
+
+声明：
+
+```cpp
+OperationResult publishMotionCommand(const MotionCommand& command);
+```
+
+- 说明：使用活动 `MotionCommand` 租约发布完整运动指令。
+- 参数：`command` — 要发布的运动指令。
+- 返回：Publish 或租约检查状态。
+
+#### `publishControlGroupCommand`
+
+声明：
+
+```cpp
+OperationResult publishControlGroupCommand(const ControlGroupCommand& command);
+```
+
+- 说明：检查全部目标 Joint resource 后发布控制组指令。
+- 参数：`command` — 完整控制组指令。
+- 返回：Publish 或租约检查状态。
+
+#### `publishMotorConfigurationCommand`
+
+声明：
+
+```cpp
+OperationResult publishMotorConfigurationCommand(const MotorConfigurationCommand& command);
+```
+
+- 说明：检查目标 Joint resource 后发布临时电机参数。
+- 参数：`command` — 完整电机配置指令。
+- 返回：Publish 或租约检查状态。
+
+#### `setSubController`
+
+声明：
+
+```cpp
+OperationResult setSubController(const SubControllerCommand& command);
+```
+
+- 说明：无租约更新 Universal Controller 子控制器。
+- 参数：`command` — reset 或控制器参数请求。
+- 返回：Aurora Service 结果；无活动 Universal Controller task 时失败。
+
+#### `requestFsmState`
+
+声明：
+
+```cpp
+OperationResult requestFsmState(uint32_t state_id);
+```
+
+- 说明：无租约请求一个 Aurora FSM 状态。
+- 参数：`state_id` — 目标 FSM ID。
+- 返回：Aurora FSM Service 结果。
+
+#### `setVelocity`
+
+声明：
+
+```cpp
+OperationResult setVelocity(double vx, double vy, double yaw, double duration, uint8_t gait_type = 0);
+```
+
+- 说明：构造并发布 Base-frame 速度 MotionCommand。
+- 参数：`vx`、`vy` — m/s；`yaw` — rad/s；`duration` — 有效秒数；`gait_type` — gait selector。
+- 返回：Publish 或租约检查状态。
+
+#### `setStandPose`
+
+声明：
+
+```cpp
+OperationResult setStandPose(double delta_height, double delta_pitch, double delta_yaw, double duration = 1.0);
+```
+
+- 说明：构造并发布标准站姿 offset。
+- 参数：`delta_height` — 米；`delta_pitch`、`delta_yaw` — 弧度；`duration` — 有效秒数。
+- 返回：Publish 或租约检查状态。
+
+#### `resetUnicontroller`
+
+声明：
+
+```cpp
+OperationResult resetUnicontroller();
+```
+
+- 说明：发送 `reset=true` 的子控制器请求。
+- 参数：无。
+- 返回：Aurora 子控制器 Service 结果。
+
+### 租约管理
+
+活动租约会自动 renew 且不写入磁盘；replace/release 期间暂停受保护发布。
+
+#### `registerLease`
+
+声明：
+
+```cpp
+LeaseResult registerLease(const std::vector<AuroraResource>& resources, const LeaseOption& option = {});
+```
+
+- 说明：注册模块的第一组完整租约资源。
+- 参数：`resources` — 要控制的唯一资源；`option` — 周期、优先级与超时。
+- 返回：包含 Aurora 决策和本地租约状态的 `LeaseResult`。
+
+#### `replaceLease`
+
+声明：
+
+```cpp
+LeaseResult replaceLease(const std::vector<AuroraResource>& resources, const LeaseOption& option = {});
+```
+
+- 说明：原子请求新的完整资源集和 lease ID；明确拒绝时保留仍有效的旧租约。
+- 参数：`resources` — 替换资源集；`option` — 周期、优先级与超时。
+- 返回：替换操作及最终本地状态的 `LeaseResult`。
+
+#### `releaseLease`
+
+声明：
+
+```cpp
+LeaseResult releaseLease();
+```
+
+- 说明：释放活动模块租约；重复释放安全。
+- 参数：无。
+- 返回：释放后的本地 `LeaseResult`。
+
+#### `getLease`
+
+声明：
+
+```cpp
+LeaseResult getLease() const;
+```
+
+- 说明：不联系 Aurora，读取当前模块租约。
+- 参数：无。
+- 返回：瞬时本地 `LeaseResult` 快照。
+
+### Callbacks
+
+只能在 Stopped 时注册、替换或清空 callback。状态 callback 在 DDS callback
+thread 更新 cache 后 inline 执行；不要在 callback 内调用 `stop()`。
+
+#### `onAuroraState`
+
+声明：
+
+```cpp
+void onAuroraState(AuroraStateHandler callback);
+```
+
+- 说明：设置或清空 AuroraState cache 更新后的 callback。
+- 参数：`callback` — 接收 `AuroraState`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onMotionState`
+
+声明：
+
+```cpp
+void onMotionState(MotionStateHandler callback);
+```
+
+- 说明：设置或清空 MotionState callback。
+- 参数：`callback` — 接收 `MotionState`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onControlGroupState`
+
+声明：
+
+```cpp
+void onControlGroupState(ControlGroupStateHandler callback);
+```
+
+- 说明：设置或清空 ControlGroupState callback。
+- 参数：`callback` — 接收 `ControlGroupState`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onMotorConfigurationState`
+
+声明：
+
+```cpp
+void onMotorConfigurationState(MotorConfigurationStateHandler callback);
+```
+
+- 说明：设置或清空 MotorConfigurationState callback。
+- 参数：`callback` — 接收 `MotorConfigurationState`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onEstimatorData`
+
+声明：
+
+```cpp
+void onEstimatorData(EstimatorDataHandler callback);
+```
+
+- 说明：设置或清空 EstimatorData callback。
+- 参数：`callback` — 接收 `EstimatorData`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onErrorCodes`
+
+声明：
+
+```cpp
+void onErrorCodes(ErrorCodesHandler callback);
+```
+
+- 说明：设置或清空异步 ErrorCodes callback。
+- 参数：`callback` — 接收 `ErrorCodes`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+#### `onLeaseChanged`
+
+声明：
+
+```cpp
+void onLeaseChanged(LeaseChangedHandler callback);
+```
+
+- 说明：设置或清空串行执行的租约变化 callback。
+- 参数：`callback` — 接收 `LeaseResult`；空 handler 表示清空。
+- 返回：无；Client 必须为 Stopped。
+
+## 返回值辅助函数
+
+`resultCodeName(code)` 返回稳定符号名，未知值返回 `UNKNOWN_RESULT_CODE`；
+`defaultResultMessage(code)` 返回默认英文消息；`OperationResult::success()`、
+`LeaseResult::success()`、`LeaseResult::usable()` 的语义见对应类型说明。
