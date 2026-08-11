@@ -66,6 +66,7 @@ export CMAKE_GENERATOR="Unix Makefiles"
 build_args=(
     --wheel
     --no-isolation
+    --skip-dependency-check
     --outdir "${artifact_dir}"
     --config-setting="build-dir=${build_dir}"
     --config-setting="cmake.build-type=Release"
