@@ -2,6 +2,7 @@
 #include <chrono>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -154,7 +155,12 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
     auto session = testing::mockFactoryControl().latest();
     SDK_CHECK(test, static_cast<bool>(session));
     SDK_CHECK(test, client.state() == sdk::ClientState::Running);
+    const auto immediate_match_start = std::chrono::steady_clock::now();
     SDK_CHECK(test, client.waitForEndpoints(std::chrono::milliseconds(0)));
+    SDK_CHECK(
+        test,
+        std::chrono::steady_clock::now() - immediate_match_start >=
+            std::chrono::milliseconds(190));
 
     result = client.getMotionState(motion_output);
     SDK_CHECK(test, result.code == sdk::result_codes::STATE_NOT_RECEIVED);
@@ -252,6 +258,20 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
 
     session->setAllEnabledMatched(false);
     SDK_CHECK(test, !client.waitForEndpoints(std::chrono::milliseconds(0)));
+
+    const auto delayed_match_start = std::chrono::steady_clock::now();
+    std::thread match_later([session] {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        session->setAllEnabledMatched(true);
+    });
+    SDK_CHECK(test, client.waitForEndpoints(std::chrono::milliseconds(500)));
+    match_later.join();
+    SDK_CHECK(
+        test,
+        std::chrono::steady_clock::now() - delayed_match_start >=
+            std::chrono::milliseconds(240));
+
+    session->setAllEnabledMatched(false);
     SDK_CHECK_THROWS(
         test,
         sdk::InvalidArgumentError,

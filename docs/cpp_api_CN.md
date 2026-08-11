@@ -509,8 +509,8 @@ bool isFsmServiceMatched() const;
 bool waitForEndpoints(std::chrono::milliseconds timeout);
 ```
 
-- 说明：等待全部已启用 endpoint 匹配。
-- 参数：`timeout` — 最大等待时间。
+- 说明：等待全部已启用 endpoint 匹配后，再等待 200 ms，使 volatile publisher 有时间发送首个 sample；返回成功前会再次检查匹配状态。
+- 参数：`timeout` — DDS 发现的最大等待时间；匹配后的 200 ms 为额外等待。
 - 返回：全部匹配为 `true`，超时为 `false`。
 
 ### 状态读取

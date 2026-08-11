@@ -24,6 +24,9 @@ namespace fourier::aurora_sdk {
 
 namespace {
 
+constexpr auto kEndpointMatchStabilizationDelay =
+    std::chrono::milliseconds(200);
+
 template <typename Entry>
 std::vector<double> selectJointField(const Entry& entry, JointField field) {
     switch (field) {
@@ -1382,7 +1385,7 @@ bool AuroraClient::isFsmServiceMatched() const {
     return endpointMatchStatus().fsm_service.matched;
 }
 
-// Polls local match state until every enabled endpoint is ready or time expires.
+// Polls local match state, then allows volatile writers to deliver initial data.
 bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
     if (timeout.count() < 0) {
         throw InvalidArgumentError("timeout must be nonnegative");
@@ -1404,7 +1407,18 @@ bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
             }
         }
         if (allEnabledEndpointsMatched(status)) {
-            return true;
+            std::unique_lock<std::mutex> lock(impl_->mutex);
+            const bool stopped = impl_->state_changed.wait_for(
+                lock,
+                kEndpointMatchStabilizationDelay,
+                [this] { return impl_->client_state != ClientState::Running; });
+            if (stopped) {
+                return false;
+            }
+            lock.unlock();
+            if (allEnabledEndpointsMatched(endpointMatchStatus())) {
+                return true;
+            }
         }
 
         const auto now = std::chrono::steady_clock::now();

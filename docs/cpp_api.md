@@ -604,8 +604,8 @@ Declaration:
 bool waitForEndpoints(std::chrono::milliseconds timeout);
 ```
 
-- Description: Waits until every enabled endpoint is matched.
-- Parameters: `timeout` — maximum wait duration.
+- Description: Waits until every enabled endpoint is matched, then waits another 200 ms so volatile publishers can deliver their first sample. Match state is checked again before success.
+- Parameters: `timeout` — maximum discovery wait duration; the 200 ms post-match delay is additional.
 - Returns: `true` when all endpoints match, otherwise `false` on timeout.
 
 ### State access

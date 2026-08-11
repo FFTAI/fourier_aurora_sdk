@@ -532,8 +532,8 @@ Declaration:
 client.wait_for_endpoints(timeout)
 ```
 
-- Description: Waits until every enabled endpoint is matched.
-- Parameters: `timeout` — finite, nonnegative seconds.
+- Description: Waits until every enabled endpoint is matched, then waits another 0.2 seconds so volatile publishers can deliver their first sample. Match state is checked again before success.
+- Parameters: `timeout` — finite, nonnegative discovery timeout in seconds; the 0.2-second post-match delay is additional.
 - Returns: `True` when all endpoints match, otherwise `False` on timeout.
 
 ### State access

@@ -463,8 +463,8 @@ client.is_fsm_service_matched()
 client.wait_for_endpoints(timeout)
 ```
 
-- 说明：等待全部已启用 endpoint 匹配。
-- 参数：`timeout` — 有限、非负的秒数。
+- 说明：等待全部已启用 endpoint 匹配后，再等待 0.2 秒，使 volatile publisher 有时间发送首个 sample；返回成功前会再次检查匹配状态。
+- 参数：`timeout` — 有限、非负的 DDS 发现超时秒数；匹配后的 0.2 秒为额外等待。
 - 返回：全部匹配为 `True`，超时为 `False`。
 
 ### 状态读取

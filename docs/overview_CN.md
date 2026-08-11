@@ -62,7 +62,8 @@ flowchart LR
 
 `ConnectionOptions.enabled_endpoints` 决定创建哪些 DDS reader、writer 和
 service。只选择需要的 endpoint 可以减少发现流量和资源占用。
-`waitForEndpoints()` / `wait_for_endpoints()` 等待所有已启用 endpoint 匹配。
+`waitForEndpoints()` / `wait_for_endpoints()` 等待所有已启用 endpoint 匹配，
+然后额外稳定 200 ms，等待 volatile topic 的首个 sample。
 
 SDK 管理的上层接口 Topic 和 Service 名称使用
 `ConnectionOptions.topic_prefix`，默认值为 `aurora/`，例如

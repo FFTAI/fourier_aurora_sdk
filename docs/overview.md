@@ -66,7 +66,8 @@ the application, and write the complete object back.
 `ConnectionOptions.enabled_endpoints` controls which DDS readers, writers, and
 services are created. Selecting only required endpoints reduces discovery and
 resource use. `waitForEndpoints()` / `wait_for_endpoints()` waits until every
-enabled endpoint is matched.
+enabled endpoint is matched, then adds a 200 ms stabilization delay for the
+first volatile samples.
 
 SDK-managed upper-interface topic and service names use
 `ConnectionOptions.topic_prefix`, which defaults to `aurora/`. For example,
