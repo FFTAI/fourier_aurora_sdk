@@ -604,7 +604,7 @@ Declaration:
 bool waitForEndpoints(std::chrono::milliseconds timeout);
 ```
 
-- Description: Waits until every enabled endpoint is matched, then waits another 200 ms so volatile publishers can deliver their first sample. Match state is checked again before success.
+- Description: Waits until every enabled endpoint is matched, then waits another 200 ms so volatile publishers can deliver their first sample. Match state is checked again before success. While discovery is pending, the SDK prints a match summary once per second; it prints an all-matched summary on success and an error with matched and unmatched endpoint names on timeout.
 - Parameters: `timeout` — maximum discovery wait duration; the 200 ms post-match delay is additional.
 - Returns: `true` when all endpoints match, otherwise `false` on timeout.
 

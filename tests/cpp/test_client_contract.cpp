@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <chrono>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -14,6 +15,18 @@ namespace sdk = fourier::aurora_sdk;
 namespace testing = fourier::aurora_sdk::testing;
 
 namespace {
+
+std::size_t countOccurrences(
+    const std::string& text,
+    const std::string& needle) {
+    std::size_t count = 0;
+    std::size_t offset = 0;
+    while ((offset = text.find(needle, offset)) != std::string::npos) {
+        ++count;
+        offset += needle.size();
+    }
+    return count;
+}
 
 template <typename Value, typename = void>
 struct HasCartesianCommandMember : std::false_type {};
@@ -156,11 +169,23 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
     SDK_CHECK(test, static_cast<bool>(session));
     SDK_CHECK(test, client.state() == sdk::ClientState::Running);
     const auto immediate_match_start = std::chrono::steady_clock::now();
-    SDK_CHECK(test, client.waitForEndpoints(std::chrono::milliseconds(0)));
+    std::ostringstream matched_log;
+    auto* original_cerr = std::cerr.rdbuf(matched_log.rdbuf());
+    const bool endpoints_matched =
+        client.waitForEndpoints(std::chrono::milliseconds(0));
+    std::cerr.rdbuf(original_cerr);
+    SDK_CHECK(test, endpoints_matched);
     SDK_CHECK(
         test,
         std::chrono::steady_clock::now() - immediate_match_start >=
             std::chrono::milliseconds(190));
+    SDK_CHECK(
+        test,
+        matched_log.str().find("all enabled endpoints matched") !=
+            std::string::npos);
+    SDK_CHECK(
+        test,
+        matched_log.str().find("unmatched: []") != std::string::npos);
 
     result = client.getMotionState(motion_output);
     SDK_CHECK(test, result.code == sdk::result_codes::STATE_NOT_RECEIVED);
@@ -258,6 +283,31 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
 
     session->setAllEnabledMatched(false);
     SDK_CHECK(test, !client.waitForEndpoints(std::chrono::milliseconds(0)));
+
+    session->setMatched(sdk::Endpoint::MotionStateSubscriber, true);
+    std::ostringstream timeout_log;
+    original_cerr = std::cerr.rdbuf(timeout_log.rdbuf());
+    const bool matched_before_timeout =
+        client.waitForEndpoints(std::chrono::milliseconds(1150));
+    std::cerr.rdbuf(original_cerr);
+    SDK_CHECK(test, !matched_before_timeout);
+    SDK_CHECK(
+        test,
+        countOccurrences(
+            timeout_log.str(), "waiting for endpoint matches") >= 2);
+    SDK_CHECK(
+        test,
+        timeout_log.str().find("ERROR: endpoint match timed out") !=
+            std::string::npos);
+    SDK_CHECK(
+        test,
+        timeout_log.str().find("matched: [MotionStateSubscriber]") !=
+            std::string::npos);
+    SDK_CHECK(
+        test,
+        timeout_log.str().find(
+            "unmatched: [ControlGroupStateSubscriber") !=
+            std::string::npos);
 
     const auto delayed_match_start = std::chrono::steady_clock::now();
     std::thread match_later([session] {

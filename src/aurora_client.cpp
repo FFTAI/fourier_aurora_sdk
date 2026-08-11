@@ -1,6 +1,7 @@
 #include "fourier_aurora_sdk/aurora_client.hpp"
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <condition_variable>
@@ -11,6 +12,8 @@
 #include <mutex>
 #include <random>
 #include <set>
+#include <sstream>
+#include <string>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -26,6 +29,7 @@ namespace {
 
 constexpr auto kEndpointMatchStabilizationDelay =
     std::chrono::milliseconds(200);
+constexpr auto kEndpointMatchProgressPeriod = std::chrono::seconds(1);
 
 template <typename Entry>
 std::vector<double> selectJointField(const Entry& entry, JointField field) {
@@ -123,6 +127,57 @@ const EndpointStatus& endpointStatus(
             return status.error_codes_subscriber;
     }
     throw InvalidArgumentError("invalid Endpoint value");
+}
+
+struct EndpointDescription {
+    Endpoint endpoint;
+    const char* name;
+};
+
+constexpr std::array<EndpointDescription, 12> kEndpointDescriptions{{
+    {Endpoint::FsmService, "FsmService"},
+    {Endpoint::ManageLeaseService, "ManageLeaseService"},
+    {Endpoint::MotionCommandPublisher, "MotionCommandPublisher"},
+    {Endpoint::ControlGroupCommandPublisher,
+     "ControlGroupCommandPublisher"},
+    {Endpoint::MotorConfigurationCommandPublisher,
+     "MotorConfigurationCommandPublisher"},
+    {Endpoint::SubControllerService, "SubControllerService"},
+    {Endpoint::AuroraStateSubscriber, "AuroraStateSubscriber"},
+    {Endpoint::MotionStateSubscriber, "MotionStateSubscriber"},
+    {Endpoint::ControlGroupStateSubscriber,
+     "ControlGroupStateSubscriber"},
+    {Endpoint::MotorConfigurationStateSubscriber,
+     "MotorConfigurationStateSubscriber"},
+    {Endpoint::EstimatorDataSubscriber, "EstimatorDataSubscriber"},
+    {Endpoint::ErrorCodesSubscriber, "ErrorCodesSubscriber"},
+}};
+
+std::string formatEndpointsByMatchState(
+    const EndpointMatchStatus& status,
+    bool matched) {
+    std::ostringstream output;
+    output << "[";
+    bool first = true;
+    for (const auto& description : kEndpointDescriptions) {
+        const auto& endpoint = endpointStatus(status, description.endpoint);
+        if (!endpoint.enabled || endpoint.matched != matched) {
+            continue;
+        }
+        if (!first) {
+            output << ", ";
+        }
+        first = false;
+        output << description.name;
+    }
+    output << "]";
+    return output.str();
+}
+
+std::string formatEndpointMatchSummary(
+    const EndpointMatchStatus& status) {
+    return "matched: " + formatEndpointsByMatchState(status, true) +
+           ", unmatched: " + formatEndpointsByMatchState(status, false);
 }
 
 bool allEnabledEndpointsMatched(const EndpointMatchStatus& status) {
@@ -1397,9 +1452,10 @@ bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
         timeout >= available
             ? std::chrono::steady_clock::time_point::max()
             : start + timeout;
+    auto next_progress_log = start;
 
     for (;;) {
-        const auto status = endpointMatchStatus();
+        auto status = endpointMatchStatus();
         {
             std::lock_guard<std::mutex> lock(impl_->mutex);
             if (impl_->client_state != ClientState::Running) {
@@ -1416,14 +1472,31 @@ bool AuroraClient::waitForEndpoints(std::chrono::milliseconds timeout) {
                 return false;
             }
             lock.unlock();
-            if (allEnabledEndpointsMatched(endpointMatchStatus())) {
+            status = endpointMatchStatus();
+            if (allEnabledEndpointsMatched(status)) {
+                std::cerr
+                    << "[fourier_aurora_sdk] INFO: all enabled endpoints "
+                       "matched; "
+                    << formatEndpointMatchSummary(status) << std::endl;
                 return true;
             }
         }
 
         const auto now = std::chrono::steady_clock::now();
         if (now >= deadline) {
+            std::cerr
+                << "[fourier_aurora_sdk] ERROR: endpoint match timed out "
+                   "after "
+                << timeout.count() << " ms; "
+                << formatEndpointMatchSummary(status) << std::endl;
             return false;
+        }
+        if (now >= next_progress_log) {
+            std::cerr
+                << "[fourier_aurora_sdk] INFO: waiting for endpoint "
+                   "matches; "
+                << formatEndpointMatchSummary(status) << std::endl;
+            next_progress_log = now + kEndpointMatchProgressPeriod;
         }
         const auto interval = std::min<std::chrono::steady_clock::duration>(
             std::chrono::milliseconds(10), deadline - now);
