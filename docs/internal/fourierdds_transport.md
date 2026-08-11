@@ -10,12 +10,13 @@ Construction immediately creates one configured transport session:
 
 ```cpp
 fourier::aurora_sdk::ConnectionOptions options;
+options.domain_id = 123;
 options.enabled_endpoints = {
     fourier::aurora_sdk::Endpoint::AuroraStateSubscriber,
     fourier::aurora_sdk::Endpoint::FsmService,
 };
 
-fourier::aurora_sdk::FourierDdsTransport transport(123, options);
+fourier::aurora_sdk::FourierDdsTransport transport(options);
 // Inspect, publish, or request.
 transport.stop();
 ```

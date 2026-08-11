@@ -69,7 +69,9 @@ namespace sdk = fourier::aurora_sdk;
 
 | 成员 | 类型 | 默认值 | 说明 |
 |---|---|---:|---|
+| `domain_id` | `uint32_t` | `123` | Client 启动下一个 transport session 时使用的 DDS domain。 |
 | `namespace_name` | `std::optional<std::string>` | 未设置 | 显式 DDS namespace；未设置时可由 transport 发现。 |
+| `topic_prefix` | `std::string` | `"aurora/"` | 原样添加到 SDK 管理的所有 Aurora Topic 和 Service 名称之前；设为 `""` 表示不加前缀。 |
 | `dds_mode` | `uint8_t` | `0` | FourierDDS mode，范围 `0..3`。 |
 | `is_ros_compatible` | `std::optional<bool>` | 未设置 | 可选 ROS-compatible naming override。 |
 | `use_namespace` | `bool` | `true` | 是否给 endpoint 添加 namespace。 |
@@ -421,7 +423,7 @@ void configure(const ConnectionOptions& options);
 void setDomainId(uint32_t domain_id);
 ```
 
-- 说明：设置下个 session 的 DDS domain，初始值为 123。
+- 说明：`ConnectionOptions::domain_id` 的便捷 setter；更新下个 session 使用的 stopped-stage 标准配置。
 - 参数：`domain_id` — DDS domain ID。
 - 返回：无；Client 必须为 Stopped。
 
@@ -433,7 +435,7 @@ void setDomainId(uint32_t domain_id);
 uint32_t domainId() const;
 ```
 
-- 说明：读取已配置的 DDS domain。
+- 说明：读取标准配置中的 `ConnectionOptions::domain_id`，是其便捷 getter。
 - 参数：无。
 - 返回：DDS domain ID。
 

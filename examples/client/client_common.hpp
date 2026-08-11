@@ -142,8 +142,8 @@ inline void configureClient(
         throw fourier::aurora_sdk::InvalidArgumentError(
             "source_id must be a nonzero uint32");
     }
-    client.setDomainId(domain_id);
     auto options = client.config();
+    options.domain_id = domain_id;
     options.source_id = source_id;
     options.enabled_endpoints = std::move(endpoints);
     client.configure(options);

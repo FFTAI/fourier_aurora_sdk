@@ -78,10 +78,10 @@ int main(int argc, char** argv) {
 
     try {
         auto options = client.config();
+        options.domain_id = 89;
         options.enabled_endpoints = {
             sdk::Endpoint::AuroraStateSubscriber,
         };
-        client.setDomainId(89);
         client.configure(options);
 
         client.onAuroraState(

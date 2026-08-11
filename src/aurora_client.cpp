@@ -1021,7 +1021,6 @@ struct AuroraClient::Impl {
             std::shared_ptr<Transition> owned_transition;
             ConnectionOptions frozen_options;
             CallbackOverrides frozen_callbacks;
-            uint32_t frozen_domain_id = 0;
             uint64_t generation = 0;
             std::unique_ptr<detail::ITransport> retired_transport;
 
@@ -1049,7 +1048,6 @@ struct AuroraClient::Impl {
                     transition = owned_transition;
                     frozen_options = options;
                     frozen_callbacks = callback_overrides;
-                    frozen_domain_id = domain_id;
                     session_options = frozen_options;
                     generation = ++session_generation;
                     terminal_observed = false;
@@ -1076,7 +1074,6 @@ struct AuroraClient::Impl {
                 }
                 auto handlers = makeHandlers(generation, frozen_callbacks);
                 new_transport = detail::makeProductionTransport(
-                    frozen_domain_id,
                     frozen_options,
                     std::move(handlers),
                     [this, generation] {
@@ -1225,7 +1222,6 @@ struct AuroraClient::Impl {
     ClientState client_state = ClientState::Stopped;
     std::shared_ptr<Transition> transition;
 
-    uint32_t domain_id = 123;
     ConnectionOptions options;
     CallbackOverrides callback_overrides;
 
@@ -1320,13 +1316,13 @@ void AuroraClient::setDomainId(uint32_t domain_id) {
         throw InvalidStateError(
             "setDomainId() is allowed only while the client is stopped");
     }
-    impl_->domain_id = domain_id;
+    impl_->options.domain_id = domain_id;
 }
 
 // Reads the configured DDS domain independently of transport state.
 uint32_t AuroraClient::domainId() const {
     std::lock_guard<std::mutex> lock(impl_->mutex);
-    return impl_->domain_id;
+    return impl_->options.domain_id;
 }
 
 // Reports only the local lifecycle state, not endpoint or robot readiness.

@@ -18,9 +18,7 @@ struct LeaseManagementResponse;
 
 class FourierDdsTransport final {
 public:
-    explicit FourierDdsTransport(
-        uint32_t domain_id,
-        ConnectionOptions options = {});
+    explicit FourierDdsTransport(ConnectionOptions options = {});
     ~FourierDdsTransport() noexcept;
 
     FourierDdsTransport(const FourierDdsTransport&) = delete;
@@ -68,7 +66,6 @@ private:
     struct InitialHandlers;
 
     FourierDdsTransport(
-        uint32_t domain_id,
         ConnectionOptions options,
         InitialHandlers handlers);
 

@@ -73,7 +73,9 @@ the object is local; `configure()` copies and validates it.
 
 | Attribute | Python type | Default | Description |
 |---|---|---:|---|
+| `domain_id` | `int` | `123` | DDS domain used when the client starts its next transport session. Must fit `uint32`. |
 | `namespace_name` | `str | None` | `None` | Explicit DDS namespace. |
+| `topic_prefix` | `str` | `"aurora/"` | Literal prefix prepended to every SDK-managed Aurora topic and service name. Use `""` for no prefix. |
 | `dds_mode` | `int` | `0` | FourierDDS mode; only `0..3` is accepted. |
 | `is_ros_compatible` | `bool | None` | `None` | Optional ROS-compatible naming override. |
 | `use_namespace` | `bool` | `True` | Enables namespaced endpoints. |
@@ -444,7 +446,7 @@ Declaration:
 client.set_domain_id(domain_id)
 ```
 
-- Description: Sets the DDS domain for the next session; the initial domain is 123.
+- Description: Convenience setter for `ConnectionOptions.domain_id`; updates the canonical stopped-stage configuration used by the next session.
 - Parameters: `domain_id` — integer in the `uint32` range.
 - Returns: `None`; the client must be stopped.
 
@@ -456,7 +458,7 @@ Declaration:
 client.domain_id()
 ```
 
-- Description: Reads the configured DDS domain.
+- Description: Convenience getter for the canonical `ConnectionOptions.domain_id` value.
 - Parameters: None.
 - Returns: Domain identifier as `int`.
 

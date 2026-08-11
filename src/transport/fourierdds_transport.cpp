@@ -571,7 +571,6 @@ struct FourierDdsTransport::Impl
     };
 
     static std::shared_ptr<Impl> create(
-        uint32_t domain_id,
         const ConnectionOptions& public_options,
         InitialHandlers initial_handlers) {
         auto& coordinator = detail::TeardownCoordinator::instance();
@@ -582,7 +581,7 @@ struct FourierDdsTransport::Impl
                 detail::normalizeConnectionOptions(public_options),
                 std::move(initial_handlers)));
         try {
-            session->initialize(domain_id);
+            session->initialize(session->options.public_options.domain_id);
         } catch (const std::exception& error) {
             try {
                 session->requestStop().get();
@@ -638,28 +637,33 @@ struct FourierDdsTransport::Impl
             node->setNamespace(options.namespace_name);
         }
 
+        const auto endpoint_name = [&public_options](const char* base_name) {
+            return public_options.topic_prefix + base_name;
+        };
+
         if (options.endpointEnabled(Endpoint::MotionCommandPublisher)) {
             motion_command_pub =
-                std::make_unique<MotionCommandPublisher>(node, "robot_motion_cmd");
+                std::make_unique<MotionCommandPublisher>(
+                    node, endpoint_name("robot_motion_cmd"));
         }
         if (options.endpointEnabled(
                 Endpoint::ControlGroupCommandPublisher)) {
             control_group_command_pub =
                 std::make_unique<ControlGroupCommandPublisher>(
-                    node, "robot_control_group_cmd");
+                    node, endpoint_name("robot_control_group_cmd"));
         }
         if (options.endpointEnabled(
                 Endpoint::MotorConfigurationCommandPublisher)) {
             motor_configuration_command_pub =
                 std::make_unique<MotorConfigurationCommandPublisher>(
-                    node, "robot_motor_cfg_group_cmd");
+                    node, endpoint_name("robot_motor_cfg_group_cmd"));
         }
 
         const std::weak_ptr<Impl> weak = shared_from_this();
         if (options.endpointEnabled(Endpoint::AuroraStateSubscriber)) {
             aurora_state_sub = std::make_unique<AuroraStateSubscription>(
                 node,
-                "aurora_state",
+                endpoint_name("aurora_state"),
                 [weak](const dds_msg::AuroraState& message) {
                     if (const auto session = weak.lock()) {
                         session->dispatch(
@@ -674,7 +678,7 @@ struct FourierDdsTransport::Impl
         if (options.endpointEnabled(Endpoint::MotionStateSubscriber)) {
             motion_state_sub = std::make_unique<MotionStateSubscription>(
                 node,
-                "robot_motion_state",
+                endpoint_name("robot_motion_state"),
                 [weak](const dds_msg::RobotMotionState& message) {
                     if (const auto session = weak.lock()) {
                         session->dispatch(
@@ -691,7 +695,7 @@ struct FourierDdsTransport::Impl
             control_group_state_sub =
                 std::make_unique<ControlGroupStateSubscription>(
                     node,
-                    "robot_control_group_state",
+                    endpoint_name("robot_control_group_state"),
                     [weak](const dds_msg::RobotControlGroupState& message) {
                         if (const auto session = weak.lock()) {
                             session->dispatch(
@@ -709,7 +713,7 @@ struct FourierDdsTransport::Impl
             motor_configuration_state_sub =
                 std::make_unique<MotorConfigurationStateSubscription>(
                     node,
-                    "robot_motor_cfg_group_state",
+                    endpoint_name("robot_motor_cfg_group_state"),
                     [weak](const dds_msg::RobotMotorCfgGroupState& message) {
                         if (const auto session = weak.lock()) {
                             session->dispatch(
@@ -726,7 +730,7 @@ struct FourierDdsTransport::Impl
         if (options.endpointEnabled(Endpoint::EstimatorDataSubscriber)) {
             estimator_data_sub = std::make_unique<EstimatorDataSubscription>(
                 node,
-                "estimator_data",
+                endpoint_name("estimator_data"),
                 [weak](const dds_msg::EstimatorData& message) {
                     if (const auto session = weak.lock()) {
                         session->dispatch(
@@ -741,7 +745,7 @@ struct FourierDdsTransport::Impl
         if (options.endpointEnabled(Endpoint::ErrorCodesSubscriber)) {
             error_codes_sub = std::make_unique<ErrorCodesSubscription>(
                 node,
-                "error_codes_pub",
+                endpoint_name("error_codes_pub"),
                 [weak](const dds_msg::ErrorCodes& message) {
                     if (const auto session = weak.lock()) {
                         session->dispatch(
@@ -755,17 +759,17 @@ struct FourierDdsTransport::Impl
         }
         if (options.endpointEnabled(Endpoint::FsmService)) {
             fsm_service = std::make_unique<FsmClient>(
-                node, "whole_body_fsm_state_change_service");
+                node, endpoint_name("whole_body_fsm_state_change_service"));
         }
         if (options.endpointEnabled(Endpoint::ManageLeaseService)) {
             fourier_dds::ClientOptions client_options;
             client_options.log_requests = false;
             manage_lease_service = std::make_unique<ManageLeaseClient>(
-                node, "ManageLease", client_options);
+                node, endpoint_name("ManageLease"), client_options);
         }
         if (options.endpointEnabled(Endpoint::SubControllerService)) {
             sub_controller_service = std::make_unique<SubControllerClient>(
-                node, "sub_controller_cmd");
+                node, endpoint_name("sub_controller_cmd"));
         }
     }
 
@@ -1308,18 +1312,15 @@ struct FourierDdsTransport::Impl
 };
 
 FourierDdsTransport::FourierDdsTransport(
-    uint32_t domain_id,
     ConnectionOptions options)
     : FourierDdsTransport(
-          domain_id,
           std::move(options),
           InitialHandlers{}) {}
 
 FourierDdsTransport::FourierDdsTransport(
-    uint32_t domain_id,
     ConnectionOptions options,
     InitialHandlers handlers)
-    : impl_(Impl::create(domain_id, options, std::move(handlers))) {}
+    : impl_(Impl::create(options, std::move(handlers))) {}
 
 FourierDdsTransport::~FourierDdsTransport() noexcept {
     if (!impl_) {
@@ -1502,15 +1503,12 @@ void FourierDdsTransport::stop() {
 struct FourierDdsTransport::Impl {};
 
 FourierDdsTransport::FourierDdsTransport(
-    uint32_t domain_id,
     ConnectionOptions options)
     : FourierDdsTransport(
-          domain_id,
           std::move(options),
           InitialHandlers{}) {}
 
 FourierDdsTransport::FourierDdsTransport(
-    uint32_t,
     ConnectionOptions options,
     InitialHandlers) {
     (void)detail::normalizeConnectionOptions(options);
@@ -1701,7 +1699,6 @@ private:
 class FourierDdsTransportFactory {
 public:
     static std::unique_ptr<ITransport> create(
-        uint32_t domain_id,
         const ConnectionOptions& options,
         TransportHandlers handlers,
         TransportTerminalObserver terminal_observer) {
@@ -1710,14 +1707,13 @@ public:
         initial.terminal_observer = std::move(terminal_observer);
         initial.callbacks_are_user = false;
         auto transport = std::unique_ptr<FourierDdsTransport>(
-            new FourierDdsTransport(domain_id, options, std::move(initial)));
+            new FourierDdsTransport(options, std::move(initial)));
         return std::make_unique<FourierDdsTransportAdapter>(
             std::move(transport));
     }
 };
 
 std::unique_ptr<ITransport> makeProductionTransport(
-    uint32_t domain_id,
     const ConnectionOptions& options,
     TransportHandlers handlers,
     TransportTerminalObserver terminal_observer) {
@@ -1729,14 +1725,12 @@ std::unique_ptr<ITransport> makeProductionTransport(
     }
     if (factory) {
         return factory(
-            domain_id,
             options,
             std::move(handlers),
             std::move(terminal_observer));
     }
 #endif
     return FourierDdsTransportFactory::create(
-        domain_id,
         options,
         std::move(handlers),
         std::move(terminal_observer));

@@ -37,6 +37,17 @@ void validateBoundedString(const std::string& value, const char* field_name) {
     }
 }
 
+void validateTopicPrefix(const std::string& value) {
+    if (value.size() > 128) {
+        throw InvalidArgumentError("topic_prefix must be 128 bytes or less");
+    }
+    if (std::any_of(value.begin(), value.end(),
+                    [](unsigned char c) { return c < 0x20 || c == 0x7f; })) {
+        throw InvalidArgumentError(
+            "topic_prefix must not contain control characters");
+    }
+}
+
 bool endpointEnabled(const std::vector<Endpoint>& endpoints, Endpoint endpoint) {
     return std::find(endpoints.begin(), endpoints.end(), endpoint) != endpoints.end();
 }
@@ -87,6 +98,7 @@ NormalizedConnectionOptions normalizeConnectionOptions(
     }
 
     NormalizedConnectionOptions normalized;
+    validateTopicPrefix(options.topic_prefix);
     normalized.public_options = options;
     normalized.public_options.enabled_endpoints =
         normalizeEndpoints(options.enabled_endpoints);

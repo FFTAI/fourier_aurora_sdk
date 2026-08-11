@@ -26,7 +26,7 @@ int main() {
     SDK_CHECK_THROWS(
         test,
         sdk::ConnectionError,
-        sdk::FourierDdsTransport(123, options));
+        sdk::FourierDdsTransport(options));
     client.stop();
     return test.result();
 }

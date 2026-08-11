@@ -69,7 +69,9 @@ Native 单例的进程级 Python wrapper。使用 `get_instance()`；直接构�
 
 | Attribute | Python 类型 | 默认值 | 说明 |
 |---|---|---:|---|
+| `domain_id` | `int` | `123` | Client 启动下一个 transport session 时使用的 DDS domain，必须符合 `uint32`。 |
 | `namespace_name` | `str | None` | `None` | 显式 DDS namespace。 |
+| `topic_prefix` | `str` | `"aurora/"` | 原样添加到 SDK 管理的所有 Aurora Topic 和 Service 名称之前；设为 `""` 表示不加前缀。 |
 | `dds_mode` | `int` | `0` | FourierDDS mode，仅允许 `0..3`。 |
 | `is_ros_compatible` | `bool | None` | `None` | 可选 ROS-compatible naming override。 |
 | `use_namespace` | `bool` | `True` | 是否使用 namespace。 |
@@ -375,7 +377,7 @@ client.configure(options)
 client.set_domain_id(domain_id)
 ```
 
-- 说明：设置下个 session 的 DDS domain，初始值为 123。
+- 说明：`ConnectionOptions.domain_id` 的便捷 setter；更新下个 session 使用的 stopped-stage 标准配置。
 - 参数：`domain_id` — `uint32` 范围内的整数。
 - 返回：`None`；Client 必须为 Stopped。
 
@@ -387,7 +389,7 @@ client.set_domain_id(domain_id)
 client.domain_id()
 ```
 
-- 说明：读取已配置的 DDS domain。
+- 说明：读取标准配置中的 `ConnectionOptions.domain_id`，是其便捷 getter。
 - 参数：无。
 - 返回：domain integer。
 

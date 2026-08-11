@@ -10,7 +10,9 @@
 namespace fourier::aurora_sdk {
 
 struct ConnectionOptions {
+    uint32_t domain_id = 123;
     std::optional<std::string> namespace_name;
+    std::string topic_prefix = "aurora/";
     uint8_t dds_mode = 0;
     std::optional<bool> is_ros_compatible;
     bool use_namespace = true;
@@ -35,7 +37,9 @@ struct ConnectionOptions {
     };
 
     bool operator==(const ConnectionOptions& other) const {
-        return namespace_name == other.namespace_name && dds_mode == other.dds_mode &&
+        return domain_id == other.domain_id &&
+               namespace_name == other.namespace_name &&
+               topic_prefix == other.topic_prefix && dds_mode == other.dds_mode &&
                is_ros_compatible == other.is_ros_compatible &&
                use_namespace == other.use_namespace &&
                use_discovery_server == other.use_discovery_server &&

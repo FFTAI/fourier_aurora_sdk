@@ -84,9 +84,20 @@ std::chrono::milliseconds requireWaitDuration(
 void bind_client(py::module_& m) {
     py::class_<sdk::ConnectionOptions>(m, "ConnectionOptions")
         .def(py::init<>())
+        .def_property(
+            "domain_id",
+            [](const sdk::ConnectionOptions& options) {
+                return options.domain_id;
+            },
+            [](sdk::ConnectionOptions& options, const py::object& value) {
+                options.domain_id = requireUint32(value, "domain_id");
+            })
         .def_readwrite(
             "namespace_name",
             &sdk::ConnectionOptions::namespace_name)
+        .def_readwrite(
+            "topic_prefix",
+            &sdk::ConnectionOptions::topic_prefix)
         .def_property(
             "dds_mode",
             [](const sdk::ConnectionOptions& options) {

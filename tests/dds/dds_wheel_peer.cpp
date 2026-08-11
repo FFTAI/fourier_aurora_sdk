@@ -69,13 +69,13 @@ int main() {
     node->setNamespace(kNamespace);
 
     fourier_dds::DdsPublisher<dds_msg::AuroraStatePubSubType> state_publisher(
-        node, "aurora_state");
+        node, "aurora/aurora_state");
 
     std::atomic<bool> motion_received{false};
     fourier_dds::DdsSubscription<dds_msg::RobotMotionCmdPubSubType>
         motion_subscription(
             node,
-            "robot_motion_cmd",
+            "aurora/robot_motion_cmd",
             [&](const dds_msg::RobotMotionCmd&) {
                 motion_received = true;
             },
@@ -88,7 +88,7 @@ int main() {
         dds_srv::SetInt_ResponsePubSubType>
         fsm_server(
             node,
-            "whole_body_fsm_state_change_service",
+            "aurora/whole_body_fsm_state_change_service",
             [&](const dds_srv::SetInt_Request& request,
                 dds_srv::SetInt_Response& response) {
                 request_received = true;
@@ -102,7 +102,7 @@ int main() {
         dds_srv::ManageLease_ResponsePubSubType>
         lease_server(
             node,
-            "ManageLease",
+            "aurora/ManageLease",
             [](const dds_srv::ManageLease_Request& request,
                dds_srv::ManageLease_Response& response) {
                 response.header(request.header());

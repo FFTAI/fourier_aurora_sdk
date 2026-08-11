@@ -11,6 +11,8 @@ def test_singleton_wrapper_identity_and_defaults():
     assert client is sdk.AuroraClient.get_instance()
     assert client.state() == sdk.ClientState.STOPPED
     assert client.domain_id() == 123
+    assert client.config().domain_id == 123
+    assert client.config().topic_prefix == "aurora/"
     # The test fixture installs a valid module identity so lifecycle tests can
     # start the default protected endpoints.  ConnectionOptions itself still
     # defaults to source_id == 0 and is rejected on protected start.
@@ -56,7 +58,9 @@ def test_exception_hierarchy():
 def test_configuration_round_trip_and_copy_isolation():
     client = sdk.AuroraClient.get_instance()
     options = client.config()
+    options.domain_id = 314
     options.namespace_name = "python_test"
+    options.topic_prefix = "python_test/"
     options.dds_mode = 3
     options.is_ros_compatible = False
     options.use_namespace = False
@@ -70,7 +74,9 @@ def test_configuration_round_trip_and_copy_isolation():
     client.configure(options)
 
     canonical = client.config()
+    assert canonical.domain_id == 314
     assert canonical.namespace_name == "python_test"
+    assert canonical.topic_prefix == "python_test/"
     assert canonical.dds_mode == 3
     assert canonical.is_ros_compatible is False
     assert canonical.use_namespace is False
@@ -91,6 +97,13 @@ def test_domain_id_rejects_non_uint32(value):
     with pytest.raises(sdk.InvalidArgumentError):
         client.set_domain_id(value)
     assert client.domain_id() == 123
+
+
+@pytest.mark.parametrize("value", [True, False, -1, 2**32])
+def test_connection_options_domain_id_rejects_non_uint32(value):
+    options = sdk.ConnectionOptions()
+    with pytest.raises(sdk.InvalidArgumentError):
+        options.domain_id = value
 
 
 @pytest.mark.parametrize("value", [True, False, -1, 2**32])

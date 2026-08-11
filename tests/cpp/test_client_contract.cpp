@@ -37,7 +37,9 @@ void testTraitsAndDefaults(testing::TestHarness& test) {
     SDK_CHECK(test, &client == &alias);
     SDK_CHECK(test, client.state() == sdk::ClientState::Stopped);
     SDK_CHECK(test, client.domainId() == 123);
+    SDK_CHECK(test, client.config().domain_id == 123);
     SDK_CHECK(test, client.config().source_id == 42);
+    SDK_CHECK(test, client.config().topic_prefix == "aurora/");
     SDK_CHECK(test, client.config().enabled_endpoints.size() == 12);
 
     const sdk::OperationResult default_result;
@@ -50,7 +52,9 @@ void testTraitsAndDefaults(testing::TestHarness& test) {
 void testConfiguration(testing::TestHarness& test) {
     auto& client = testing::resetClientFixture();
     auto options = client.config();
+    options.domain_id = 314;
     options.namespace_name = "test_namespace";
+    options.topic_prefix = "test/";
     options.dds_mode = 2;
     options.is_ros_compatible = false;
     options.use_namespace = false;
@@ -64,7 +68,9 @@ void testConfiguration(testing::TestHarness& test) {
     client.configure(options);
 
     const auto canonical = client.config();
+    SDK_CHECK(test, canonical.domain_id == 314);
     SDK_CHECK(test, canonical.namespace_name == "test_namespace");
+    SDK_CHECK(test, canonical.topic_prefix == "test/");
     SDK_CHECK(test, canonical.dds_mode == 2);
     SDK_CHECK(test, canonical.is_ros_compatible == false);
     SDK_CHECK(test, !canonical.use_namespace);
@@ -97,6 +103,12 @@ void testConfiguration(testing::TestHarness& test) {
     SDK_CHECK(test, client.config() == before_invalid);
 
     invalid = before_invalid;
+    invalid.topic_prefix = std::string(129, 'a');
+    SDK_CHECK_THROWS(
+        test, sdk::InvalidArgumentError, client.configure(invalid));
+    SDK_CHECK(test, client.config() == before_invalid);
+
+    invalid = before_invalid;
     invalid.enabled_endpoints = {static_cast<sdk::Endpoint>(255)};
     SDK_CHECK_THROWS(
         test, sdk::InvalidArgumentError, client.configure(invalid));
@@ -107,6 +119,7 @@ void testConfiguration(testing::TestHarness& test) {
     renamed.source_name = "contract_test";
     client.configure(renamed);
     SDK_CHECK(test, client.domainId() == 42);
+    SDK_CHECK(test, client.config().domain_id == 42);
     SDK_CHECK(test, client.config().source_name == "contract_test");
 }
 

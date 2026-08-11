@@ -32,6 +32,7 @@ from fourier_aurora_client import AuroraClient, Endpoint
 
 client = AuroraClient.get_instance()
 options = client.config()
+options.domain_id = 123
 options.enabled_endpoints = [Endpoint.AURORA_STATE_SUBSCRIBER]
 client.configure(options)
 
@@ -72,6 +73,7 @@ namespace sdk = fourier::aurora_sdk;
 int main() {
     auto& client = sdk::AuroraClient::getInstance();
     auto options = client.config();
+    options.domain_id = 123;
     options.enabled_endpoints = {sdk::Endpoint::AuroraStateSubscriber};
     client.configure(options);
 

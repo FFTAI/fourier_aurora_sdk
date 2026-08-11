@@ -69,14 +69,12 @@ public:
 };
 
 [[nodiscard]] std::unique_ptr<ITransport> makeProductionTransport(
-    uint32_t domain_id,
     const ConnectionOptions& options,
     TransportHandlers handlers,
     TransportTerminalObserver terminal_observer);
 
 #if defined(FOURIER_AURORA_SDK_TESTING)
 using TransportFactory = std::function<std::unique_ptr<ITransport>(
-    uint32_t,
     const ConnectionOptions&,
     TransportHandlers,
     TransportTerminalObserver)>;

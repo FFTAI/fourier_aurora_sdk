@@ -68,6 +68,11 @@ services are created. Selecting only required endpoints reduces discovery and
 resource use. `waitForEndpoints()` / `wait_for_endpoints()` waits until every
 enabled endpoint is matched.
 
+SDK-managed upper-interface topic and service names use
+`ConnectionOptions.topic_prefix`, which defaults to `aurora/`. For example,
+the defaults produce `aurora/robot_motion_cmd` and `aurora/ManageLease`. Set
+the option to an empty string when Aurora is configured without a prefix.
+
 Protected publishers (`MotionCommand`, `ControlGroupCommand`, and temporary
 `MotorConfigurationCommand`) require both `ManageLeaseService` and a nonzero
 `source_id`. Read-only and FSM/sub-controller service clients do not require a

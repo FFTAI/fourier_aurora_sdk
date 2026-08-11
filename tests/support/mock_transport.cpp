@@ -345,12 +345,11 @@ MockFactoryControl& mockFactoryControl() {
 
 void installMockTransportFactory() {
     detail::setTransportFactoryForTesting(
-        [](uint32_t domain_id,
-           const ConnectionOptions& options,
+        [](const ConnectionOptions& options,
            detail::TransportHandlers handlers,
            detail::TransportTerminalObserver terminal_observer) {
             auto session = std::make_shared<MockSession>();
-            session->domain_id = domain_id;
+            session->domain_id = options.domain_id;
             session->options = options;
             session->handlers = std::move(handlers);
             session->terminal_observer = std::move(terminal_observer);

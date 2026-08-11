@@ -64,6 +64,11 @@ flowchart LR
 service。只选择需要的 endpoint 可以减少发现流量和资源占用。
 `waitForEndpoints()` / `wait_for_endpoints()` 等待所有已启用 endpoint 匹配。
 
+SDK 管理的上层接口 Topic 和 Service 名称使用
+`ConnectionOptions.topic_prefix`，默认值为 `aurora/`，例如
+`aurora/robot_motion_cmd` 和 `aurora/ManageLease`。如果 Aurora 配置为空前缀，
+SDK 也应将该选项设置为空字符串。
+
 受保护的 publisher（`MotionCommand`、`ControlGroupCommand` 和临时
 `MotorConfigurationCommand`）必须同时启用 `ManageLeaseService`，并配置非零
 `source_id`。只读 client 和 FSM/sub-controller service 不需要租约身份。

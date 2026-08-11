@@ -63,6 +63,7 @@ std::shared_ptr<fourier_dds::DdsNode> makePeerNode(bool use_namespace) {
 
 sdk::ConnectionOptions directOptions() {
     sdk::ConnectionOptions options;
+    options.domain_id = kDomainId;
     options.namespace_name = kNamespace;
     options.dds_mode = 0;
     options.is_ros_compatible = false;
@@ -114,12 +115,12 @@ int main() {
 
     auto peer = makePeerNode(true);
     fourier_dds::DdsPublisher<dds_msg::AuroraStatePubSubType> state_publisher(
-        peer, "aurora_state");
+        peer, "aurora/aurora_state");
     std::atomic<int> motion_samples{0};
     fourier_dds::DdsSubscription<dds_msg::RobotMotionCmdPubSubType>
         motion_subscription(
             peer,
-            "robot_motion_cmd",
+            "aurora/robot_motion_cmd",
             [&](const dds_msg::RobotMotionCmd&) { ++motion_samples; },
             false,
             fourier_dds::SubscriptionDurability::Volatile);
@@ -130,7 +131,7 @@ int main() {
         dds_srv::SetInt_ResponsePubSubType>
         fsm_server(
             peer,
-            "whole_body_fsm_state_change_service",
+            "aurora/whole_body_fsm_state_change_service",
             [&](const dds_srv::SetInt_Request& request,
                 dds_srv::SetInt_Response& response) {
                 const auto delay = service_delay_ms.load();
@@ -149,7 +150,7 @@ int main() {
         dds_srv::ManageLease_ResponsePubSubType>
         lease_server(
             peer,
-            "ManageLease",
+            "aurora/ManageLease",
             [](const dds_srv::ManageLease_Request& request,
                dds_srv::ManageLease_Response& response) {
                 response.header(request.header());
@@ -165,15 +166,16 @@ int main() {
             });
     lease_server.run();
 
-    sdk::FourierDdsTransport direct(kDomainId, directOptions());
+    sdk::FourierDdsTransport direct(directOptions());
     sdk::ConnectionOptions second_options;
+    second_options.domain_id = kDomainId;
     second_options.namespace_name = kNamespace;
     second_options.is_ros_compatible = false;
     second_options.use_discovery_server = false;
     second_options.enabled_endpoints = {
         sdk::Endpoint::AuroraStateSubscriber,
     };
-    sdk::FourierDdsTransport second_direct(kDomainId, second_options);
+    sdk::FourierDdsTransport second_direct(second_options);
 
     SDK_CHECK(
         test,
@@ -236,7 +238,7 @@ int main() {
 
     auto timeout_options = directOptions();
     timeout_options.service_timeout_ms = 10;
-    sdk::FourierDdsTransport timeout_direct(kDomainId, timeout_options);
+    sdk::FourierDdsTransport timeout_direct(timeout_options);
     SDK_CHECK(
         test,
         waitUntil([&] { return timeout_direct.isFsmServiceMatched(); }, 5s));
@@ -313,6 +315,8 @@ int main() {
             });
     plain_lease_server.run();
     sdk::ConnectionOptions plain_options;
+    plain_options.domain_id = kDomainId;
+    plain_options.topic_prefix.clear();
     plain_options.use_namespace = false;
     plain_options.is_ros_compatible = false;
     plain_options.use_discovery_server = false;
@@ -321,7 +325,7 @@ int main() {
         sdk::Endpoint::ManageLeaseService,
         sdk::Endpoint::MotionCommandPublisher,
     };
-    sdk::FourierDdsTransport plain_direct(kDomainId, plain_options);
+    sdk::FourierDdsTransport plain_direct(plain_options);
     SDK_CHECK(
         test,
         waitUntil(

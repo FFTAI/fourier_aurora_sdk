@@ -73,7 +73,9 @@ Complete configuration frozen by `AuroraClient::start()`.
 
 | Member | Type | Default | Description |
 |---|---|---:|---|
+| `domain_id` | `uint32_t` | `123` | DDS domain used when the client starts its next transport session. |
 | `namespace_name` | `std::optional<std::string>` | unset | Explicit DDS namespace. When unset, the transport may discover one. |
+| `topic_prefix` | `std::string` | `"aurora/"` | Literal prefix prepended to every SDK-managed Aurora topic and service name. Set to `""` for no prefix. |
 | `dds_mode` | `uint8_t` | `0` | FourierDDS mode in the range `0..3`. |
 | `is_ros_compatible` | `std::optional<bool>` | unset | Overrides ROS-compatible DDS naming when set. |
 | `use_namespace` | `bool` | `true` | Enables namespace prefixes on endpoints. |
@@ -516,7 +518,7 @@ Declaration:
 void setDomainId(uint32_t domain_id);
 ```
 
-- Description: Sets the DDS domain for the next session; the initial domain is 123.
+- Description: Convenience setter for `ConnectionOptions::domain_id`; updates the canonical stopped-stage configuration used by the next session.
 - Parameters: `domain_id` — DDS domain identifier.
 - Returns: Nothing. The client must be stopped.
 
@@ -528,7 +530,7 @@ Declaration:
 uint32_t domainId() const;
 ```
 
-- Description: Reads the configured DDS domain.
+- Description: Convenience getter for the canonical `ConnectionOptions::domain_id` value.
 - Parameters: None.
 - Returns: The configured domain identifier.
 
