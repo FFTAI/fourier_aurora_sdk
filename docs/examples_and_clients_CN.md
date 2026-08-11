@@ -200,6 +200,24 @@ python3 examples/gr3/python/swing_arms.py 42
 示例假设 GR3 的 `left_manipulator` 与 `right_manipulator` group 排列。运行前
 必须根据已连接机器人检查并确认关节 index。
 
+### `sub_controller`（Python）
+
+用途：展示手臂 passthrough 指令与 Universal Controller 运行时 rate 和 reset
+之间的配合方式。
+
+这个 recipe 接收模块 source ID，租用左右 manipulator，并请求 GR3
+ExternalUniController（FSM `120`）。它先将 momentum 和 waist compensation
+rate 设为 `0.0`，再将双臂目标设为全零。用户确认后，将双侧肘关节设为
+`-1.0`，momentum rate 设为 `0.5`，waist rate 设为 `1.0`；再次确认后 reset
+Universal Controller。每次手臂移动都从最新测量状态开始，以 100 Hz 在两秒内
+插值到目标位置。
+
+```bash
+python3 examples/gr3/python/sub_controller.py 42
+```
+
+示例假设 GR3 使用七关节 manipulator 排列，肘关节 index 为 `3`。
+
 ## 把示例作为应用模板
 
 每个示例有意把完整流程放在单个文件中。改造成应用时：

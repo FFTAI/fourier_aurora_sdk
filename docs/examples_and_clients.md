@@ -217,6 +217,26 @@ The example expects `left_manipulator` and `right_manipulator` group ordering
 used by GR3. Inspect and validate joint indices against the connected robot
 before running it.
 
+### `sub_controller` (Python)
+
+Purpose: demonstrate how arm passthrough commands interact with Universal
+Controller runtime rates and reset.
+
+The recipe accepts the module source ID, leases both manipulators, and requests
+GR3 ExternalUniController (FSM `120`). It first disables momentum and waist
+compensation and commands both arms to zero. After confirmation, it commands
+both elbow joints to `-1.0`, sets momentum to `0.5` and waist compensation to
+`1.0`, then waits for confirmation before resetting Universal Controller. Each
+arm transition starts from the latest measured state and interpolates to its
+target over two seconds at 100 Hz.
+
+```bash
+python3 examples/gr3/python/sub_controller.py 42
+```
+
+This example assumes the GR3 seven-joint manipulator ordering, with the elbow
+at index `3`.
+
 ## Use the examples as application templates
 
 The examples intentionally keep each workflow in one file. When adapting one:
