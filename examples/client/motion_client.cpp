@@ -4,6 +4,7 @@
 #include <exception>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "client_common.hpp"
@@ -282,21 +283,38 @@ int main(int argc, char** argv) {
     client_example::installSignalHandlers();
     auto& client = sdk::AuroraClient::getInstance();
     try {
+        std::vector<sdk::Endpoint> endpoints;
+        if (parsed.get_state || parsed.monitor_state) {
+            endpoints.push_back(sdk::Endpoint::MotionStateSubscriber);
+        }
+        if (parsed.get_estimator || parsed.monitor_estimator) {
+            endpoints.push_back(sdk::Endpoint::EstimatorDataSubscriber);
+        }
+        if (parsed.publish_command) {
+            endpoints.push_back(sdk::Endpoint::ManageLeaseService);
+            endpoints.push_back(sdk::Endpoint::MotionCommandPublisher);
+        }
         client_example::configureClient(
             client,
             domain_id,
             argv[2],
-            {sdk::Endpoint::ManageLeaseService,
-             sdk::Endpoint::MotionStateSubscriber,
-             sdk::Endpoint::EstimatorDataSubscriber,
-             sdk::Endpoint::MotionCommandPublisher});
+            std::move(endpoints));
         client.start();
-        const auto lease = client.registerLease({sdk::AuroraResource::MotionCommand});
-        if (!lease.success()) {
-            client_example::printResult("registerLease", lease.operation);
-            return client_example::stopClient(client, client_example::kRuntimeFailure);
+        if (!client.waitForEndpoints(std::chrono::seconds(5))) {
+            std::cerr << "Timed out waiting for required endpoints.\n";
+            return client_example::stopClient(
+                client, client_example::kRuntimeFailure);
         }
-        client_example::sleepInterruptibly(std::chrono::milliseconds(500));
+        if (parsed.publish_command) {
+            const auto lease = client.registerLease(
+                {sdk::AuroraResource::MotionCommand});
+            if (!lease.success()) {
+                client_example::printResult(
+                    "registerLease", lease.operation);
+                return client_example::stopClient(
+                    client, client_example::kRuntimeFailure);
+            }
+        }
 
         int exit_code = client_example::kSuccess;
         if (parsed.monitor_state) {

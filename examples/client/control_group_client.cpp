@@ -336,14 +336,24 @@ int main(int argc, char** argv) {
     client_example::installSignalHandlers();
     auto& client = sdk::AuroraClient::getInstance();
     try {
+        std::vector<sdk::Endpoint> endpoints{
+            sdk::Endpoint::ControlGroupStateSubscriber};
+        if (parsed.operation == Operation::SetPosition) {
+            endpoints.push_back(sdk::Endpoint::ManageLeaseService);
+            endpoints.push_back(
+                sdk::Endpoint::ControlGroupCommandPublisher);
+        }
         client_example::configureClient(
             client,
             domain_id,
             argv[2],
-            {sdk::Endpoint::ManageLeaseService,
-             sdk::Endpoint::ControlGroupStateSubscriber,
-             sdk::Endpoint::ControlGroupCommandPublisher});
+            std::move(endpoints));
         client.start();
+        if (!client.waitForEndpoints(std::chrono::seconds(5))) {
+            std::cerr << "Timed out waiting for required endpoints.\n";
+            return client_example::stopClient(
+                client, client_example::kRuntimeFailure);
+        }
         if (parsed.operation == Operation::SetPosition) {
             std::vector<sdk::AuroraResource> resources;
             const auto convert = [](const std::string& group) {
@@ -369,7 +379,6 @@ int main(int argc, char** argv) {
                 return client_example::stopClient(client, client_example::kRuntimeFailure);
             }
         }
-        client_example::sleepInterruptibly(std::chrono::milliseconds(500));
 
         int exit_code = client_example::kSuccess;
         if (client_example::stopRequested()) {

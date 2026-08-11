@@ -43,14 +43,16 @@ Every tool requires a DDS domain ID and nonzero module `source_id`:
 <tool> <domain_id> <source_id> <operation...>
 ```
 
-Both are unsigned 32-bit integers. `source_id` is the lease authority's module
-identity and must be unique among concurrently connected modules. Tools print
-their domain and source at startup.
+Both are unsigned 32-bit integers. `source_id` identifies the client module and
+is used by the lease authority when that client requests control; it must be
+unique among concurrently connected modules. Tools print their domain and
+source at startup.
 
-Each tool creates a fixed endpoint bundle. Options select operations, not DDS
-construction. The tools intentionally do not call aggregate
-`waitForEndpoints()` because an unrelated endpoint should not block a focused
-diagnostic. Each operation prints its exact result on failure.
+Each tool enables only the endpoints required by the selected operations. It
+waits up to five seconds for those endpoints to match before reading state,
+sending a request, or registering a lease. Read-only get and monitor operations
+do not enable lease management, register a lease, or claim control resources.
+Each operation prints its exact result on failure.
 
 | Exit code | Meaning |
 |---:|---|
@@ -61,7 +63,8 @@ diagnostic. Each operation prints its exact result on failure.
 
 ### `state_client`
 
-Endpoints: `AuroraStateSubscriber`, `FsmService`.
+Endpoints are selected by operation: read and monitor operations use
+`AuroraStateSubscriber`; `--request-state` uses `FsmService`.
 
 ```bash
 state_client 123 42 --get-state
@@ -78,8 +81,9 @@ state_client 123 42 --monitor-state
 
 ### `motion_client`
 
-Endpoints: `MotionStateSubscriber`, `EstimatorDataSubscriber`,
-`MotionCommandPublisher`, `ManageLeaseService`.
+Endpoints are selected by operation. State reads use `MotionStateSubscriber`,
+estimator reads use `EstimatorDataSubscriber`, and command operations add
+`MotionCommandPublisher` plus `ManageLeaseService`.
 
 Read operations:
 
@@ -113,13 +117,16 @@ motion_client 123 42 \
   --lin-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-The client registers the `MotionCommand` lease before publishing. Motion
-position is world-frame; linear/angular velocity is robot-base-frame. Values
-use SI units.
+The client registers the `MotionCommand` lease only when command fields are
+present, after all selected endpoints match. Read-only invocations remain
+passive and can monitor Aurora while another source owns the motion lease.
+Motion position is world-frame; linear/angular velocity is robot-base-frame.
+Values use SI units.
 
 ### `control_group_client`
 
-Endpoints: `ControlGroupStateSubscriber`, `ControlGroupCommandPublisher`,
+Read and monitor operations use only `ControlGroupStateSubscriber`. A
+`--position` operation also enables `ControlGroupCommandPublisher` and
 `ManageLeaseService`.
 
 ```bash
@@ -136,9 +143,10 @@ control_group_client 123 42 \
 interpolate from one measured snapshot to the supplied joint positions.
 `--duration` defaults to 5 seconds and `--rate` to 100 Hz.
 
-Before publishing, the client registers one lease covering every named joint
-group. Aurora validates whether names, vector lengths, and modes are valid for
-the connected robot.
+Before publishing, and only after its selected endpoints match, the client
+registers one lease covering every named joint group. Read-only invocations do
+not register a lease. Aurora validates whether names, vector lengths, and modes
+are valid for the connected robot.
 
 ## GR3 recipes
 

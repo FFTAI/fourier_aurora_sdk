@@ -40,12 +40,13 @@ GR3 recipe 使用 DDS domain `123`；诊断客户端从命令行接收 domain。
 <tool> <domain_id> <source_id> <operation...>
 ```
 
-两者都是无符号 32 位整数。`source_id` 是租约 authority 使用的模块身份，同时
-连接的模块必须使用不同 ID。工具启动时会打印 domain 与 source。
+两者都是无符号 32 位整数。`source_id` 标识 client 模块，并在该 client 请求控制权
+时供租约 authority 使用；同时连接的模块必须使用不同 ID。工具启动时会打印
+domain 与 source。
 
-每个工具创建固定 endpoint 组合；选项只选择操作，不改变 DDS endpoint。工具
-不会调用聚合的 `waitForEndpoints()`，避免无关 endpoint 阻塞单项诊断。每个操作
-失败时都会打印完整返回值。
+每个工具只启用所选操作需要的 endpoint。在读取状态、发送 request 或注册租约前，
+工具最多等待 5 秒，确认这些 endpoint 已匹配。只读 get 和 monitor 操作不会启用
+租约管理、注册租约或占用控制资源。每个操作失败时都会打印完整返回值。
 
 | 退出码 | 含义 |
 |---:|---|
@@ -56,7 +57,8 @@ GR3 recipe 使用 DDS domain `123`；诊断客户端从命令行接收 domain。
 
 ### `state_client`
 
-Endpoint：`AuroraStateSubscriber`、`FsmService`。
+Endpoint 按操作选择：读取和 monitor 使用 `AuroraStateSubscriber`；
+`--request-state` 使用 `FsmService`。
 
 ```bash
 state_client 123 42 --get-state
@@ -73,8 +75,9 @@ state_client 123 42 --monitor-state
 
 ### `motion_client`
 
-Endpoint：`MotionStateSubscriber`、`EstimatorDataSubscriber`、
-`MotionCommandPublisher`、`ManageLeaseService`。
+Endpoint 按操作选择：状态读取使用 `MotionStateSubscriber`，估计器读取使用
+`EstimatorDataSubscriber`；命令操作额外启用 `MotionCommandPublisher` 和
+`ManageLeaseService`。
 
 读取操作：
 
@@ -108,13 +111,15 @@ motion_client 123 42 \
   --lin-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-客户端发布前注册 `MotionCommand` 租约。Motion position 使用世界坐标系，线速度
-与角速度使用机器人机身坐标系。数值使用 SI 单位。
+只有存在命令字段时，客户端才会在所有所选 endpoint 匹配后注册
+`MotionCommand` 租约。只读调用保持被动，可在其他 source 持有运动租约时监视
+Aurora。Motion position 使用世界坐标系，线速度与角速度使用机器人机身坐标系。
+数值使用 SI 单位。
 
 ### `control_group_client`
 
-Endpoint：`ControlGroupStateSubscriber`、`ControlGroupCommandPublisher`、
-`ManageLeaseService`。
+读取和 monitor 操作只使用 `ControlGroupStateSubscriber`。`--position` 操作额外
+启用 `ControlGroupCommandPublisher` 和 `ManageLeaseService`。
 
 ```bash
 control_group_client 123 42 --get-state
@@ -129,8 +134,9 @@ control_group_client 123 42 \
 一个或多个 `--position` group 会从同一实测快照线性插值到目标位置。
 `--duration` 默认 5 秒，`--rate` 默认 100 Hz。
 
-发布前，客户端注册一个覆盖全部命名关节组的租约。Group 名称、向量长度和 mode
-是否适用于已连接机器人，由 Aurora 验证。
+发布前，客户端会先等待所选 endpoint 匹配，再注册一个覆盖全部命名关节组的租约。
+只读调用不注册租约。Group 名称、向量长度和 mode 是否适用于已连接机器人，由
+Aurora 验证。
 
 ## GR3 Recipe
 

@@ -1,8 +1,10 @@
 #include <algorithm>
+#include <chrono>
 #include <cstdint>
 #include <exception>
 #include <iostream>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "client_common.hpp"
@@ -135,14 +137,36 @@ int main(int argc, char** argv) {
     client_example::installSignalHandlers();
     auto& client = sdk::AuroraClient::getInstance();
     try {
+        const bool reads_state = std::any_of(
+            operations.begin(),
+            operations.end(),
+            [](const Operation& operation) {
+                return operation.type != OperationType::RequestState;
+            });
+        const bool requests_state = std::any_of(
+            operations.begin(),
+            operations.end(),
+            [](const Operation& operation) {
+                return operation.type == OperationType::RequestState;
+            });
+        std::vector<sdk::Endpoint> endpoints;
+        if (reads_state) {
+            endpoints.push_back(sdk::Endpoint::AuroraStateSubscriber);
+        }
+        if (requests_state) {
+            endpoints.push_back(sdk::Endpoint::FsmService);
+        }
         client_example::configureClient(
             client,
             domain_id,
             argv[2],
-            {sdk::Endpoint::AuroraStateSubscriber,
-             sdk::Endpoint::FsmService});
+            std::move(endpoints));
         client.start();
-        client_example::sleepInterruptibly(std::chrono::milliseconds(500));
+        if (!client.waitForEndpoints(std::chrono::seconds(5))) {
+            std::cerr << "Timed out waiting for required endpoints.\n";
+            return client_example::stopClient(
+                client, client_example::kRuntimeFailure);
+        }
 
         int exit_code = client_example::kSuccess;
         if (operations.front().type == OperationType::MonitorState) {
