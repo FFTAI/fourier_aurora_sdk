@@ -38,6 +38,9 @@ option(FOURIER_AURORA_SDK_BUILD_TESTS "Build tests" ${FOURIER_AURORA_SDK_BUILD_T
 option(FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS
     "Build robot-independent C++ diagnostic clients"
     ${FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS_DEFAULT})
+option(FOURIER_AURORA_SDK_INSTALL_SYSTEM_CLIENT
+    "Expose aurora-client and completions in system paths"
+    OFF)
 option(FOURIER_AURORA_SDK_BUILD_EXAMPLES
     "Build robot-specific C++ recipes"
     ${FOURIER_AURORA_SDK_BUILD_EXAMPLES_DEFAULT})
@@ -429,16 +432,60 @@ if(FOURIER_AURORA_SDK_BUILD_TESTS)
     endif()
 endif()
 
-if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS)
-    foreach(client_name state_client motion_client control_group_client)
-        add_executable(${client_name} examples/client/${client_name}.cpp)
-        target_include_directories(${client_name} PRIVATE examples/client)
-        target_link_libraries(${client_name} PRIVATE fourier_aurora_sdk)
-    endforeach()
+if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND
+   FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS)
+    add_executable(aurora_client examples/client/aurora_client.cpp)
+    set_target_properties(aurora_client PROPERTIES OUTPUT_NAME aurora-client)
+    target_compile_definitions(aurora_client PRIVATE
+        FOURIER_AURORA_SDK_VERSION="${PROJECT_VERSION}"
+    )
+    target_include_directories(aurora_client PRIVATE examples/client)
+    target_link_libraries(aurora_client PRIVATE fourier_aurora_sdk)
     if(NOT SKBUILD)
-        install(TARGETS state_client motion_client control_group_client
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/client
+        install(TARGETS aurora_client
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         )
+        if(FOURIER_AURORA_SDK_INSTALL_SYSTEM_CLIENT)
+            file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/packaging")
+            file(CREATE_LINK
+                "/opt/fftai/fourier_aurora_sdk/bin/aurora-client"
+                "${CMAKE_CURRENT_BINARY_DIR}/packaging/aurora-client"
+                SYMBOLIC
+            )
+            install(FILES "${CMAKE_CURRENT_BINARY_DIR}/packaging/aurora-client"
+                DESTINATION /usr/bin
+            )
+            set(_aurora_client_completion_root "/usr/share")
+        else()
+            set(_aurora_client_completion_root
+                "${CMAKE_INSTALL_DATAROOTDIR}")
+        endif()
+        install(FILES completion/aurora-client.bash
+            DESTINATION
+                "${_aurora_client_completion_root}/bash-completion/completions"
+            RENAME aurora-client
+        )
+        install(FILES completion/_aurora-client
+            DESTINATION "${_aurora_client_completion_root}/zsh/site-functions"
+        )
+        install(FILES completion/aurora-client.fish
+            DESTINATION
+                "${_aurora_client_completion_root}/fish/vendor_completions.d"
+        )
+    endif()
+    if(FOURIER_AURORA_SDK_BUILD_TESTS)
+        find_program(FOURIER_AURORA_SDK_BASH_EXECUTABLE bash)
+        if(FOURIER_AURORA_SDK_BASH_EXECUTABLE)
+            add_test(
+                NAME unified_client_cli
+                COMMAND
+                    "${FOURIER_AURORA_SDK_BASH_EXECUTABLE}"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/tests/client/test_unified_client_cli.sh"
+                    "$<TARGET_FILE:aurora_client>"
+                    "${CMAKE_CURRENT_SOURCE_DIR}/completion"
+            )
+            set_tests_properties(unified_client_cli PROPERTIES TIMEOUT 15)
+        endif()
     endif()
 endif()
 
@@ -483,6 +530,7 @@ if(NOT SKBUILD)
         "${_aurora_sdk_debian_architecture}")
     set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/fftai/fourier_aurora_sdk")
+    set(CPACK_SET_DESTDIR ON)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS
         "fourier_dds (= 1.2.0-1), fourier-dds-msgs (= 0.1.0-1)")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")

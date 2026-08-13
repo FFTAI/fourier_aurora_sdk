@@ -20,4 +20,5 @@ Internal material:
 - `command_contract.md`, `result_codes.md`: implementation contract details;
 - `sdk_architecture.md`, `fourierdds_transport.md`: internal architecture;
 - `dependency_discovery.md`, `source_id_registry.md`: deployment/maintainer notes;
+- `unified_client_design.md`: agreed unified diagnostic-client behavior;
 - `testing.md`, `release_checklist.md`: verification and release tracking.

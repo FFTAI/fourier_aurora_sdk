@@ -17,7 +17,7 @@ work area, verify the robot model and FSM IDs, and be ready to stop it.
 
 | Program | Source tree | Native build | Debian installation |
 |---|---|---|---|
-| Diagnostic clients | `examples/client/` | `build/{state_client,motion_client,control_group_client}` | `/opt/fftai/fourier_aurora_sdk/bin/client/` |
+| Diagnostic client | `examples/client/aurora_client.cpp` | `build/aurora-client` | `aurora-client` on the system `PATH` |
 | C++ GR3 recipes | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms,aurora_state_callback}` | Source under `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
 | Python GR3 recipes | `examples/gr3/python/` | Run from source | Source under `share/doc/fourier_aurora_sdk/examples/gr3/python/` |
 
@@ -32,23 +32,30 @@ diagnostic executables.
 4. Run read-only operations first and verify the robot type/current FSM.
 5. Check every printed `OperationResult`, not only the process exit code.
 
-The GR3 recipes use DDS domain `123`. Diagnostic clients accept a domain on the
-command line.
+The GR3 recipes and diagnostic client default to DDS domain `123`.
 
 ## Diagnostic client common contract
 
-Every tool requires a DDS domain ID and nonzero module `source_id`:
+The unified diagnostic executable uses an area and command hierarchy:
 
 ```text
-<tool> <domain_id> <source_id> <operation...>
+aurora-client [global options] <area> <command> [command options]
 ```
 
-Both are unsigned 32-bit integers. `source_id` identifies the client module and
-is used by the lease authority when that client requests control; it must be
-unique among concurrently connected modules. Tools print their domain and
-source at startup.
+DDS domain ID defaults to `123` and source ID defaults to `1234`. Override them
+anywhere on the command line with `-d`/`--domain_id` and
+`-s`/`--source_id`. Both are unsigned 32-bit integers and `source_id` must be
+nonzero. A source ID identifies the client module to the lease authority and
+must be unique among concurrently connected modules. The client prints the
+effective IDs to standard error at startup.
 
-Each tool enables only the endpoints required by the selected operations. It
+```bash
+aurora-client state get
+aurora-client -d 7 -s 42 state get
+aurora-client state get --domain_id 7 --source_id 42
+```
+
+The client enables only the endpoints required by the selected command. It
 waits up to five seconds for those endpoints to match before reading state,
 sending a request, or registering a lease. Read-only get and monitor operations
 do not enable lease management, register a lease, or claim control resources.
@@ -61,50 +68,61 @@ Each operation prints its exact result on failure.
 | `2` | Invalid command-line usage |
 | `130` | Interrupted by `SIGINT` or `SIGTERM` |
 
-### `state_client`
+Run `aurora-client --help`, `aurora-client <area> --help`, or
+`aurora-client <area> <command> --help` without starting DDS. The Debian
+package also installs Bash, Zsh, and Fish completion definitions.
+
+Monitor commands default to `500ms`. `--interval` accepts milliseconds as a
+bare value or explicit `ms`/`s` suffixes; the minimum is `10ms`.
+
+### `state`
 
 Endpoints are selected by operation: read and monitor operations use
-`AuroraStateSubscriber`; `--request-state` uses `FsmService`.
+`AuroraStateSubscriber`; `request` uses `FsmService`.
 
 ```bash
-state_client 123 42 --get-state
-state_client 123 42 --get-available-states
-state_client 123 42 --request-state 13
-state_client 123 42 --get-state --request-state 13
-state_client 123 42 --monitor-state
+aurora-client state get
+aurora-client state list
+aurora-client state request 13
+aurora-client state monitor
+aurora-client state monitor --interval 250ms
 ```
 
-- `--get-state` prints robot information, switch status, and current FSM.
-- `--get-available-states` prints Aurora's advertised state list.
-- `--request-state` sends a numeric FSM request and prints Aurora's reply.
-- `--monitor-state` must be used alone; it reads the latest cache every 500 ms.
+- `get` prints robot information, switch status, and current FSM.
+- `list` prints Aurora's advertised state list.
+- `request` sends a numeric FSM request and prints Aurora's immediate reply.
+- `monitor` reads the latest cache until interrupted.
 
-### `motion_client`
+### `estimator`
 
-Endpoints are selected by operation. State reads use `MotionStateSubscriber`,
-estimator reads use `EstimatorDataSubscriber`, and command operations add
+Estimator telemetry is a separate read-only area:
+
+```bash
+aurora-client estimator get
+aurora-client estimator monitor --interval 1s
+```
+
+It prints the complete estimator pose, motion, inertial, contact, and stability
+payload. Read-only invocations do not enable lease management or claim a
+control resource.
+
+### `motion`
+
+Motion-state reads use `MotionStateSubscriber`. Command publication uses
 `MotionCommandPublisher` plus `ManageLeaseService`.
 
-Read operations:
-
 ```bash
-motion_client 123 42 --get-state
-motion_client 123 42 --get-estimator
-motion_client 123 42 --get-state --get-estimator
-motion_client 123 42 --monitor-state
-motion_client 123 42 --monitor-estimator
+aurora-client motion get
+aurora-client motion monitor --interval 500
 ```
-
-A monitor option must be the only operation. Monitor mode reads the latest
-cache every 500 ms and only repeats a transient failure when it changes.
 
 Command fields may be combined into one `MotionCommand`:
 
 ```text
 --position <x> <y> <z>
---lin-velocity <vx> <vy> <vz>
+--linear-velocity <vx> <vy> <vz>
 --attitude <roll> <pitch> <yaw>
---ang-velocity <wx> <wy> <wz>
+--angular-velocity <wx> <wy> <wz>
 --delta-height <value>
 --gait-type <uint8>
 --skills <s0> <s1> <s2> <s3> <s4> <s5> <s6> <s7>
@@ -112,35 +130,35 @@ Command fields may be combined into one `MotionCommand`:
 ```
 
 ```bash
-motion_client 123 42 \
-  --get-state --get-estimator \
-  --lin-velocity 0.1 0.0 0.0 --duration 1.0
+aurora-client motion command \
+  --linear-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-The client registers the `MotionCommand` lease only when command fields are
-present, after all selected endpoints match. Read-only invocations remain
-passive and can monitor Aurora while another source owns the motion lease.
+`motion command` requires at least one field, publishes exactly once, and
+registers the `MotionCommand` lease after its selected endpoints match.
+Read-only invocations remain passive and can monitor Aurora while another
+source owns the motion lease.
 Motion position is world-frame; linear/angular velocity is robot-base-frame.
 Values use SI units.
 
-### `control_group_client`
+### `control-group`
 
 Read and monitor operations use only `ControlGroupStateSubscriber`. A
-`--position` operation also enables `ControlGroupCommandPublisher` and
+`position` also enables `ControlGroupCommandPublisher` and
 `ManageLeaseService`.
 
 ```bash
-control_group_client 123 42 --get-state
-control_group_client 123 42 --monitor-state
-control_group_client 123 42 \
-  --position left_manipulator 0.0 0.2 0.0 -0.7 \
-  --position right_manipulator 0.0 -0.2 0.0 -0.7 \
+aurora-client control-group get
+aurora-client control-group monitor
+aurora-client control-group position \
+  --target left_manipulator 0.0 0.2 0.0 -0.7 \
+  --target right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100
 ```
 
-`--get-state` prints latest joint and Cartesian state/command entries.
-`--monitor-state` must be used alone. One or more `--position` groups linearly
-interpolate from one measured snapshot to the supplied joint positions.
+`get` prints latest joint and Cartesian state/command entries. One or more
+repeatable `--target` values linearly interpolate from one measured snapshot
+to the supplied joint positions.
 `--duration` defaults to 5 seconds and `--rate` to 100 Hz.
 
 Before publishing, and only after its selected endpoints match, the client

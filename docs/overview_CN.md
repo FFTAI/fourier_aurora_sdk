@@ -149,7 +149,8 @@ cmake --build build-cpp --parallel 4
 | 选项 | 原生默认值 | 作用 |
 |---|---:|---|
 | `FOURIER_AURORA_SDK_BUILD_PYTHON` | `ON` | 构建 pybind11 extension |
-| `FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS` | `ON` | 构建诊断客户端 |
+| `FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS` | `ON` | 构建 `aurora-client` |
+| `FOURIER_AURORA_SDK_INSTALL_SYSTEM_CLIENT` | `OFF` | 在系统路径暴露客户端和补全（打包用） |
 | `FOURIER_AURORA_SDK_BUILD_EXAMPLES` | `ON` | 构建 C++ GR3 recipe |
 | `FOURIER_AURORA_SDK_BUILD_TESTS` | `OFF` | 构建并注册测试 |
 | `FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT` | `ON` | 启用真实 transport |
@@ -168,7 +169,8 @@ cmake --install build-cpp --prefix /tmp/fourier-aurora-sdk-install
 include/fourier_aurora_sdk/        C++ 头文件
 lib/libfourier_aurora_sdk.so*      动态库
 lib/cmake/fourier_aurora_sdk/      find_package 配置
-bin/client/                         诊断客户端
+bin/aurora-client                  统一诊断客户端
+share/{bash-completion,zsh,fish}/  shell 自动补全
 share/doc/fourier_aurora_sdk/      readme、license、changelog、GR3 源码
 ```
 

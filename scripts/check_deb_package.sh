@@ -55,9 +55,10 @@ required_files=(
     "${sdk_prefix}/lib/libfourier_aurora_sdk.so.${version}"
     "${sdk_prefix}/lib/cmake/fourier_aurora_sdk/fourier_aurora_sdkConfig.cmake"
     "${sdk_prefix}/lib/cmake/fourier_aurora_sdk/fourier_aurora_sdkConfigVersion.cmake"
-    "${sdk_prefix}/bin/client/state_client"
-    "${sdk_prefix}/bin/client/motion_client"
-    "${sdk_prefix}/bin/client/control_group_client"
+    "${sdk_prefix}/bin/aurora-client"
+    "${extract_root}/usr/share/bash-completion/completions/aurora-client"
+    "${extract_root}/usr/share/zsh/site-functions/_aurora-client"
+    "${extract_root}/usr/share/fish/vendor_completions.d/aurora-client.fish"
     "${doc_prefix}/LICENSE"
     "${doc_prefix}/README.md"
     "${doc_prefix}/README_CN.md"
@@ -85,6 +86,14 @@ for required_file in "${required_files[@]}"; do
         exit 1
     fi
 done
+[[ -L "${extract_root}/usr/bin/aurora-client" ]]
+[[ "$(readlink "${extract_root}/usr/bin/aurora-client")" == \
+    "/opt/fftai/fourier_aurora_sdk/bin/aurora-client" ]]
+if find "${sdk_prefix}/bin" -type f -o -type l | \
+    grep -Eq '/(state_client|motion_client|control_group_client)$'; then
+    echo "Debian package contains replaced diagnostic clients." >&2
+    exit 1
+fi
 [[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so" ]]
 [[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.2" ]]
 cmp "${project_root}/LICENSE" "${doc_prefix}/LICENSE"

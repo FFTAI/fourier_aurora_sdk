@@ -55,6 +55,11 @@ originate inside the client or from an Aurora reply and is distinct from
 asynchronous robot fault telemetry.
 _Avoid_: ErrorCodes, exception
 
+**Estimator telemetry**:
+Read-only robot pose, motion, inertial, contact, and stability observations
+published by Aurora's state estimator.
+_Avoid_: Motion state, estimator command
+
 **Client diagnostic tool**:
 A robot-independent command-line program for inspecting or exercising Aurora
 SDK client interfaces. It accepts robot-dependent identifiers or values as

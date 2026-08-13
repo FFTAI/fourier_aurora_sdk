@@ -163,7 +163,8 @@ Useful CMake switches are:
 | Option | Native default | Effect |
 |---|---:|---|
 | `FOURIER_AURORA_SDK_BUILD_PYTHON` | `ON` | Build pybind11 extension |
-| `FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS` | `ON` | Build diagnostic clients |
+| `FOURIER_AURORA_SDK_BUILD_CLIENT_TOOLS` | `ON` | Build `aurora-client` |
+| `FOURIER_AURORA_SDK_INSTALL_SYSTEM_CLIENT` | `OFF` | Expose the client and completions in system paths (packaging) |
 | `FOURIER_AURORA_SDK_BUILD_EXAMPLES` | `ON` | Build C++ GR3 recipes |
 | `FOURIER_AURORA_SDK_BUILD_TESTS` | `OFF` | Build and register tests |
 | `FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT` | `ON` | Enable real transport |
@@ -183,7 +184,8 @@ Installation produces:
 include/fourier_aurora_sdk/        C++ headers
 lib/libfourier_aurora_sdk.so*      shared library
 lib/cmake/fourier_aurora_sdk/      find_package configuration
-bin/client/                         diagnostic clients
+bin/aurora-client                  unified diagnostic client
+share/{bash-completion,zsh,fish}/  shell completion definitions
 share/doc/fourier_aurora_sdk/      readme, license, changelog, GR3 sources
 ```
 

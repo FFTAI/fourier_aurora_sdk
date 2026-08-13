@@ -16,7 +16,7 @@
 
 | 程序 | 源码 | 原生构建结果 | Debian 安装结果 |
 |---|---|---|---|
-| 诊断客户端 | `examples/client/` | `build/{state_client,motion_client,control_group_client}` | `/opt/fftai/fourier_aurora_sdk/bin/client/` |
+| 诊断客户端 | `examples/client/aurora_client.cpp` | `build/aurora-client` | 系统 `PATH` 中的 `aurora-client` |
 | C++ GR3 recipe | `examples/gr3/cpp/` | `build/gr3_{get_info,walk_forward,swing_arms,aurora_state_callback}` | 源码位于 `share/doc/fourier_aurora_sdk/examples/gr3/cpp/` |
 | Python GR3 recipe | `examples/gr3/python/` | 从源码运行 | 源码位于 `share/doc/fourier_aurora_sdk/examples/gr3/python/` |
 
@@ -30,22 +30,29 @@ Python wheel 只包含 client package，不包含示例或诊断 executable。
 4. 先运行只读操作，确认机器人型号和当前 FSM。
 5. 检查打印的每个 `OperationResult`，不要只看进程退出码。
 
-GR3 recipe 使用 DDS domain `123`；诊断客户端从命令行接收 domain。
+GR3 recipe 和诊断客户端默认使用 DDS domain `123`。
 
 ## 诊断客户端通用约定
 
-每个工具都要求 DDS domain ID 和非零模块 `source_id`：
+统一诊断程序采用 area 和 command 层级：
 
 ```text
-<tool> <domain_id> <source_id> <operation...>
+aurora-client [global options] <area> <command> [command options]
 ```
 
-两者都是无符号 32 位整数。`source_id` 标识 client 模块，并在该 client 请求控制权
-时供租约 authority 使用；同时连接的模块必须使用不同 ID。工具启动时会打印
-domain 与 source。
+DDS domain ID 默认为 `123`，source ID 默认为 `1234`。可在命令行任意位置用
+`-d`/`--domain_id` 和 `-s`/`--source_id` 覆盖。两者都是无符号 32 位整数，
+且 `source_id` 不能为零。同时连接的模块必须使用不同 source ID。程序启动时会将
+生效的 ID 打印到标准错误。
 
-每个工具只启用所选操作需要的 endpoint。在读取状态、发送 request 或注册租约前，
-工具最多等待 5 秒，确认这些 endpoint 已匹配。只读 get 和 monitor 操作不会启用
+```bash
+aurora-client state get
+aurora-client -d 7 -s 42 state get
+aurora-client state get --domain_id 7 --source_id 42
+```
+
+客户端只启用所选 command 需要的 endpoint。在读取状态、发送 request 或注册租约前，
+程序最多等待 5 秒，确认这些 endpoint 已匹配。只读 get 和 monitor 操作不会启用
 租约管理、注册租约或占用控制资源。每个操作失败时都会打印完整返回值。
 
 | 退出码 | 含义 |
@@ -55,50 +62,51 @@ domain 与 source。
 | `2` | 命令行参数错误 |
 | `130` | 被 `SIGINT` 或 `SIGTERM` 中断 |
 
-### `state_client`
+可用 `aurora-client --help`、`aurora-client <area> --help` 或 command 级帮助，
+且不会启动 DDS。Debian package 同时安装 Bash、Zsh 和 Fish 自动补全。
+Monitor 默认间隔为 `500ms`；`--interval` 可使用无后缀毫秒值或 `ms`/`s`，最小
+间隔为 `10ms`。
+
+### `state`
 
 Endpoint 按操作选择：读取和 monitor 使用 `AuroraStateSubscriber`；
-`--request-state` 使用 `FsmService`。
+`request` 使用 `FsmService`。
 
 ```bash
-state_client 123 42 --get-state
-state_client 123 42 --get-available-states
-state_client 123 42 --request-state 13
-state_client 123 42 --get-state --request-state 13
-state_client 123 42 --monitor-state
+aurora-client state get
+aurora-client state list
+aurora-client state request 13
+aurora-client state monitor --interval 250ms
 ```
 
-- `--get-state` 打印机器人信息、switch status 和当前 FSM。
-- `--get-available-states` 打印 Aurora 发布的状态列表。
-- `--request-state` 发送数字 FSM 请求并打印 Aurora reply。
-- `--monitor-state` 必须单独使用，每 500 ms 读取一次最新 cache。
+- `get` 打印机器人信息、switch status 和当前 FSM。
+- `list` 打印 Aurora 发布的状态列表。
+- `request` 发送数字 FSM request 并打印即时 reply。
+- `monitor` 持续读取最新 cache，直到被中断。
 
-### `motion_client`
+### `estimator`
 
-Endpoint 按操作选择：状态读取使用 `MotionStateSubscriber`，估计器读取使用
-`EstimatorDataSubscriber`；命令操作额外启用 `MotionCommandPublisher` 和
-`ManageLeaseService`。
-
-读取操作：
+Estimator 是独立的只读 area：
 
 ```bash
-motion_client 123 42 --get-state
-motion_client 123 42 --get-estimator
-motion_client 123 42 --get-state --get-estimator
-motion_client 123 42 --monitor-state
-motion_client 123 42 --monitor-estimator
+aurora-client estimator get
+aurora-client estimator monitor --interval 1s
 ```
 
-Monitor 选项必须单独使用。Monitor 每 500 ms 读取最新 cache，只在临时失败发生
-变化时重复打印。
+### `motion`
+
+```bash
+aurora-client motion get
+aurora-client motion monitor --interval 500
+```
 
 下列字段可以组合为一条 `MotionCommand`：
 
 ```text
 --position <x> <y> <z>
---lin-velocity <vx> <vy> <vz>
+--linear-velocity <vx> <vy> <vz>
 --attitude <roll> <pitch> <yaw>
---ang-velocity <wx> <wy> <wz>
+--angular-velocity <wx> <wy> <wz>
 --delta-height <value>
 --gait-type <uint8>
 --skills <s0> <s1> <s2> <s3> <s4> <s5> <s6> <s7>
@@ -106,32 +114,31 @@ Monitor 选项必须单独使用。Monitor 每 500 ms 读取最新 cache，只�
 ```
 
 ```bash
-motion_client 123 42 \
-  --get-state --get-estimator \
-  --lin-velocity 0.1 0.0 0.0 --duration 1.0
+aurora-client motion command \
+  --linear-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-只有存在命令字段时，客户端才会在所有所选 endpoint 匹配后注册
+`motion command` 至少需要一个字段，只发布一次，并在 endpoint 匹配后注册
 `MotionCommand` 租约。只读调用保持被动，可在其他 source 持有运动租约时监视
 Aurora。Motion position 使用世界坐标系，线速度与角速度使用机器人机身坐标系。
 数值使用 SI 单位。
 
-### `control_group_client`
+### `control-group`
 
-读取和 monitor 操作只使用 `ControlGroupStateSubscriber`。`--position` 操作额外
+读取和 monitor 操作只使用 `ControlGroupStateSubscriber`。`position` 额外
 启用 `ControlGroupCommandPublisher` 和 `ManageLeaseService`。
 
 ```bash
-control_group_client 123 42 --get-state
-control_group_client 123 42 --monitor-state
-control_group_client 123 42 \
-  --position left_manipulator 0.0 0.2 0.0 -0.7 \
-  --position right_manipulator 0.0 -0.2 0.0 -0.7 \
+aurora-client control-group get
+aurora-client control-group monitor
+aurora-client control-group position \
+  --target left_manipulator 0.0 0.2 0.0 -0.7 \
+  --target right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100
 ```
 
-`--get-state` 打印最新关节和笛卡尔状态/命令；`--monitor-state` 必须单独使用。
-一个或多个 `--position` group 会从同一实测快照线性插值到目标位置。
+`get` 打印最新关节和笛卡尔状态/命令。一个或多个重复的 `--target` group 会从
+同一实测快照线性插值到目标位置。
 `--duration` 默认 5 秒，`--rate` 默认 100 Hz。
 
 发布前，客户端会先等待所选 endpoint 匹配，再注册一个覆盖全部命名关节组的租约。
