@@ -66,7 +66,7 @@ set(FOURIER_AURORA_SDK_DDS_PREFIX "/opt/fftai" CACHE PATH
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(FOURIER_AURORA_SDK_SOVERSION 2)
+set(FOURIER_AURORA_SDK_SOVERSION 3)
 
 add_library(fourier_aurora_sdk SHARED
     src/aurora_client.cpp
@@ -532,7 +532,7 @@ if(NOT SKBUILD)
     set(CPACK_PACKAGING_INSTALL_PREFIX "/opt/fftai/fourier_aurora_sdk")
     set(CPACK_SET_DESTDIR ON)
     set(CPACK_DEBIAN_PACKAGE_DEPENDS
-        "fourier_dds (= 1.2.0-1), fourier-dds-msgs (= 0.1.0-1)")
+        "fourier_dds (= 1.2.0-1), fourier-dds-msgs (= 0.2.0-1)")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
     set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
         "${CMAKE_CURRENT_SOURCE_DIR}/packaging/postinst"

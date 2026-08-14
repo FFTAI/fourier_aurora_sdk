@@ -21,7 +21,7 @@ if [[ -z ${area} ]]; then
     'motion[motion state and commands]' \
     'control-group[control-group state and commands]' \
     '-d[DDS domain ID]' '--domain_id[DDS domain ID]' \
-    '-s[source ID]' '--source_id[source ID]' \
+    '-s[Source Name]' '--source_name[Source Name]' \
     '-h[show help]' '--help[show help]' '--version[show version]'
   return
 fi
@@ -35,12 +35,12 @@ if [[ -z ${command} ]]; then
   esac
   _values 'command or global option' ${choices} \
     '-d[DDS domain ID]' '--domain_id[DDS domain ID]' \
-    '-s[source ID]' '--source_id[source ID]' \
+    '-s[Source Name]' '--source_name[Source Name]' \
     '-h[show help]' '--help[show help]'
   return
 fi
 
-choices=(-d --domain_id -s --source_id -h --help)
+choices=(-d --domain_id -s --source_name -h --help)
 case ${command} in
   monitor) choices+=(--interval) ;;
   command)

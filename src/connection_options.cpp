@@ -116,26 +116,20 @@ NormalizedConnectionOptions normalizeConnectionOptions(
         throw InvalidArgumentError(
             "protected command publishers require ManageLeaseService");
     }
-    if ((has_manage || has_protected_publisher) && options.source_id == 0) {
+    if (options.source_name.empty() || options.source_name.size() > 64 ||
+        !std::all_of(options.source_name.begin(), options.source_name.end(),
+                     [](unsigned char c) {
+                         return (c >= 'A' && c <= 'Z') ||
+                                (c >= 'a' && c <= 'z') ||
+                                (c >= '0' && c <= '9') || c == '.' ||
+                                c == '_' || c == '-';
+                     })) {
         throw InvalidArgumentError(
-            "source_id must be nonzero when lease management is enabled");
+            "source_name must match [A-Za-z0-9._-]{1,64}");
     }
-    if (options.source_name.has_value()) {
-        if (options.source_id == 0) {
-            throw InvalidArgumentError("source_name requires a nonzero source_id");
-        }
-        validateBoundedString(*options.source_name, "source_name");
-        if (options.source_name->size() > 64) {
-            throw InvalidArgumentError("source_name must be 64 bytes or less");
-        }
-        if (std::any_of(options.source_name->begin(), options.source_name->end(),
-                        [](unsigned char c) { return c < 0x20 || c == 0x7f; })) {
-            throw InvalidArgumentError("source_name must not contain control characters");
-        }
-    }
-    if (options.allow_emergency_lease_priority && (!has_manage || options.source_id == 0)) {
+    if (options.allow_emergency_lease_priority && !has_manage) {
         throw InvalidArgumentError(
-            "Emergency lease opt-in requires ManageLeaseService and source_id");
+            "Emergency lease opt-in requires ManageLeaseService");
     }
 
     if (options.namespace_name.has_value()) {
@@ -152,15 +146,6 @@ NormalizedConnectionOptions normalizeConnectionOptions(
         normalized.has_discovery_server_override = true;
     }
     return normalized;
-}
-
-std::string effectiveSourceName(const ConnectionOptions& options) {
-    if (options.source_name.has_value()) {
-        return *options.source_name;
-    }
-    return options.source_id == 0
-               ? std::string{}
-               : "aurora_sdk_" + std::to_string(options.source_id);
 }
 
 }  // namespace fourier::aurora_sdk::detail

@@ -77,13 +77,12 @@ namespace sdk = fourier::aurora_sdk;
 | `use_namespace` | `bool` | `true` | 是否给 endpoint 添加 namespace。 |
 | `use_discovery_server` | `std::optional<bool>` | 未设置 | 可选 Discovery Server override。 |
 | `service_timeout_ms` | `uint32_t` | `1000` | 同步 Service 默认超时。 |
-| `source_id` | `uint32_t` | `0` | 部署分配的模块身份，用于租约。 |
-| `source_name` | `std::optional<std::string>` | 未设置 | 诊断名称，默认 `aurora_sdk_<source_id>`。 |
+| `source_name` | `std::string` | `""`（设置前无效） | 必填的可读 client 身份，必须符合 `[A-Za-z0-9._-]{1,64}`。 |
 | `allow_emergency_lease_priority` | `bool` | `false` | 允许提出 Emergency 租约请求；最终仍由 Aurora 授权。 |
 | `enabled_endpoints` | `std::vector<Endpoint>` | 全部 | `start()` 实际创建的 endpoint。 |
 
-启用租约或受保护 publisher 时 `source_id` 必须非零；受保护 publisher
-还必须启用 `ManageLeaseService`。
+每个 client 都必须配置 `source_name`；`start()` 会在创建 transport 之前校验。
+受保护 publisher 还必须启用 `ManageLeaseService`。
 
 ### `ClientState`
 
@@ -317,7 +316,7 @@ Quaternion 长度为 4，其他空间 vector 长度为 3。
 |---|---|
 | `operation` | 本次 API 操作的 `OperationResult`。 |
 | `state` | 当前本地 `LeaseState`。 |
-| `source_id`、`source_name` | 模块身份。 |
+| `source_name` | 模块身份。 |
 | `lease_id` | Authority 分配的 ID。 |
 | `resources` | 完整资源集合。 |
 | `priority` | 租约优先级。 |
@@ -329,8 +328,8 @@ Quaternion 长度为 4，其他空间 vector 长度为 3。
 
 ### `AuthorityResourceStatus`
 
-`resource` 指定资源，`acquired` 表示是否有 holder，`holder_source_id` 与
-`holder_source_name` 标识 holder，`holder_priority` 为其优先级。该数据仅为
+`resource` 指定资源，`acquired` 表示是否有 holder，`holder_source_name`
+标识 holder，`holder_priority` 为其优先级。该数据仅为
 状态快照，实际指令授权使用 SDK 管理的租约。
 
 ## 电机配置类型

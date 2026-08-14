@@ -74,10 +74,10 @@ SDK-managed upper-interface topic and service names use
 the defaults produce `aurora/robot_motion_cmd` and `aurora/ManageLease`. Set
 the option to an empty string when Aurora is configured without a prefix.
 
-Protected publishers (`MotionCommand`, `ControlGroupCommand`, and temporary
-`MotorConfigurationCommand`) require both `ManageLeaseService` and a nonzero
-`source_id`. Read-only and FSM/sub-controller service clients do not require a
-lease identity.
+Every SDK client requires a `source_name` matching
+`[A-Za-z0-9._-]{1,64}` before transport startup. Protected publishers
+(`MotionCommand`, `ControlGroupCommand`, and temporary
+`MotorConfigurationCommand`) additionally require `ManageLeaseService`.
 
 ### State snapshots and results
 
@@ -93,7 +93,7 @@ execution acknowledgement.
 
 ### Control lease
 
-One module (`source_id`) owns at most one SDK-managed lease. The application
+One module (`source_name`) owns at most one SDK-managed lease. The application
 registers the initial complete resource set, may atomically replace it, and
 releases it when control is no longer needed. The SDK renews active leases
 using a steady clock and rejects a protected publish locally when no usable
@@ -115,7 +115,7 @@ The source build currently expects Linux and the exact staged dependencies in
 | CMake | 3.16 or newer | Configure, build, install, package |
 | C++ compiler | C++17 | Native SDK and clients |
 | `fourier_dds` | `1.2.0-1` | DDS transport abstraction |
-| `fourier-dds-msgs` | `0.1.0-1` | Generated Aurora DDS messages |
+| `fourier-dds-msgs` | `0.2.0-1` | Generated Aurora DDS messages |
 | FastDDS/FastCDR | supplied with the DDS packages | DDS runtime |
 | Python | 3.9–3.13 API range; stage-one package build uses CPython 3.10 | Python client |
 | pybind11 | 2.13.6 | Python native binding |
@@ -205,7 +205,7 @@ The output is named
 matching DDS packages available:
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_2.0.1*.deb
+sudo apt install ./fourier-aurora-sdk_3.0.0*.deb
 ```
 
 ### Build a Python wheel
@@ -246,7 +246,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python consumer
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-2.0.1-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-3.0.0-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 
@@ -255,8 +255,9 @@ python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 Use this sequence for both languages:
 
 1. Obtain the singleton and copy `ConnectionOptions`.
-2. Set the DDS domain/namespace and the smallest endpoint set.
-3. For protected commands, set the assigned `source_id`, enable
+2. Set a human-readable `source_name`, the DDS domain/namespace, and the
+   smallest endpoint set.
+3. For protected commands, enable
    `ManageLeaseService`, and include the protected publisher.
 4. Configure callbacks only while stopped, then start the client.
 5. Wait for endpoint matching and separately verify robot/FSM readiness.

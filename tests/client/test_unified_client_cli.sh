@@ -27,7 +27,7 @@ expect_status 0 "${client}" state
 grep -Fq 'request <state-id>' /tmp/aurora-client-test.out
 expect_status 0 "${client}" motion command --help
 grep -Fq -- '--linear-velocity' /tmp/aurora-client-test.out
-expect_status 0 "${client}" state monitor --domain_id 7 --source_id 42 --help
+expect_status 0 "${client}" state monitor --domain_id 7 --source_name read-client --help
 grep -Fq 'minimum: 10ms' /tmp/aurora-client-test.out
 if grep -Fq 'domain_id=' /tmp/aurora-client-test.err; then
     echo "help unexpectedly initialized the client" >&2
@@ -40,8 +40,12 @@ expect_status 2 "${client}" state monitor --interval 500 --interval 1s
 grep -Fq 'specified more than once' /tmp/aurora-client-test.err
 expect_status 2 "${client}" -d 7 state get --domain_id 8
 grep -Fq 'specified more than once' /tmp/aurora-client-test.err
-expect_status 2 "${client}" state get --source_id 0
-grep -Fq 'nonzero uint32' /tmp/aurora-client-test.err
+expect_status 2 "${client}" state get --source_name 'invalid name'
+grep -Fq '[A-Za-z0-9._-]{1,64}' /tmp/aurora-client-test.err
+expect_status 2 "${client}" state get --source_id 42
+grep -Fq 'does not accept command options' /tmp/aurora-client-test.err
+expect_status 1 "${client}" -d 231 state get
+grep -Eq '^domain_id=231 source_name=aurora-client-[0-9]{4}$' /tmp/aurora-client-test.err
 expect_status 2 "${client}" estimator monitor --interval 1minute
 grep -Fq 'positive duration in ms or s' /tmp/aurora-client-test.err
 expect_status 2 "${client}" motion command

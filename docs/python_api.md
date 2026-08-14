@@ -81,13 +81,13 @@ the object is local; `configure()` copies and validates it.
 | `use_namespace` | `bool` | `True` | Enables namespaced endpoints. |
 | `use_discovery_server` | `bool | None` | `None` | Optional discovery-server override. |
 | `service_timeout_ms` | `int` | `1000` | Default synchronous service timeout. |
-| `source_id` | `int` | `0` | Deployment-assigned module identity. Must fit `uint32`. |
-| `source_name` | `str | None` | `None` | Diagnostic name; defaults to `aurora_sdk_<source_id>`. |
+| `source_name` | `str` | `""` (invalid until set) | Required human-readable client identity matching `[A-Za-z0-9._-]{1,64}`. |
 | `allow_emergency_lease_priority` | `bool` | `False` | Allows emergency-priority requests; Aurora still authorizes them. |
 | `enabled_endpoints` | `list[Endpoint]` | all endpoints | Exact endpoint set created by `start()`. |
 
-`source_id` must be nonzero when lease management or a protected publisher is
-enabled. Protected publishers also require `MANAGE_LEASE_SERVICE`.
+`source_name` is required for every client configuration and is validated by
+`start()` before transport creation. Protected publishers also require
+`MANAGE_LEASE_SERVICE`.
 
 ### `ClientState`
 
@@ -187,7 +187,7 @@ All data types below have a zero/default constructor and writable attributes.
 | `switch_status` | Aurora state-switch status integer. |
 | `current_state` | Current `StateInfo`. |
 | `available_states` | List of reported `StateInfo` objects. |
-| `authority_resources` | Advisory per-resource authority objects with `resource`, `acquired`, `holder_source_id`, `holder_source_name`, and `holder_priority`. |
+| `authority_resources` | Advisory per-resource authority objects with `resource`, `acquired`, `holder_source_name`, and `holder_priority`. |
 
 ### `MotionState`
 
@@ -361,7 +361,7 @@ Values: `NONE`, `DEADLINE_EXPIRED`, `AUTHORITY_REJECTED`, `OPERATION_TIMEOUT`,
 |---|---|
 | `operation` | `OperationResult` for the call. |
 | `state` | Current `LeaseState`. |
-| `source_id`, `source_name` | Module identity. |
+| `source_name` | Module identity. |
 | `lease_id` | Authority-issued ID. |
 | `resources` | Complete `AuroraResource` list. |
 | `priority` | Lease priority. |

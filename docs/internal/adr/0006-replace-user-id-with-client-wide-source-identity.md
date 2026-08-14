@@ -1,8 +1,12 @@
 ---
-status: accepted
+status: superseded
+superseded_by: 0031
 ---
 
 # Replace user ID with one module-level lease Source ID
+
+Superseded by ADR 0031, which makes Source Name the sole client identity and
+uses the authority-issued Lease ID as the command token.
 
 The SDK's former string `user_id` is replaced by the protocol's integer
 `source_id`, shared by every Managed Control Lease from the module's

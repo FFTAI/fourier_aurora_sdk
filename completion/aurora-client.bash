@@ -16,22 +16,22 @@ _aurora_client()
 
     if [[ -z "${area}" ]]; then
         COMPREPLY=( $(compgen -W \
-            'state estimator motion control-group -d --domain_id -s --source_id -h --help --version' \
+            'state estimator motion control-group -d --domain_id -s --source_name -h --help --version' \
             -- "${cur}") )
         return
     fi
     if [[ -z "${command}" ]]; then
         case "${area}" in
-            state) word='get list request monitor -d --domain_id -s --source_id -h --help' ;;
-            estimator) word='get monitor -d --domain_id -s --source_id -h --help' ;;
-            motion) word='get monitor command -d --domain_id -s --source_id -h --help' ;;
-            control-group) word='get monitor position -d --domain_id -s --source_id -h --help' ;;
+            state) word='get list request monitor -d --domain_id -s --source_name -h --help' ;;
+            estimator) word='get monitor -d --domain_id -s --source_name -h --help' ;;
+            motion) word='get monitor command -d --domain_id -s --source_name -h --help' ;;
+            control-group) word='get monitor position -d --domain_id -s --source_name -h --help' ;;
         esac
         COMPREPLY=( $(compgen -W "${word}" -- "${cur}") )
         return
     fi
 
-    word='-d --domain_id -s --source_id -h --help'
+    word='-d --domain_id -s --source_name -h --help'
     case "${command}" in
         monitor) word="${word} --interval" ;;
         command)

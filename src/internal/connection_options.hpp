@@ -26,6 +26,5 @@ struct NormalizedConnectionOptions {
 [[nodiscard]] std::size_t endpointIndex(Endpoint endpoint);
 [[nodiscard]] NormalizedConnectionOptions normalizeConnectionOptions(
     const ConnectionOptions& options);
-[[nodiscard]] std::string effectiveSourceName(const ConnectionOptions& options);
 
 }  // namespace fourier::aurora_sdk::detail

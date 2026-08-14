@@ -1,6 +1,6 @@
 # Release Checklist
 
-SDK versioning is independent from the Aurora runtime version. SDK `2.0.0`
+SDK versioning is independent from the Aurora runtime version. SDK `3.0.0`
 may support an Aurora `4.0.x` runtime when that pair is explicitly tested and
 recorded; matching their major versions would incorrectly imply one shared
 compatibility contract.
@@ -9,14 +9,14 @@ compatibility contract.
 
 - Linux amd64 C++ Debian package built with CPython disabled.
 - Linux amd64 CPython 3.10 standard-GIL wheel.
-- Exact `fourier_dds 1.2.0-1` and `fourier-dds-msgs 0.1.0-1` dependency pair
+- Exact `fourier_dds 1.2.0-1` and `fourier-dds-msgs 0.2.0-1` dependency pair
   recorded in `REVISIONS.yaml` and enforced by Debian metadata.
-- Internal Debian names use `2.0.0+g<eight-character-head>` and internal wheel
+- Internal Debian names use `3.0.0+g<eight-character-head>` and internal wheel
   names use build tag `1g<eight-character-head>`.
 - Commit-bearing builds require a completely clean worktree and a hash that
   resolves to the checked-out `HEAD`.
 - Public-style clean names are verification inputs only. Do not publish or tag
-  `2.0.0` during this internal stage.
+  `3.0.0` during this internal stage.
 
 ## CI Integration
 
@@ -33,7 +33,7 @@ compatibility contract.
 
 - Decide whether any internal `2.0.0+g<hash>` Debian or metadata-version
   `2.0.0` wheel escaped the controlled channel. If it did, select at least
-  `2.0.1` for a clean public upgrade; never replace distributed content under
+  `3.0.0` for a clean public upgrade; never replace distributed content under
   the same clean version.
 - Produce Linux Debian packages for amd64 and arm64.
 - Produce standard-GIL Linux wheels for CPython 3.9 through 3.13 on amd64 and

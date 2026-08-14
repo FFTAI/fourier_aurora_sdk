@@ -20,6 +20,6 @@ best-effort release, then discard all token, sequence, deadline, and retry
 state. Shutdown is not blocked indefinitely by DDS or authority availability;
 any unreleased Aurora grant ends by ordinary expiry. Restart always begins
 Unregistered and restores nothing. Once stop completes, polling while Stopped
-returns an Unregistered lease snapshot with configured Source ID and zero
+returns an Unregistered lease snapshot with configured Source Name and zero
 token/resources/durations; Lost is reserved for uncertainty inside a running
 session.

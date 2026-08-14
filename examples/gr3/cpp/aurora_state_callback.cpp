@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <atomic>
 #include <charconv>
 #include <chrono>
@@ -22,6 +23,14 @@ volatile std::sig_atomic_t interrupted = 0;
 
 void handleSignal(int) {
     interrupted = 1;
+}
+
+bool validSourceName(std::string_view name) {
+    return !name.empty() && name.size() <= 64 &&
+           std::all_of(name.begin(), name.end(), [](unsigned char c) {
+               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                      (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+           });
 }
 
 bool parseDurationSeconds(
@@ -64,9 +73,10 @@ void stopAfterFailure(sdk::AuroraClient& client) {
 
 int main(int argc, char** argv) {
     std::uint32_t duration_seconds = 0;
-    if (argc > 2 ||
-        (argc == 2 && !parseDurationSeconds(argv[1], duration_seconds))) {
-        std::cerr << "Usage: " << argv[0] << " [positive_duration_seconds]\n";
+    if (argc < 2 || argc > 3 || !validSourceName(argv[1]) ||
+        (argc == 3 && !parseDurationSeconds(argv[2], duration_seconds))) {
+        std::cerr << "Usage: " << argv[0]
+                  << " <source_name> [positive_duration_seconds]\n";
         return 2;
     }
 
@@ -79,6 +89,7 @@ int main(int argc, char** argv) {
     try {
         auto options = client.config();
         options.domain_id = 89;
+        options.source_name = argv[1];
         options.enabled_endpoints = {
             sdk::Endpoint::AuroraStateSubscriber,
         };

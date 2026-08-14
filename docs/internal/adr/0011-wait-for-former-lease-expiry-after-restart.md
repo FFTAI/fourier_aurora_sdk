@@ -5,8 +5,8 @@ status: accepted
 # Wait for the former lease to expire after SDK restart
 
 A restarted SDK begins without authority and immediately starts a fresh lease
-registration under its stable module Source ID and new memory-only Client
-Instance ID. If Aurora still has an active Lease Period for that Source ID, it
+registration under its module Source Name and new memory-only Client Instance
+ID. If Aurora still has an active Lease Period for that Source Name, it
 returns `SOURCE_ALREADY_ACTIVE` without changing or disclosing the former
 token. Rejected registration creates no replay record. Within one
 `registerLease()` call, the new SDK waits with a fixed 50 ms retry cadence and
@@ -19,8 +19,8 @@ the operation budget remains.
 
 ## Consequences
 
-Knowledge of a Source ID alone cannot revoke valid authority. A duplicate live
-process configured with the same Source ID also cannot steal the holder's
+Knowledge of a Source Name alone cannot revoke valid authority. A duplicate live
+process configured with the same Source Name also cannot steal the holder's
 lease; it remains unauthorized while the holder renews.
 
 Restart recovery may wait up to the former lease's remaining duration, which is

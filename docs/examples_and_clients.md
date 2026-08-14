@@ -28,7 +28,7 @@ diagnostic executables.
 
 1. Start Aurora and confirm that its DDS domain and namespace match the client.
 2. Confirm compatible DDS and message runtime packages are installed.
-3. For protected commands, obtain a deployment-assigned, nonzero `source_id`.
+3. Choose a human-readable `source_name` matching `[A-Za-z0-9._-]{1,64}`.
 4. Run read-only operations first and verify the robot type/current FSM.
 5. Check every printed `OperationResult`, not only the process exit code.
 
@@ -42,17 +42,16 @@ The unified diagnostic executable uses an area and command hierarchy:
 aurora-client [global options] <area> <command> [command options]
 ```
 
-DDS domain ID defaults to `123` and source ID defaults to `1234`. Override them
-anywhere on the command line with `-d`/`--domain_id` and
-`-s`/`--source_id`. Both are unsigned 32-bit integers and `source_id` must be
-nonzero. A source ID identifies the client module to the lease authority and
-must be unique among concurrently connected modules. The client prints the
-effective IDs to standard error at startup.
+DDS domain ID defaults to `123`. Override it anywhere on the command line with
+`-d`/`--domain_id`. The wrapper generates a process-local default Source Name
+`aurora-client-NNNN`; override it with `-s`/`--source_name` when a stable,
+descriptive name is useful. Source Names match `[A-Za-z0-9._-]{1,64}`. The
+client prints the effective domain and Source Name to standard error at startup.
 
 ```bash
 aurora-client state get
-aurora-client -d 7 -s 42 state get
-aurora-client state get --domain_id 7 --source_id 42
+aurora-client -d 7 -s state-reader state get
+aurora-client state get --domain_id 7 --source_name state-reader
 ```
 
 The client enables only the endpoints required by the selected command. It
@@ -181,8 +180,8 @@ callback. Both timestamps use `HH:MM:SS:ffffff`.
 
 ```bash
 cmake --build build --target gr3_aurora_state_callback
-./build/gr3_aurora_state_callback
-./build/gr3_aurora_state_callback 5  # stop automatically after 5 seconds
+./build/gr3_aurora_state_callback state-callback
+./build/gr3_aurora_state_callback state-callback 5  # stop after 5 seconds
 ```
 
 The optional positive duration is useful for bounded diagnostics and CI. With
@@ -200,8 +199,8 @@ prints robot type, hardware/end-effector type, current FSM, base orientation
 and velocity, stable level, and available control-group names.
 
 ```bash
-./build/gr3_get_info
-python3 examples/gr3/python/get_info.py
+./build/gr3_get_info info-reader
+python3 examples/gr3/python/get_info.py info-reader
 ```
 
 Start here to verify connectivity without acquiring control.
@@ -211,14 +210,14 @@ Start here to verify connectivity without acquiring control.
 Purpose: demonstrate the complete bounded motion workflow: lease registration,
 FSM transition, motion command, and lease release.
 
-This bounded recipe accepts the module source ID, registers the
+This bounded recipe accepts the module Source Name, registers the
 `MotionCommand` resource, requests GR3 Walk (FSM `3`), waits for the transition,
 then commands `0.3 m/s` forward for three seconds. It requires an exact `YES`
 confirmation before taking control.
 
 ```bash
-./build/gr3_walk_forward 42
-python3 examples/gr3/python/walk_forward.py 42
+./build/gr3_walk_forward walk-demo
+python3 examples/gr3/python/walk_forward.py walk-demo
 ```
 
 Review the constants in the source before use. Do not assume FSM IDs or limits
@@ -229,14 +228,14 @@ are portable to another robot type.
 Purpose: demonstrate leased multi-group joint control with interpolation from
 one measured state snapshot.
 
-This bounded recipe accepts the module source ID, leases both manipulator
+This bounded recipe accepts the module Source Name, leases both manipulator
 resources, requests GR3 PdStandStanding (FSM `13`), reads both arm positions
 from one snapshot, interpolates to a center pose over three seconds, and runs
 two five-second arm-swing periods at 100 Hz. It requires `YES` confirmation.
 
 ```bash
-./build/gr3_swing_arms 42
-python3 examples/gr3/python/swing_arms.py 42
+./build/gr3_swing_arms arm-demo
+python3 examples/gr3/python/swing_arms.py arm-demo
 ```
 
 The example expects `left_manipulator` and `right_manipulator` group ordering
@@ -248,7 +247,7 @@ before running it.
 Purpose: demonstrate how arm passthrough commands interact with Universal
 Controller runtime rates and reset.
 
-The recipe accepts the module source ID, leases both manipulators, and requests
+The recipe accepts the module Source Name, leases both manipulators, and requests
 GR3 ExternalUniController (FSM `120`). It first disables momentum and waist
 compensation and commands both arms to zero. After confirmation, it commands
 both elbow joints to `-1.0`, sets momentum to `0.5` and waist compensation to
@@ -257,7 +256,7 @@ arm transition starts from the latest measured state and interpolates to its
 target over two seconds at 100 Hz.
 
 ```bash
-python3 examples/gr3/python/sub_controller.py 42
+python3 examples/gr3/python/sub_controller.py arm-passthrough
 ```
 
 This example assumes the GR3 seven-joint manipulator ordering, with the elbow
@@ -269,7 +268,7 @@ The examples intentionally keep each workflow in one file. When adapting one:
 
 1. Replace hard-coded robot capabilities and FSM IDs with deployment config.
 2. Select only the endpoints the application actually uses.
-3. Assign a registered module `source_id`; never generate one at runtime.
+3. Assign a readable, distinct module `source_name`.
 4. Register the complete resource set before protected publishers.
 5. Bound every wait and motion, handle interruption, and stop in all paths.
 6. Treat state/error telemetry as the robot outcome; local publish is not an

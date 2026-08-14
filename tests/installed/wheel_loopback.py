@@ -14,12 +14,11 @@ def main():
     assert client.state() == ClientState.STOPPED
     assert client.domain_id() == 123
     assert client.config().domain_id == 123
-    assert client.config().source_id == 0
+    assert client.config().source_name == ""
 
     client.set_domain_id(214)
     options = client.config()
     assert options.domain_id == 214
-    options.source_id = 77
     options.source_name = "wheel_loopback"
     options.namespace_name = "aurora_sdk_wheel_loopback"
     options.dds_mode = 0

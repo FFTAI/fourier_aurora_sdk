@@ -581,8 +581,7 @@ struct AuroraClient::Impl {
         result.operation = std::move(operation);
         result.state = lease_state;
         const auto& current_options = session_options ? *session_options : options;
-        result.source_id = current_options.source_id;
-        result.source_name = detail::effectiveSourceName(current_options);
+        result.source_name = current_options.source_name;
         result.lease_id = lease_id;
         result.resources = lease_resources;
         result.priority = lease_priority;
@@ -661,8 +660,7 @@ struct AuroraClient::Impl {
                 return std::nullopt;
             }
         }
-        return detail::LeaseToken{
-            session_options->source_id, lease_id, command_sequences.at(stream)};
+        return detail::LeaseToken{lease_id, command_sequences.at(stream)};
     }
 
     void emitLeaseChanged(const LeaseResult& result) {
@@ -751,8 +749,7 @@ struct AuroraClient::Impl {
                 lease_state = LeaseState::Releasing;
             }
 
-            request.source_id = session_options->source_id;
-            request.source_name = detail::effectiveSourceName(*session_options);
+            request.source_name = session_options->source_name;
             request.client_instance_id = client_instance_id;
             request.action = action;
             request.operation_id = allocateOperationIdLocked();

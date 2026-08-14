@@ -4,7 +4,7 @@ status: accepted
 
 # Use one replaceable lease per module
 
-One module-level Source ID may own at most one active lease at an Aurora Lease
+One module-level Source Name may own at most one active lease at an Aurora Lease
 Authority. The SDK manages that single module lease automatically and exposes
 an atomic resource-replacement operation. A definitive replacement rejection
 leaves the old grant unchanged; successful replacement terminates the old Lease
@@ -28,7 +28,7 @@ replacement, renewal, and release each use an opaque Operation ID while the SDK
 keeps at most one logical management operation in flight. Exact replacement
 replay is retained under the old token and Operation ID. Priority,
 resources, and duration form the desired atomic new grant; priority defaults to
-the old value but may be changed explicitly when permitted for the Source ID.
+the old value but may be changed explicitly when permitted for the Source Name.
 Replacement success is usable only when processed before both the public
 operation deadline and its own first-send-based deadline, even if the old
 deadline passed; rejection resumes the old token only before the operation

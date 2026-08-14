@@ -5,7 +5,7 @@ if(NOT DEFINED FOURIER_AURORA_SDK_PREFIX)
     message(FATAL_ERROR "FOURIER_AURORA_SDK_PREFIX is required")
 endif()
 
-find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED
+find_package(fourier_aurora_sdk 3.0 CONFIG REQUIRED
     PATHS "${FOURIER_AURORA_SDK_PREFIX}/lib/cmake/fourier_aurora_sdk"
     NO_DEFAULT_PATH
 )

@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <charconv>
 #include <chrono>
 #include <csignal>
 #include <exception>
@@ -31,11 +30,12 @@ void printResult(
               << " message=\"" << result.message << "\"\n";
 }
 
-bool parseSourceId(std::string_view text, uint32_t& source_id) {
-    const auto result = std::from_chars(
-        text.data(), text.data() + text.size(), source_id);
-    return result.ec == std::errc{} &&
-           result.ptr == text.data() + text.size() && source_id != 0;
+bool validSourceName(std::string_view name) {
+    return !name.empty() && name.size() <= 64 &&
+           std::all_of(name.begin(), name.end(), [](unsigned char c) {
+               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                      (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+           });
 }
 
 void stopAfterFailure(sdk::AuroraClient& client) {
@@ -49,11 +49,11 @@ void stopAfterFailure(sdk::AuroraClient& client) {
 }  // namespace
 
 int main(int argc, char** argv) {
-    uint32_t source_id = 0;
-    if (argc != 2 || !parseSourceId(argv[1], source_id)) {
-        std::cerr << "Usage: " << argv[0] << " <nonzero_source_id>\n";
+    if (argc != 2 || !validSourceName(argv[1])) {
+        std::cerr << "Usage: " << argv[0] << " <source_name>\n";
         return 2;
     }
+    const std::string source_name = argv[1];
 
     std::cout
         << "GR3 walk_forward will request Walk (FSM 3), command "
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
     auto& client = sdk::AuroraClient::getInstance();
     try {
         auto options = client.config();
-        options.source_id = source_id;
+        options.source_name = source_name;
         options.enabled_endpoints = {
             sdk::Endpoint::FsmService,
             sdk::Endpoint::ManageLeaseService,

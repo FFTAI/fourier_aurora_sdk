@@ -1,5 +1,5 @@
 complete -c aurora-client -s d -l domain_id -r -d 'DDS domain ID (default: 123)'
-complete -c aurora-client -s s -l source_id -r -d 'Nonzero source ID (default: 1234)'
+complete -c aurora-client -s s -l source_name -r -d 'Source Name (default: aurora-client-NNNN)'
 complete -c aurora-client -s h -l help -d 'Show help'
 complete -c aurora-client -l version -d 'Show version'
 

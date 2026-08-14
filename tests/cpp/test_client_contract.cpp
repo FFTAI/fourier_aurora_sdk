@@ -52,7 +52,7 @@ void testTraitsAndDefaults(testing::TestHarness& test) {
     SDK_CHECK(test, client.state() == sdk::ClientState::Stopped);
     SDK_CHECK(test, client.domainId() == 123);
     SDK_CHECK(test, client.config().domain_id == 123);
-    SDK_CHECK(test, client.config().source_id == 42);
+    SDK_CHECK(test, client.config().source_name == "test-client");
     SDK_CHECK(test, client.config().topic_prefix == "aurora/");
     SDK_CHECK(test, client.config().enabled_endpoints.size() == 12);
 
@@ -127,6 +127,15 @@ void testConfiguration(testing::TestHarness& test) {
     SDK_CHECK_THROWS(
         test, sdk::InvalidArgumentError, client.configure(invalid));
     SDK_CHECK(test, client.config() == before_invalid);
+
+    for (const auto& invalid_name : std::vector<std::string>{
+             "", "contains space", "slash/name", std::string(65, 'a')}) {
+        invalid = before_invalid;
+        invalid.source_name = invalid_name;
+        SDK_CHECK_THROWS(
+            test, sdk::InvalidArgumentError, client.configure(invalid));
+        SDK_CHECK(test, client.config() == before_invalid);
+    }
 
     client.setDomainId(42);
     auto renamed = client.config();

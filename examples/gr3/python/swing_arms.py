@@ -114,16 +114,17 @@ def swing_arms(client, left_center, right_center):
 
 
 def main():
-    if len(sys.argv) != 2:
-        print(f"Usage: {sys.argv[0]} <nonzero_source_id>")
+    if len(sys.argv) != 2 or not (
+        1 <= len(sys.argv[1]) <= 64
+        and all(
+            character.isascii()
+            and (character.isalnum() or character in "._-")
+            for character in sys.argv[1]
+        )
+    ):
+        print(f"Usage: {sys.argv[0]} <source_name>")
         return 2
-    try:
-        source_id = int(sys.argv[1])
-    except ValueError:
-        source_id = 0
-    if source_id <= 0 or source_id > 0xFFFFFFFF:
-        print(f"Usage: {sys.argv[0]} <nonzero_source_id>")
-        return 2
+    source_name = sys.argv[1]
 
     print(
         "GR3 swing_arms will request PdStandStanding (FSM 13), "
@@ -147,7 +148,7 @@ def main():
     lease_registered = False
     try:
         options = client.config()
-        options.source_id = source_id
+        options.source_name = source_name
         options.enabled_endpoints = [
             Endpoint.FSM_SERVICE,
             Endpoint.MANAGE_LEASE_SERVICE,

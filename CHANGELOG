@@ -1,3 +1,13 @@
+### Version 3.0.0 (unreleased)
+
+- Replaced numeric lease Source IDs with required, human-readable Source Names.
+- Reduced protected-command Lease Information to the authority-issued Lease ID
+  and per-stream sequence, and adopted the pod message namespace.
+- Added the `aurora-client-NNNN` convenience identity for the packaged CLI while
+  keeping Source Name explicit for direct C++ and Python callers.
+- Raised the C++ ABI line to `SOVERSION 3` and requires
+  `fourier-dds-msgs 0.2.0-1`.
+
 ### Version 2.0.0 (unreleased)
 
 - Refactored the SDK around one canonical C++ implementation and pybind11

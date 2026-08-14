@@ -28,7 +28,7 @@ required_files=(
     "${package_dir}/__init__.py"
     "${package_dir}/client.py"
     "${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-    "${package_dir}/libfourier_aurora_sdk.so.2"
+    "${package_dir}/libfourier_aurora_sdk.so.3"
     "${dist_info}/METADATA"
     "${dist_info}/WHEEL"
     "${dist_info}/RECORD"
@@ -66,12 +66,12 @@ while IFS= read -r entry; do
 done < <(find "${extract_root}" -type f -print)
 
 extension="${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-sdk_library="${package_dir}/libfourier_aurora_sdk.so.2"
+sdk_library="${package_dir}/libfourier_aurora_sdk.so.3"
 extension_dynamic="$(readelf -d "${extension}")"
 sdk_dynamic="$(readelf -d "${sdk_library}")"
 grep -Fq '(RUNPATH)' <<< "${extension_dynamic}"
 grep -Fq '$ORIGIN' <<< "${extension_dynamic}"
-grep -Fq 'Shared library: [libfourier_aurora_sdk.so.2]' <<< "${extension_dynamic}"
+grep -Fq 'Shared library: [libfourier_aurora_sdk.so.3]' <<< "${extension_dynamic}"
 grep -Fq '(RUNPATH)' <<< "${sdk_dynamic}"
 grep -Fq '$ORIGIN' <<< "${sdk_dynamic}"
 grep -Fq '/opt/fftai/fourier_dds_msgs/lib' <<< "${sdk_dynamic}"

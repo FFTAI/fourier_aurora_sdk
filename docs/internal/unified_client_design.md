@@ -11,8 +11,8 @@ replace the three installed diagnostic clients with one binary.
   operations in different SDK interfaces remain unambiguous.
 - DDS domain ID defaults to `123` and may be overridden with `-d` or
   `--domain_id`.
-- source ID defaults to `1234` and may be overridden with `-s` or
-  `--source_id`.
+- Source Name defaults to a per-invocation `aurora-client-NNNN` value and may
+  be overridden with `-s` or `--source_name`.
 - Package installation makes the binary directly callable through the normal
   system `PATH`.
 - The installed client provides shell argument completion.
@@ -143,17 +143,22 @@ resource leases, and interpolates all targets simultaneously.
 The connection overrides are recognized anywhere in the command line:
 
 ```text
-aurora-client -d 7 -s 42 state get
-aurora-client state -d 7 get -s 42
-aurora-client state get --domain_id 7 --source_id 42
+aurora-client -d 7 -s state-reader state get
+aurora-client state -d 7 get -s state-reader
+aurora-client state get --domain_id 7 --source_name state-reader
 ```
 
 Their defaults and accepted spellings are:
 
 ```text
 -d, --domain_id <uint32>    default: 123
--s, --source_id <uint32>    default: 1234; must be nonzero
+-s, --source_name <name>    default: aurora-client-NNNN
 ```
+
+The four-digit suffix is generated once for each valid robot-facing process
+invocation. An explicit name and the generated default both match
+`[A-Za-z0-9._-]{1,64}`. Help, version, completion, and invalid argument paths
+do not initialize the SDK or generate/log a Source Name.
 
 ## Installation exposure
 
@@ -215,7 +220,7 @@ Every robot-facing invocation prints its effective connection identity before
 starting the client:
 
 ```text
-domain_id=123 source_id=1234
+domain_id=123 source_name=aurora-client-0427
 ```
 
 The banner is written to standard error, leaving command results on standard

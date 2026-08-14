@@ -81,13 +81,13 @@ Complete configuration frozen by `AuroraClient::start()`.
 | `use_namespace` | `bool` | `true` | Enables namespace prefixes on endpoints. |
 | `use_discovery_server` | `std::optional<bool>` | unset | Overrides discovery-server use when set. |
 | `service_timeout_ms` | `uint32_t` | `1000` | Default timeout for synchronous services. |
-| `source_id` | `uint32_t` | `0` | Deployment-assigned module identity used by lease management. |
-| `source_name` | `std::optional<std::string>` | unset | Diagnostic source name; defaults to `aurora_sdk_<source_id>`. |
+| `source_name` | `std::string` | `""` (invalid until set) | Required human-readable client identity matching `[A-Za-z0-9._-]{1,64}`. |
 | `allow_emergency_lease_priority` | `bool` | `false` | Lets this client request emergency lease priority; Aurora still authorizes it. |
 | `enabled_endpoints` | `std::vector<Endpoint>` | all endpoints | Exact endpoint set created by `start()`. |
 
-`source_id` must be nonzero when lease management or a protected publisher is
-enabled. A protected publisher also requires `Endpoint::ManageLeaseService`.
+`source_name` is required for every client configuration and is validated by
+`start()` before transport creation. A protected publisher also requires
+`Endpoint::ManageLeaseService`.
 
 ### `ClientState`
 
@@ -394,7 +394,7 @@ Aurora authority permission.
 |---|---|
 | `operation` | `OperationResult` for the API operation. |
 | `state` | Current local `LeaseState`. |
-| `source_id`, `source_name` | Module identity attached to the lease. |
+| `source_name` | Module identity attached to the lease. |
 | `lease_id` | Authority-issued lease identifier. |
 | `resources` | Complete leased resource set. |
 | `priority` | Granted/requested priority. |
@@ -410,8 +410,7 @@ Aurora authority permission.
 |---|---|
 | `resource` | Resource being described. |
 | `acquired` | Whether Aurora reports a holder. |
-| `holder_source_id` | Holder module ID. |
-| `holder_source_name` | Holder diagnostic name. |
+| `holder_source_name` | Holder identity. |
 | `holder_priority` | Holder lease priority. |
 
 This state is advisory; command authorization uses the SDK-managed lease.

@@ -14,8 +14,7 @@ int main() {
         sdk::LeaseOption{}.duration == std::chrono::milliseconds{4000});
     auto& client = testing::resetClientFixture();
     auto options = client.config();
-    options.source_id = 1234;
-    options.source_name.reset();
+    options.source_name = "lease-contract-test";
     options.enabled_endpoints = {
         sdk::Endpoint::ManageLeaseService,
         sdk::Endpoint::MotionCommandPublisher,
@@ -36,15 +35,13 @@ int main() {
         lease_option);
     SDK_CHECK(test, lease.success());
     SDK_CHECK(test, lease.usable());
-    SDK_CHECK(test, lease.source_id == 1234);
-    SDK_CHECK(test, lease.source_name == "aurora_sdk_1234");
+    SDK_CHECK(test, lease.source_name == "lease-contract-test");
 
     command_result = client.publishMotionCommand(motion);
     SDK_CHECK(test, command_result.success());
     {
         std::lock_guard<std::mutex> lock(session->mutex);
         SDK_CHECK(test, session->motion_tokens.size() == 1);
-        SDK_CHECK(test, session->motion_tokens[0].source_id == 1234);
         SDK_CHECK(test, session->motion_tokens[0].lease_id == lease.lease_id);
         SDK_CHECK(test, session->motion_tokens[0].sequence_id == 0);
     }

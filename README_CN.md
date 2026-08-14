@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Fourier Aurora SDK 2.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
+Fourier Aurora SDK 3.0.0 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
 命令的 C++17/Python 客户端库。应用只接触 SDK 自有类型，生成的 DDS 消息类型
 不会暴露到 SDK 边界之外。
 
@@ -23,7 +23,7 @@ Fourier Aurora SDK 2.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、�
 安装与你的平台匹配的 wheel，并且只创建程序实际需要的 endpoint：
 
 ```bash
-python3 -m pip install fourier_aurora_client-2.0.1-*.whl
+python3 -m pip install fourier_aurora_client-3.0.0-*.whl
 ```
 
 ```python
@@ -73,6 +73,7 @@ int main() {
     auto& client = sdk::AuroraClient::getInstance();
     auto options = client.config();
     options.domain_id = 123;
+    options.source_name = "state-reader";
     options.enabled_endpoints = {sdk::Endpoint::AuroraStateSubscriber};
     client.configure(options);
 
@@ -101,11 +102,12 @@ C++ timeout 使用 `std::chrono`。程序正常退出时必须显式调用 `stop
 
 ## 发送受保护命令
 
-运动、控制组和临时电机配置 publisher 必须持有控制租约。部署管理者需要为每个
-模块分配非零 `source_id`；多客户端部署中不要自行随意选择 ID。
+运动、控制组和临时电机配置 publisher 必须持有控制租约。每个直接使用 SDK 的
+client 都必须提供符合 `[A-Za-z0-9._-]{1,64}` 的可读 `source_name`。并发运行的
+模块应使用不同名称，便于在权限状态和日志中区分。
 
 ```cpp
-options.source_id = 42;
+options.source_name = "walking-controller";
 options.enabled_endpoints = {
     sdk::Endpoint::ManageLeaseService,
     sdk::Endpoint::MotionCommandPublisher,

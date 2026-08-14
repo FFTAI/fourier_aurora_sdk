@@ -9,7 +9,6 @@ int main() {
     auto& client = AuroraClient::getInstance();
     client.setDomainId(123);
     auto options = client.config();
-    options.source_id = 77;
     options.source_name = "destructor_fallback_test";
     client.configure(options);
     client.start();

@@ -70,7 +70,7 @@ sdk::ConnectionOptions directOptions() {
     options.use_namespace = true;
     options.use_discovery_server = false;
     options.service_timeout_ms = 200;
-    options.source_id = 77;
+    options.source_name = "dds-loopback";
     options.enabled_endpoints = {
         sdk::Endpoint::ManageLeaseService,
         sdk::Endpoint::FsmService,
@@ -99,7 +99,6 @@ void publishState(
         dds_msg::AuthorityResourceState resource;
         resource.resource(name);
         resource.acquired(false);
-        resource.holder_source_id(0);
         resource.holder_source_name("");
         resource.holder_priority(0);
         state.authority_resources().push_back(std::move(resource));
@@ -172,6 +171,7 @@ int main() {
     second_options.namespace_name = kNamespace;
     second_options.is_ros_compatible = false;
     second_options.use_discovery_server = false;
+    second_options.source_name = "dds-loopback-second";
     second_options.enabled_endpoints = {
         sdk::Endpoint::AuroraStateSubscriber,
     };
@@ -222,7 +222,7 @@ int main() {
     SDK_CHECK(test, other_stop_rejected);
 
     sdk::MotionCommand direct_command;
-    sdk::detail::LeaseToken direct_token{77, 9001, 0};
+    sdk::detail::LeaseToken direct_token{9001, 0};
     direct_command.header.send_time =
         std::chrono::system_clock::time_point(std::chrono::seconds(123));
     direct_command.lin_velocity = {0.1, 0.0, 0.0};
@@ -320,7 +320,7 @@ int main() {
     plain_options.use_namespace = false;
     plain_options.is_ros_compatible = false;
     plain_options.use_discovery_server = false;
-    plain_options.source_id = 78;
+    plain_options.source_name = "dds-plain-loopback";
     plain_options.enabled_endpoints = {
         sdk::Endpoint::ManageLeaseService,
         sdk::Endpoint::MotionCommandPublisher,

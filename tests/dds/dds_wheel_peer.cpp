@@ -49,7 +49,6 @@ void publishState(
         dds_msg::AuthorityResourceState resource;
         resource.resource(name);
         resource.acquired(false);
-        resource.holder_source_id(0);
         resource.holder_source_name("");
         resource.holder_priority(0);
         state.authority_resources().push_back(std::move(resource));

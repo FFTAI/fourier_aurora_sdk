@@ -70,9 +70,10 @@ SDK 管理的上层接口 Topic 和 Service 名称使用
 `aurora/robot_motion_cmd` 和 `aurora/ManageLease`。如果 Aurora 配置为空前缀，
 SDK 也应将该选项设置为空字符串。
 
-受保护的 publisher（`MotionCommand`、`ControlGroupCommand` 和临时
-`MotorConfigurationCommand`）必须同时启用 `ManageLeaseService`，并配置非零
-`source_id`。只读 client 和 FSM/sub-controller service 不需要租约身份。
+所有 SDK client 都必须在 transport 启动前配置符合
+`[A-Za-z0-9._-]{1,64}` 的 `source_name`。受保护的 publisher
+（`MotionCommand`、`ControlGroupCommand` 和临时
+`MotorConfigurationCommand`）还必须启用 `ManageLeaseService`。
 
 ### 状态快照与返回值
 
@@ -86,7 +87,7 @@ SDK 也应将该选项设置为空字符串。
 
 ### 控制租约
 
-一个模块（`source_id`）最多持有一个 SDK 管理的租约。应用注册第一组完整资源，
+一个模块（`source_name`）最多持有一个 SDK 管理的租约。应用注册第一组完整资源，
 需要时原子替换资源，并在不再控制时释放。SDK 使用 steady clock 自动续租；如果
 没有有效租约覆盖命令涉及的全部资源，会在本地拒绝受保护 publish。
 
@@ -103,7 +104,7 @@ SDK 也应将该选项设置为空字符串。
 | CMake | 3.16 或更新 | 配置、构建、安装、打包 |
 | C++ 编译器 | C++17 | 原生 SDK 与客户端 |
 | `fourier_dds` | `1.2.0-1` | DDS transport 抽象 |
-| `fourier-dds-msgs` | `0.1.0-1` | Aurora DDS 生成消息 |
+| `fourier-dds-msgs` | `0.2.0-1` | Aurora DDS 生成消息 |
 | FastDDS/FastCDR | 随 DDS 包提供 | DDS runtime |
 | Python | API 范围 3.9–3.13；Stage 1 打包使用 CPython 3.10 | Python client |
 | pybind11 | 2.13.6 | Python 原生绑定 |
@@ -188,7 +189,7 @@ ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 获得匹配的 DDS package，再安装：
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_2.0.1*.deb
+sudo apt install ./fourier-aurora-sdk_3.0.0*.deb
 ```
 
 ### 构建 Python wheel
@@ -227,7 +228,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python 应用
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-2.0.1-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-3.0.0-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 
@@ -236,8 +237,8 @@ python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 C++ 与 Python 都按以下顺序使用：
 
 1. 获取单例并复制 `ConnectionOptions`。
-2. 设置 DDS domain/namespace，并选择最小 endpoint 集合。
-3. 需要受保护命令时，设置分配好的 `source_id`，启用
+2. 设置可读 `source_name`、DDS domain/namespace，并选择最小 endpoint 集合。
+3. 需要受保护命令时，启用
    `ManageLeaseService` 和对应 publisher。
 4. 只在 stopped 状态配置 callback，然后启动 client。
 5. 等待 endpoint 匹配，并单独确认机器人/FSM 是否可执行操作。

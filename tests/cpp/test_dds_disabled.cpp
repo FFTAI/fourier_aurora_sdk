@@ -16,9 +16,11 @@ int main() {
     sdk::detail::resetTransportFactoryForTesting();
     auto& client = sdk::AuroraClient::getInstance();
     client.stop();
+    SDK_CHECK_THROWS(test, sdk::InvalidArgumentError, client.start());
+    SDK_CHECK(test, client.state() == sdk::ClientState::Stopped);
     client.setDomainId(123);
     auto options = client.config();
-    options.source_id = 42;
+    options.source_name = "dds-disabled-test";
     client.configure(options);
 
     SDK_CHECK_THROWS(test, sdk::ConnectionError, client.start());

@@ -60,6 +60,7 @@ namespace fourier::aurora_sdk {
 
 #if defined(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT)
 namespace dds_msg = fourier_msgs::msg;
+namespace dds_pod_msg = fourier_msgs_pod::msg;
 namespace dds_srv = fourier_msgs::srv;
 
 namespace {
@@ -67,6 +68,14 @@ namespace {
 constexpr std::array<const char*, 9> kResourceNames{
     "left_leg", "right_leg", "waist", "head", "left_manipulator",
     "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd"};
+
+bool validSourceName(const std::string& name) {
+    return !name.empty() && name.size() <= 64 &&
+           std::all_of(name.begin(), name.end(), [](unsigned char c) {
+               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                      (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+           });
+}
 
 template <size_t N>
 std::array<double, N> toArray(const std::vector<double>& values, const char* field_name) {
@@ -169,16 +178,13 @@ AuroraState convertAuroraState(const dds_msg::AuroraState& msg) {
         const std::string holder_name = resource.holder_source_name().to_string();
         if (resource.resource() != kResourceNames[index] ||
             (resource.holder_priority() != 0 && resource.holder_priority() != 9) ||
-            (resource.acquired() &&
-             (resource.holder_source_id() == 0 || holder_name.empty())) ||
-            (!resource.acquired() &&
-             (resource.holder_source_id() != 0 || !holder_name.empty()))) {
+            (resource.acquired() && !validSourceName(holder_name)) ||
+            (!resource.acquired() && !holder_name.empty())) {
             throw std::runtime_error("malformed Aurora authority resource snapshot");
         }
         out.authority_resources.push_back(AuthorityResourceStatus{
             static_cast<AuroraResource>(index), resource.acquired(),
-            resource.holder_source_id(), holder_name,
-            static_cast<LeasePriority>(resource.holder_priority())});
+            holder_name, static_cast<LeasePriority>(resource.holder_priority())});
     }
     return out;
 }
@@ -295,9 +301,8 @@ MotorConfigurationState convertMotorConfigurationState(
     return out;
 }
 
-dds_msg::LeaseInfo convertLease(const detail::LeaseToken& lease) {
-    dds_msg::LeaseInfo out;
-    out.source_id(lease.source_id);
+dds_pod_msg::LeaseInfo convertLease(const detail::LeaseToken& lease) {
+    dds_pod_msg::LeaseInfo out;
     out.lease_id(lease.lease_id);
     out.sequence_id(lease.sequence_id);
     return out;
@@ -1019,7 +1024,6 @@ struct FourierDdsTransport::Impl
         }
         dds_srv::ManageLease_Request request;
         request.header(makeTracerHeader(std::chrono::system_clock::now()));
-        request.source_id(value.source_id);
         request.source_name(value.source_name);
         request.client_instance_id(value.client_instance_id);
         request.action(value.action);

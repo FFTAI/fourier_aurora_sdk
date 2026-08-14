@@ -53,7 +53,6 @@ struct LeaseOption {
 struct LeaseResult {
     OperationResult operation;
     LeaseState state{LeaseState::Unregistered};
-    uint32_t source_id{0};
     std::string source_name;
     uint64_t lease_id{0};
     std::vector<AuroraResource> resources;
@@ -71,7 +70,6 @@ struct LeaseResult {
 struct AuthorityResourceStatus {
     AuroraResource resource{AuroraResource::LeftLeg};
     bool acquired{false};
-    uint32_t holder_source_id{0};
     std::string holder_source_name;
     LeasePriority holder_priority{LeasePriority::Normal};
 };

@@ -1,5 +1,10 @@
 # Dependency Discovery
 
+> **3.0.0 release amendment:** The coordinated Source Name protocol requires
+> `fourier-dds-msgs 0.2.0-1`. The 0.1.0 artifact and hash below remain the last
+> committed baseline; replace them with the verified 0.2.0 artifact metadata
+> when the coordinated component worktrees receive commit hashes.
+
 Stage one depends on this exact amd64 package pair:
 
 | Component | Package version | Source revision | Validated artifact |

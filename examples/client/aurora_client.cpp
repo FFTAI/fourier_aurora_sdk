@@ -3,9 +3,14 @@
 #include <chrono>
 #include <cstdint>
 #include <exception>
+#include <iomanip>
 #include <iostream>
 #include <limits>
+#include <optional>
+#include <random>
+#include <sstream>
 #include <string>
+#include <string_view>
 #include <thread>
 #include <type_traits>
 #include <utility>
@@ -19,13 +24,12 @@ namespace sdk = fourier::aurora_sdk;
 namespace {
 
 constexpr uint32_t kDefaultDomainId = 123;
-constexpr uint32_t kDefaultSourceId = 1234;
 constexpr auto kDefaultMonitorInterval = std::chrono::milliseconds(500);
 constexpr auto kEndpointTimeout = std::chrono::seconds(5);
 
 struct GlobalOptions {
     uint32_t domain_id = kDefaultDomainId;
-    uint32_t source_id = kDefaultSourceId;
+    std::optional<std::string> source_name;
 };
 
 enum class ReadMode { Get, Monitor };
@@ -76,7 +80,7 @@ void printRootHelp(std::ostream& output) {
         << "  control-group  Joint and Cartesian control-group data\n"
         << "\nGlobal options (accepted anywhere):\n"
         << "  -d, --domain_id <uint32>  DDS domain ID (default: 123)\n"
-        << "  -s, --source_id <uint32>  Nonzero source ID (default: 1234)\n"
+        << "  -s, --source_name <name>   Source Name (default: aurora-client-NNNN)\n"
         << "  -h, --help                Show help\n"
         << "      --version             Show version\n"
         << "\nRun 'aurora-client <area> --help' for area commands.\n";
@@ -204,6 +208,22 @@ bool containsHelp(const std::vector<std::string>& args) {
     return std::any_of(args.begin(), args.end(), isHelp);
 }
 
+bool validSourceName(std::string_view name) {
+    return !name.empty() && name.size() <= 64 &&
+           std::all_of(name.begin(), name.end(), [](unsigned char c) {
+               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                      (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+           });
+}
+
+std::string generateDefaultSourceName() {
+    std::random_device random;
+    std::uniform_int_distribution<unsigned int> suffix(0, 9999);
+    std::ostringstream out;
+    out << "aurora-client-" << std::setfill('0') << std::setw(4) << suffix(random);
+    return out.str();
+}
+
 bool parseGlobalOptions(
     int argc,
     char** argv,
@@ -215,7 +235,7 @@ bool parseGlobalOptions(
     for (int index = 1; index < argc; ++index) {
         const std::string argument = argv[index];
         const bool is_domain = argument == "-d" || argument == "--domain_id";
-        const bool is_source = argument == "-s" || argument == "--source_id";
+        const bool is_source = argument == "-s" || argument == "--source_name";
         if (!is_domain && !is_source) {
             remaining.push_back(argument);
             continue;
@@ -227,21 +247,23 @@ bool parseGlobalOptions(
         }
         seen = true;
         if (++index >= argc) {
-            error = argument + " requires a uint32 value";
-            return false;
-        }
-        uint32_t value = 0;
-        if (!client_example::parseUint32(argv[index], value) ||
-            (is_source && value == 0)) {
-            error = argument + (is_source
-                ? " requires a nonzero uint32 value"
-                : " requires a uint32 value");
+            error = argument + (is_source ? " requires a Source Name" : " requires a uint32 value");
             return false;
         }
         if (is_domain) {
+            uint32_t value = 0;
+            if (!client_example::parseUint32(argv[index], value)) {
+                error = argument + " requires a uint32 value";
+                return false;
+            }
             options.domain_id = value;
         } else {
-            options.source_id = value;
+            const std::string value = argv[index];
+            if (!validSourceName(value)) {
+                error = argument + " requires [A-Za-z0-9._-]{1,64}";
+                return false;
+            }
+            options.source_name = value;
         }
     }
     return true;
@@ -1011,13 +1033,15 @@ int main(int argc, char** argv) {
     client_example::installSignalHandlers();
     auto& client = sdk::AuroraClient::getInstance();
     try {
+        const std::string source_name = global.source_name.has_value()
+            ? *global.source_name : generateDefaultSourceName();
         auto options = client.config();
         options.domain_id = global.domain_id;
-        options.source_id = global.source_id;
+        options.source_name = source_name;
         options.enabled_endpoints = endpointsFor(command);
         client.configure(options);
         std::cerr << "domain_id=" << global.domain_id
-                  << " source_id=" << global.source_id << "\n";
+                  << " source_name=" << source_name << "\n";
         client.start();
         if (!client.waitForEndpoints(kEndpointTimeout)) {
             std::cerr << "Timed out after 5s waiting for required endpoints.\n";

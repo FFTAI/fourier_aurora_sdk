@@ -44,7 +44,7 @@ python3 -m venv "${test_root}/venv"
 site_packages="${test_root}/venv/lib/python3.10/site-packages"
 package_dir="${site_packages}/fourier_aurora_client"
 extension="${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-sdk_library="${package_dir}/libfourier_aurora_sdk.so.2"
+sdk_library="${package_dir}/libfourier_aurora_sdk.so.3"
 loader_path="${dds_prefix}/lib:${dds_prefix}/fourier_dds_msgs/lib:/usr/local/lib"
 
 extension_loader="$(LD_LIBRARY_PATH="${loader_path}" ldd "${extension}")"
@@ -54,10 +54,10 @@ if grep -Fq 'not found' <<< "${extension_loader}${sdk_loader}"; then
     echo "${extension_loader}${sdk_loader}" >&2
     exit 1
 fi
-sdk_resolution="$(grep -F 'libfourier_aurora_sdk.so.2 =>' <<< "${extension_loader}" || true)"
+sdk_resolution="$(grep -F 'libfourier_aurora_sdk.so.3 =>' <<< "${extension_loader}" || true)"
 core_resolution="$(grep -F 'libfourierdds_core.so =>' <<< "${sdk_loader}" || true)"
 state_resolution="$(grep -F 'libAuroraState.so =>' <<< "${sdk_loader}" || true)"
-if [[ "${sdk_resolution}" != *"=> ${package_dir}/libfourier_aurora_sdk.so.2"* ||
+if [[ "${sdk_resolution}" != *"=> ${package_dir}/libfourier_aurora_sdk.so.3"* ||
       "${core_resolution}" != *"=> ${dds_prefix}/"* ||
       "${state_resolution}" != *"=> ${dds_prefix}/fourier_dds_msgs/lib/"* ]]; then
     echo "Wheel native libraries did not resolve from the isolated wheel and staged prefix." >&2

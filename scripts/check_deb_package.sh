@@ -33,7 +33,7 @@ if [[ "${package_version}" != "${version}" &&
     exit 1
 fi
 [[ "${package_architecture}" == "${expected_architecture}" ]]
-[[ "${package_dependencies}" == "fourier_dds (= 1.2.0-1), fourier-dds-msgs (= 0.1.0-1)" ]]
+[[ "${package_dependencies}" == "fourier_dds (= 1.2.0-1), fourier-dds-msgs (= 0.2.0-1)" ]]
 
 expected_filename="fourier-aurora-sdk_${package_version}_${package_architecture}.deb"
 if [[ "$(basename "${package}")" != "${expected_filename}" ]]; then
@@ -95,7 +95,7 @@ if find "${sdk_prefix}/bin" -type f -o -type l | \
     exit 1
 fi
 [[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so" ]]
-[[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.2" ]]
+[[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.3" ]]
 cmp "${project_root}/LICENSE" "${doc_prefix}/LICENSE"
 
 if find "${sdk_prefix}" -type f -print | grep -Eq '(_fourier_aurora_sdk|mock_transport|/tests?/|__pycache__|\.pyc$)'; then

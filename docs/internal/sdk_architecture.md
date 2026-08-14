@@ -17,8 +17,9 @@ orchestration layer.
 
 `config()` returns a canonical copy. Editing that copy has no effect until
 `configure()` validates and replaces the complete option set while stopped.
-Domain ID, the required lease-capable integer `source_id`, and optional
-display-only `source_name` are frozen for each running session.
+Domain ID and the required human-readable `source_name` are frozen for each
+running session. `start()` validates Source Name grammar before transport
+creation; the same identity is used for lease management and diagnostics.
 
 The C++ transport callback extension points run inline on the DDS callback
 thread after SDK cache update. Python does not expose those transport callback

@@ -23,13 +23,11 @@ struct TransportHandlers {
 using TransportTerminalObserver = std::function<void()>;
 
 struct LeaseToken {
-    uint32_t source_id{0};
     uint64_t lease_id{0};
     uint64_t sequence_id{0};
 };
 
 struct LeaseManagementRequest {
-    uint32_t source_id{0};
     std::string source_name;
     uint64_t client_instance_id{0};
     uint32_t action{0};

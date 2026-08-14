@@ -18,8 +18,7 @@ struct ConnectionOptions {
     bool use_namespace = true;
     std::optional<bool> use_discovery_server;
     uint32_t service_timeout_ms = 1000;
-    uint32_t source_id = 0;
-    std::optional<std::string> source_name;
+    std::string source_name;
     bool allow_emergency_lease_priority = false;
     std::vector<Endpoint> enabled_endpoints{
         Endpoint::FsmService,
@@ -44,7 +43,6 @@ struct ConnectionOptions {
                use_namespace == other.use_namespace &&
                use_discovery_server == other.use_discovery_server &&
                service_timeout_ms == other.service_timeout_ms &&
-               source_id == other.source_id &&
                source_name == other.source_name &&
                allow_emergency_lease_priority == other.allow_emergency_lease_priority &&
                enabled_endpoints == other.enabled_endpoints;

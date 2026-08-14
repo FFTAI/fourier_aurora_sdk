@@ -12,7 +12,7 @@ must be enabled before the SDK sends an Emergency acquisition or replacement.
 ## Consequences
 
 Routine clients cannot request takeover accidentally. Enabling the SDK option
-does not authorize Emergency priority: Aurora still checks the Source ID
+does not authorize Emergency priority: Aurora still checks the exact Source Name
 against its privileged allowlist and may return `PRIORITY_NOT_ALLOWED`.
 
 Resource-only replacement preserves the current priority by default. An

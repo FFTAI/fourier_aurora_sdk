@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Read one GR3 robot, estimator, and control-group snapshot."""
 
+import sys
+
 from fourier_aurora_client import AuroraClient, Endpoint
 
 
@@ -8,10 +10,23 @@ def print_result(operation, result):
     print(f'{operation} failed: code={result.code} message="{result.message}"')
 
 
+def valid_source_name(value):
+    return 1 <= len(value) <= 64 and all(
+        character.isascii()
+        and (character.isalnum() or character in "._-")
+        for character in value
+    )
+
+
 def main():
+    if len(sys.argv) != 2 or not valid_source_name(sys.argv[1]):
+        print(f"Usage: {sys.argv[0]} <source_name>")
+        return 2
+    source_name = sys.argv[1]
     client = AuroraClient.get_instance()
     try:
         options = client.config()
+        options.source_name = source_name
         options.enabled_endpoints = [
             Endpoint.AURORA_STATE_SUBSCRIBER,
             Endpoint.ESTIMATOR_DATA_SUBSCRIBER,

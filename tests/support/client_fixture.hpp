@@ -20,7 +20,7 @@ inline AuroraClient& resetClientFixture() {
     client.onLeaseChanged({});
     ConnectionOptions options;
     options.domain_id = 123;
-    options.source_id = 42;
+    options.source_name = "test-client";
     client.configure(options);
     resetMockTransportFixture();
     return client;

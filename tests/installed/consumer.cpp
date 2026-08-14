@@ -38,7 +38,7 @@ int runDdsLoopback() {
         client.stop();
         if (client.state() != sdk::ClientState::Stopped ||
             client.domainId() != 123 || client.config().domain_id != 123 ||
-            client.config().source_id != 0) {
+            !client.config().source_name.empty()) {
             std::cerr << "installed client defaults are incorrect\n";
             return 1;
         }
@@ -49,7 +49,6 @@ int runDdsLoopback() {
             std::cerr << "setDomainId did not update ConnectionOptions\n";
             return 1;
         }
-        options.source_id = 77;
         options.source_name = "deb_loopback";
         options.namespace_name = "aurora_sdk_wheel_loopback";
         options.dds_mode = 0;

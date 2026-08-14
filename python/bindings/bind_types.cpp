@@ -321,7 +321,6 @@ void bind_types(py::module_& m) {
         .def(py::init<>())
         .def_readwrite("operation", &sdk::LeaseResult::operation)
         .def_readwrite("state", &sdk::LeaseResult::state)
-        .def_readwrite("source_id", &sdk::LeaseResult::source_id)
         .def_readwrite("source_name", &sdk::LeaseResult::source_name)
         .def_readwrite("lease_id", &sdk::LeaseResult::lease_id)
         .def_readwrite("resources", &sdk::LeaseResult::resources)
@@ -335,7 +334,6 @@ void bind_types(py::module_& m) {
         .def(py::init<>())
         .def_readwrite("resource", &sdk::AuthorityResourceStatus::resource)
         .def_readwrite("acquired", &sdk::AuthorityResourceStatus::acquired)
-        .def_readwrite("holder_source_id", &sdk::AuthorityResourceStatus::holder_source_id)
         .def_readwrite("holder_source_name", &sdk::AuthorityResourceStatus::holder_source_name)
         .def_readwrite("holder_priority", &sdk::AuthorityResourceStatus::holder_priority);
 

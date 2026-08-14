@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <iostream>
+#include <string_view>
 #include <vector>
 
 #include "fourier_aurora_sdk/aurora_client.hpp"
@@ -8,6 +10,14 @@
 namespace sdk = fourier::aurora_sdk;
 
 namespace {
+
+bool validSourceName(std::string_view name) {
+    return !name.empty() && name.size() <= 64 &&
+           std::all_of(name.begin(), name.end(), [](unsigned char c) {
+               return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
+                      (c >= '0' && c <= '9') || c == '.' || c == '_' || c == '-';
+           });
+}
 
 void printResult(
     const char* operation,
@@ -32,10 +42,15 @@ void printRange(const Range& values) {
 
 }  // namespace
 
-int main() {
+int main(int argc, char** argv) {
+    if (argc != 2 || !validSourceName(argv[1])) {
+        std::cerr << "Usage: " << argv[0] << " <source_name>\n";
+        return 2;
+    }
     auto& client = sdk::AuroraClient::getInstance();
     try {
         auto options = client.config();
+        options.source_name = argv[1];
         options.enabled_endpoints = {
             sdk::Endpoint::AuroraStateSubscriber,
             sdk::Endpoint::EstimatorDataSubscriber,

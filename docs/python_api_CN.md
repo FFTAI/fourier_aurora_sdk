@@ -77,13 +77,12 @@ Native 单例的进程级 Python wrapper。使用 `get_instance()`；直接构�
 | `use_namespace` | `bool` | `True` | 是否使用 namespace。 |
 | `use_discovery_server` | `bool | None` | `None` | 可选 Discovery Server override。 |
 | `service_timeout_ms` | `int` | `1000` | 同步 Service 默认超时。 |
-| `source_id` | `int` | `0` | 部署分配的模块 ID，必须符合 `uint32`。 |
-| `source_name` | `str | None` | `None` | 诊断名称，默认 `aurora_sdk_<source_id>`。 |
+| `source_name` | `str` | `""`（设置前无效） | 必填的可读 client 身份，必须符合 `[A-Za-z0-9._-]{1,64}`。 |
 | `allow_emergency_lease_priority` | `bool` | `False` | 允许 Emergency 请求；仍需 Aurora 授权。 |
 | `enabled_endpoints` | `list[Endpoint]` | 全部 | `start()` 创建的 endpoint。 |
 
-启用租约或受保护 publisher 时 `source_id` 必须非零；受保护 publisher 还必须
-启用 `MANAGE_LEASE_SERVICE`。
+每个 client 都必须配置 `source_name`；`start()` 会在创建 transport 之前校验。
+受保护 publisher 还必须启用 `MANAGE_LEASE_SERVICE`。
 
 ### `ClientState`
 
@@ -162,7 +161,7 @@ SDK 本地接收时间；`frame_id` 是坐标系或来源字符串。
 | `switch_status` | Aurora 状态切换值。 |
 | `current_state` | 当前 `StateInfo`。 |
 | `available_states` | 可用 `StateInfo` 列表。 |
-| `authority_resources` | 每项包含 `resource`、`acquired`、`holder_source_id`、`holder_source_name`、`holder_priority` 的权限快照。 |
+| `authority_resources` | 每项包含 `resource`、`acquired`、`holder_source_name`、`holder_priority` 的权限快照。 |
 
 ### `MotionState`
 
@@ -293,7 +292,7 @@ Cartesian 指令，本版本只读。
 |---|---|
 | `operation` | 本次调用的 `OperationResult`。 |
 | `state` | 当前 `LeaseState`。 |
-| `source_id`、`source_name` | 模块身份。 |
+| `source_name` | 模块身份。 |
 | `lease_id` | Authority 分配 ID。 |
 | `resources` | 完整 `AuroraResource` 列表。 |
 | `priority` | 租约优先级。 |

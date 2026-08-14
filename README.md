@@ -2,7 +2,7 @@
 
 [中文](README_CN.md)
 
-Fourier Aurora SDK 2.0.1 is the C++17 and Python client library for reading
+Fourier Aurora SDK 3.0.0 is the C++17 and Python client library for reading
 Aurora robot state and sending commands over FourierDDS. Applications use
 SDK-owned types; generated DDS messages stay behind the SDK boundary.
 
@@ -24,7 +24,7 @@ Install the wheel supplied for your platform, then create only the endpoints
 your program uses:
 
 ```bash
-python3 -m pip install fourier_aurora_client-2.0.1-*.whl
+python3 -m pip install fourier_aurora_client-3.0.0-*.whl
 ```
 
 ```python
@@ -74,6 +74,7 @@ int main() {
     auto& client = sdk::AuroraClient::getInstance();
     auto options = client.config();
     options.domain_id = 123;
+    options.source_name = "state-reader";
     options.enabled_endpoints = {sdk::Endpoint::AuroraStateSubscriber};
     client.configure(options);
 
@@ -104,11 +105,12 @@ shutdown.
 ## Sending a protected command
 
 Motion, control-group, and temporary motor-configuration publishers require a
-control lease. A deployment owner assigns a nonzero module `source_id`; do not
-invent an ID in a multi-client deployment.
+control lease. Every direct SDK client supplies a human-readable `source_name`
+matching `[A-Za-z0-9._-]{1,64}`. Use distinct names for concurrently running
+modules so that authority state and logs remain unambiguous.
 
 ```cpp
-options.source_id = 42;
+options.source_name = "walking-controller";
 options.enabled_endpoints = {
     sdk::Endpoint::ManageLeaseService,
     sdk::Endpoint::MotionCommandPublisher,

@@ -124,12 +124,6 @@ void bind_client(py::module_& m) {
                 options.service_timeout_ms =
                     requireUint32(value, "service_timeout_ms");
             })
-        .def_property(
-            "source_id",
-            [](const sdk::ConnectionOptions& options) { return options.source_id; },
-            [](sdk::ConnectionOptions& options, const py::object& value) {
-                options.source_id = requireUint32(value, "source_id");
-            })
         .def_readwrite("source_name", &sdk::ConnectionOptions::source_name)
         .def_readwrite(
             "allow_emergency_lease_priority",

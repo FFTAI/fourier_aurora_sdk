@@ -11,6 +11,7 @@ def test_python_recipes_are_standalone_and_compile():
     recipes = sorted((PROJECT_ROOT / "examples" / "gr3" / "python").glob("*.py"))
     assert [recipe.name for recipe in recipes] == [
         "get_info.py",
+        "sub_controller.py",
         "swing_arms.py",
         "walk_forward.py",
     ]
@@ -29,6 +30,7 @@ def test_python_recipes_are_standalone_and_compile():
 def test_cpp_recipes_do_not_include_shared_example_helpers():
     recipes = sorted((PROJECT_ROOT / "examples" / "gr3" / "cpp").glob("*.cpp"))
     assert [recipe.name for recipe in recipes] == [
+        "aurora_state_callback.cpp",
         "get_info.cpp",
         "swing_arms.cpp",
         "walk_forward.cpp",

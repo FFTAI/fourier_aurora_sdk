@@ -26,7 +26,7 @@ Python wheel 只包含 client package，不包含示例或诊断 executable。
 
 1. 启动 Aurora，确认 DDS domain 与 namespace 和 client 一致。
 2. 确认安装了兼容的 DDS 与消息 runtime package。
-3. 发送受保护命令前，取得部署分配的非零 `source_id`。
+3. 选择符合 `[A-Za-z0-9._-]{1,64}` 的可读 `source_name`。
 4. 先运行只读操作，确认机器人型号和当前 FSM。
 5. 检查打印的每个 `OperationResult`，不要只看进程退出码。
 
@@ -40,15 +40,16 @@ GR3 recipe 和诊断客户端默认使用 DDS domain `123`。
 aurora-client [global options] <area> <command> [command options]
 ```
 
-DDS domain ID 默认为 `123`，source ID 默认为 `1234`。可在命令行任意位置用
-`-d`/`--domain_id` 和 `-s`/`--source_id` 覆盖。两者都是无符号 32 位整数，
-且 `source_id` 不能为零。同时连接的模块必须使用不同 source ID。程序启动时会将
-生效的 ID 打印到标准错误。
+DDS domain ID 默认为 `123`，可在命令行任意位置用 `-d`/`--domain_id` 覆盖。
+wrapper 会生成进程内默认 Source Name `aurora-client-NNNN`；需要稳定、描述性的
+名称时可用 `-s`/`--source_name` 覆盖。Source Name 必须符合
+`[A-Za-z0-9._-]{1,64}`。程序启动时会把生效的 domain 和 Source Name 打印到
+标准错误。
 
 ```bash
 aurora-client state get
-aurora-client -d 7 -s 42 state get
-aurora-client state get --domain_id 7 --source_id 42
+aurora-client -d 7 -s state-reader state get
+aurora-client state get --domain_id 7 --source_name state-reader
 ```
 
 客户端只启用所选 command 需要的 endpoint。在读取状态、发送 request 或注册租约前，
@@ -160,8 +161,8 @@ Python recipe 要求已安装 `fourier_aurora_client` wheel，或者在 `PYTHONP
 
 ```bash
 cmake --build build --target gr3_aurora_state_callback
-./build/gr3_aurora_state_callback
-./build/gr3_aurora_state_callback 5  # 5 秒后自动停止
+./build/gr3_aurora_state_callback state-callback
+./build/gr3_aurora_state_callback state-callback 5  # 5 秒后自动停止
 ```
 
 可选的正数 duration 适合有界诊断和 CI；不传参数时使用 Ctrl+C 停止。实现位于
@@ -176,8 +177,8 @@ cmake --build build --target gr3_aurora_state_callback
 hardware/end-effector 类型、当前 FSM、机身姿态和速度、stable level 及控制组名称。
 
 ```bash
-./build/gr3_get_info
-python3 examples/gr3/python/get_info.py
+./build/gr3_get_info info-reader
+python3 examples/gr3/python/get_info.py info-reader
 ```
 
 建议先运行它，在不获取控制权的情况下验证连接。
@@ -186,13 +187,13 @@ python3 examples/gr3/python/get_info.py
 
 用途：展示完整的有界运动流程，包括租约注册、FSM 切换、运动指令和租约释放。
 
-这个有界 recipe 接收模块 source ID，注册 `MotionCommand` 资源，请求 GR3 Walk
+这个有界 recipe 接收模块 Source Name，注册 `MotionCommand` 资源，请求 GR3 Walk
 （FSM `3`），等待状态切换，然后以 `0.3 m/s` 向前运动三秒。获取控制前必须精确
 输入 `YES` 确认。
 
 ```bash
-./build/gr3_walk_forward 42
-python3 examples/gr3/python/walk_forward.py 42
+./build/gr3_walk_forward walk-demo
+python3 examples/gr3/python/walk_forward.py walk-demo
 ```
 
 运行前检查源码中的常量。不要假设 FSM ID 或限制可以直接用于其他机器人型号。
@@ -201,13 +202,13 @@ python3 examples/gr3/python/walk_forward.py 42
 
 用途：展示从单个测量快照开始插值的、带租约多控制组 Joint 控制。
 
-这个有界 recipe 接收模块 source ID，租用左右 manipulator 资源，请求 GR3
+这个有界 recipe 接收模块 Source Name，租用左右 manipulator 资源，请求 GR3
 PdStandStanding（FSM `13`），从同一份快照读取双臂位置，在三秒内插值到中心姿态，
 再以 100 Hz 执行两个五秒摆臂周期。运行前必须输入 `YES`。
 
 ```bash
-./build/gr3_swing_arms 42
-python3 examples/gr3/python/swing_arms.py 42
+./build/gr3_swing_arms arm-demo
+python3 examples/gr3/python/swing_arms.py arm-demo
 ```
 
 示例假设 GR3 的 `left_manipulator` 与 `right_manipulator` group 排列。运行前
@@ -218,7 +219,7 @@ python3 examples/gr3/python/swing_arms.py 42
 用途：展示手臂 passthrough 指令与 Universal Controller 运行时 rate 和 reset
 之间的配合方式。
 
-这个 recipe 接收模块 source ID，租用左右 manipulator，并请求 GR3
+这个 recipe 接收模块 Source Name，租用左右 manipulator，并请求 GR3
 ExternalUniController（FSM `120`）。它先将 momentum 和 waist compensation
 rate 设为 `0.0`，再将双臂目标设为全零。用户确认后，将双侧肘关节设为
 `-1.0`，momentum rate 设为 `0.5`，waist rate 设为 `1.0`；再次确认后 reset
@@ -226,7 +227,7 @@ Universal Controller。每次手臂移动都从最新测量状态开始，以 10
 插值到目标位置。
 
 ```bash
-python3 examples/gr3/python/sub_controller.py 42
+python3 examples/gr3/python/sub_controller.py arm-passthrough
 ```
 
 示例假设 GR3 使用七关节 manipulator 排列，肘关节 index 为 `3`。
@@ -237,7 +238,7 @@ python3 examples/gr3/python/sub_controller.py 42
 
 1. 用部署配置替换硬编码的机器人能力和 FSM ID。
 2. 只选择应用实际需要的 endpoint。
-3. 使用登记过的模块 `source_id`，不要在运行时随机生成。
+3. 使用可读且能区分并发模块的 `source_name`。
 4. 使用受保护 publisher 前注册完整资源集合。
 5. 为所有等待和运动设置边界，处理中断，并在所有路径停止 client。
 6. 通过状态/错误遥测判断机器人结果；本地 publish 不是 acknowledgement。
