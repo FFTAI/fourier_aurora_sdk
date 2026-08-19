@@ -4,6 +4,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 wheel="${1:-}"
 dds_prefix="${FOURIER_AURORA_SDK_DDS_PREFIX:-}"
+python_bin="${PYTHON_BIN:-python3}"
 
 if [[ -z "${wheel}" || ! -f "${wheel}" ]]; then
     echo "Usage: $0 <fourier_aurora_client.whl>" >&2
@@ -12,6 +13,32 @@ fi
 if [[ -z "${dds_prefix}" || ! -d "${dds_prefix}" ]]; then
     echo "Set FOURIER_AURORA_SDK_DDS_PREFIX to the exact staged dependency prefix." >&2
     exit 2
+fi
+filename="$(basename "${wheel}")"
+if [[ ! "${filename}" =~ -(cp(310|311|312|313))-(cp(310|311|312|313))-linux_x86_64\.whl$ ]]; then
+    echo "Cannot determine the supported CPython version from ${filename}." >&2
+    exit 2
+fi
+wheel_python_tag="${BASH_REMATCH[1]}"
+wheel_python_digits="${BASH_REMATCH[2]}"
+wheel_abi_tag="${BASH_REMATCH[3]}"
+if [[ "${wheel_python_tag}" != "${wheel_abi_tag}" ]]; then
+    echo "Python and ABI tags must match: ${wheel_python_tag} != ${wheel_abi_tag}" >&2
+    exit 2
+fi
+if ! command -v "${python_bin}" >/dev/null 2>&1; then
+    echo "Python interpreter is unavailable: ${python_bin}" >&2
+    exit 2
+fi
+interpreter_tag="$("${python_bin}" -c 'import platform, sys; assert platform.python_implementation() == "CPython"; print(f"cp{sys.version_info.major}{sys.version_info.minor}")')"
+if [[ "${interpreter_tag}" != "${wheel_python_tag}" ]]; then
+    echo "${filename} requires ${wheel_python_tag}, but ${python_bin} is ${interpreter_tag}." >&2
+    exit 2
+fi
+soversion="$(sed -nE 's/^[[:space:]]*set\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+([0-9]+)\).*$/\1/p' "${project_root}/CMakeLists.txt")"
+if [[ -z "${soversion}" ]]; then
+    echo "Unable to read FOURIER_AURORA_SDK_SOVERSION." >&2
+    exit 1
 fi
 
 build_root="${BUILD_ROOT:-/tmp}"
@@ -37,14 +64,14 @@ cmake -S "${project_root}" -B "${test_root}/build" \
     -DFOURIER_AURORA_SDK_BUILD_EXAMPLES=OFF
 cmake --build "${test_root}/build" --target dds_wheel_peer --parallel "${JOBS:-4}"
 
-python3 -m venv "${test_root}/venv"
+"${python_bin}" -m venv "${test_root}/venv"
 "${test_root}/venv/bin/python" -m pip install \
     --disable-pip-version-check --no-index --no-deps "${wheel}"
 
-site_packages="${test_root}/venv/lib/python3.10/site-packages"
+site_packages="$("${test_root}/venv/bin/python" -c 'import sysconfig; print(sysconfig.get_path("platlib"))')"
 package_dir="${site_packages}/fourier_aurora_client"
-extension="${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-sdk_library="${package_dir}/libfourier_aurora_sdk.so.3"
+extension="${package_dir}/_fourier_aurora_sdk.cpython-${wheel_python_digits}-x86_64-linux-gnu.so"
+sdk_library="${package_dir}/libfourier_aurora_sdk.so.${soversion}"
 loader_path="${dds_prefix}/lib:${dds_prefix}/fourier_dds_msgs/lib:/usr/local/lib"
 
 extension_loader="$(LD_LIBRARY_PATH="${loader_path}" ldd "${extension}")"
@@ -54,10 +81,10 @@ if grep -Fq 'not found' <<< "${extension_loader}${sdk_loader}"; then
     echo "${extension_loader}${sdk_loader}" >&2
     exit 1
 fi
-sdk_resolution="$(grep -F 'libfourier_aurora_sdk.so.3 =>' <<< "${extension_loader}" || true)"
+sdk_resolution="$(grep -F "libfourier_aurora_sdk.so.${soversion} =>" <<< "${extension_loader}" || true)"
 core_resolution="$(grep -F 'libfourierdds_core.so =>' <<< "${sdk_loader}" || true)"
 state_resolution="$(grep -F 'libAuroraState.so =>' <<< "${sdk_loader}" || true)"
-if [[ "${sdk_resolution}" != *"=> ${package_dir}/libfourier_aurora_sdk.so.3"* ||
+if [[ "${sdk_resolution}" != *"=> ${package_dir}/libfourier_aurora_sdk.so.${soversion}"* ||
       "${core_resolution}" != *"=> ${dds_prefix}/"* ||
       "${state_resolution}" != *"=> ${dds_prefix}/fourier_dds_msgs/lib/"* ]]; then
     echo "Wheel native libraries did not resolve from the isolated wheel and staged prefix." >&2
@@ -66,6 +93,7 @@ if [[ "${sdk_resolution}" != *"=> ${package_dir}/libfourier_aurora_sdk.so.3"* ||
 fi
 if grep -Eq '=> /opt/fftai/' <<< "${extension_loader}${sdk_loader}"; then
     echo "Wheel test resolved a native dependency from the persistent /opt installation." >&2
+    echo "${extension_loader}${sdk_loader}" >&2
     exit 1
 fi
 

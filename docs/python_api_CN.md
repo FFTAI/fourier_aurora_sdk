@@ -11,8 +11,8 @@ import fourier_aurora_client as aurora
 client = aurora.AuroraClient.get_instance()
 ```
 
-不要直接构造 `AuroraClient`。当前 stage-one wheel 面向 standard-GIL
-CPython 3.10 x86_64。
+不要直接构造 `AuroraClient`。Linux x86_64 wheel 按 standard-GIL CPython
+3.10 至 3.13 分别发布。
 
 ## API 索引
 

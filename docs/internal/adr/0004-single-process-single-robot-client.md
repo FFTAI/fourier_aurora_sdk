@@ -4,7 +4,7 @@ status: accepted
 
 # Use one singleton client for one robot per process
 
-Aurora SDK `2.0` is designed for single-robot control. `AuroraClient` remains a
+Aurora SDK `1.x` is designed for single-robot control. `AuroraClient` remains a
 process-wide singleton, and multi-robot applications use separate processes or
 another orchestration layer.
 

@@ -16,7 +16,8 @@ fi
 grep -Fq 'dynamic = ["version"]' "${project_root}/pyproject.toml"
 grep -Fq 'provider = "scikit_build_core.metadata.regex"' "${project_root}/pyproject.toml"
 grep -Fq 'input = "VERSION"' "${project_root}/pyproject.toml"
-grep -Eq 'set\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+3\)' \
+version_major="${version%%.*}"
+grep -Eq "set\\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+${version_major}\\)" \
     "${project_root}/CMakeLists.txt"
 grep -Fq "### Version ${version} (unreleased)" "${project_root}/CHANGELOG"
 

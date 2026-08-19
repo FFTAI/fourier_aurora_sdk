@@ -106,7 +106,7 @@ SDK 也应将该选项设置为空字符串。
 | `fourier_dds` | `1.2.0-1` | DDS transport 抽象 |
 | `fourier-dds-msgs` | `0.2.0-1` | Aurora DDS 生成消息 |
 | FastDDS/FastCDR | 随 DDS 包提供 | DDS runtime |
-| Python | API 范围 3.9–3.13；Stage 1 打包使用 CPython 3.10 | Python client |
+| Python | standard-GIL CPython 3.10–3.13 | Python client wheel |
 | pybind11 | 2.13.6 | Python 原生绑定 |
 | scikit-build-core、build | 构建 wheel 时需要 | Python 打包 |
 
@@ -189,19 +189,20 @@ ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 获得匹配的 DDS package，再安装：
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_3.0.0*.deb
+sudo apt install ./fourier-aurora-sdk_1.0.1*.deb
 ```
 
 ### 构建 Python wheel
 
-Stage 1 的 x86_64 脚本要求 CPython 3.10，并要求当前环境安装 `build`、
-`pybind11` 与 `scikit-build-core`：
+x86_64 脚本每次构建一个解释器专用 wheel。通过 `PYTHON_BIN` 选择 CPython
+3.10、3.11、3.12 或 3.13，并在对应环境安装 `build`、`pybind11` 与
+`scikit-build-core`：
 
 ```bash
 python3 -m pip install build pybind11==2.13.6 scikit-build-core
 FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
 ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
-./scripts/build_wheel_x86_64.sh
+PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
 ```
 
 Wheel 包含 Python package、原生 binding 和私有 SDK 动态库，不包含头文件、
@@ -219,7 +220,7 @@ cmake -S app -B app/build \
 ```
 
 ```cmake
-find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED)
+find_package(fourier_aurora_sdk 1.0 CONFIG REQUIRED)
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
 target_compile_features(app PRIVATE cxx_std_17)
@@ -228,7 +229,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python 应用
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-3.0.0-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-1.0.1-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 

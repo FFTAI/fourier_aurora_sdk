@@ -1,6 +1,6 @@
 # Dependency Discovery
 
-> **3.0.0 release amendment:** The coordinated Source Name protocol requires
+> **1.0.1 release amendment:** The coordinated Source Name protocol requires
 > `fourier-dds-msgs 0.2.0-1`. The 0.1.0 artifact and hash below remain the last
 > committed baseline; replace them with the verified 0.2.0 artifact metadata
 > when the coordinated component worktrees receive commit hashes.
@@ -21,7 +21,7 @@ b594b0d74a4d4962233e16a5d8004f843d8319712fb5c1c0927fb9c08e89bd00  fourierddsmsgs
 
 FastDDS and FastCDR are runtime dependencies supplied by the build image and
 the pinned packages. `REVISIONS.yaml` is the machine-readable compatibility
-mapping for SDK `2.0.0`.
+mapping for SDK `1.0.1`.
 
 Extract both Debian artifacts beneath one staging root and pass its
 `opt/fftai` directory as the only SDK dependency prefix:

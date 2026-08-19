@@ -21,7 +21,7 @@ revisions:
     artifact: fourierddsmsgs-0.1.0-18a24585-0e930b.deb
     sha256: b594b0d74a4d4962233e16a5d8004f843d8319712fb5c1c0927fb9c08e89bd00
 compatibility:
-  - aurora_sdk: 2.0.1
+  - aurora_sdk: 1.0.1
     fourierdds_package: fourier_dds
     fourierdds_package_version: 1.2.0-1
     fourierdds_commit: 1aec6d3307c3f64c1210b4d26d113fe0979c29c3

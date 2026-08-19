@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Aurora C++ SDK with Python bindings"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9,<3.14"
+requires-python = ">=3.10,<3.14"
 
 [tool.scikit-build]
 minimum-version = "0.9"

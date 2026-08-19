@@ -37,6 +37,6 @@ run without one.
 `ConnectionOptions` contains `uint32_t source_id`, optional `source_name`, and the
 Emergency opt-in. `configure()` while Stopped is the sole identity mutator;
 `config()` returns the optional configured name, while `LeaseResult` exposes the
-effective fallback name used on the wire. SDK 2.0.1 removes the unreleased
+effective fallback name used on the wire. SDK 1.0.1 removes the unreleased
 string-only `setUserId()` / `userId()` pair without a compatibility wrapper or a
 second convenience setter.

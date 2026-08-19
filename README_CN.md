@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Fourier Aurora SDK 3.0.0 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
+Fourier Aurora SDK 1.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
 命令的 C++17/Python 客户端库。应用只接触 SDK 自有类型，生成的 DDS 消息类型
 不会暴露到 SDK 边界之外。
 
@@ -23,7 +23,7 @@ Fourier Aurora SDK 3.0.0 是通过 FourierDDS 读取 Aurora 机器人状态、�
 安装与你的平台匹配的 wheel，并且只创建程序实际需要的 endpoint：
 
 ```bash
-python3 -m pip install fourier_aurora_client-3.0.0-*.whl
+python3 -m pip install fourier_aurora_client-1.0.1-*.whl
 ```
 
 ```python
@@ -57,7 +57,7 @@ Python 的 timeout 单位是秒。`Running` 仅表示本地 transport 已启动�
 安装 Debian 包后，链接导出的 CMake target：
 
 ```cmake
-find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED)
+find_package(fourier_aurora_sdk 1.0 CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
 target_compile_features(my_app PRIVATE cxx_std_17)
 ```

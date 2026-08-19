@@ -117,7 +117,7 @@ The source build currently expects Linux and the exact staged dependencies in
 | `fourier_dds` | `1.2.0-1` | DDS transport abstraction |
 | `fourier-dds-msgs` | `0.2.0-1` | Generated Aurora DDS messages |
 | FastDDS/FastCDR | supplied with the DDS packages | DDS runtime |
-| Python | 3.9–3.13 API range; stage-one package build uses CPython 3.10 | Python client |
+| Python | Standard-GIL CPython 3.10–3.13 | Python client wheels |
 | pybind11 | 2.13.6 | Python native binding |
 | scikit-build-core, build | required for wheel builds | Python packaging |
 
@@ -205,19 +205,20 @@ The output is named
 matching DDS packages available:
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_3.0.0*.deb
+sudo apt install ./fourier-aurora-sdk_1.0.1*.deb
 ```
 
 ### Build a Python wheel
 
-The stage-one x86_64 script requires CPython 3.10 and `build`, `pybind11`, and
-`scikit-build-core` in the active environment:
+The x86_64 script builds one interpreter-specific wheel. Select CPython 3.10,
+3.11, 3.12, or 3.13 with `PYTHON_BIN` and install `build`, `pybind11`, and
+`scikit-build-core` in that interpreter's environment:
 
 ```bash
 python3 -m pip install build pybind11==2.13.6 scikit-build-core
 FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
 ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
-./scripts/build_wheel_x86_64.sh
+PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
 ```
 
 The wheel contains the Python package, native binding, and private SDK shared
@@ -237,7 +238,7 @@ cmake -S app -B app/build \
 ```
 
 ```cmake
-find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED)
+find_package(fourier_aurora_sdk 1.0 CONFIG REQUIRED)
 add_executable(app main.cpp)
 target_link_libraries(app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
 target_compile_features(app PRIVATE cxx_std_17)
@@ -246,7 +247,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python consumer
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-3.0.0-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-1.0.1-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 

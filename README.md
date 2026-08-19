@@ -2,7 +2,7 @@
 
 [中文](README_CN.md)
 
-Fourier Aurora SDK 3.0.0 is the C++17 and Python client library for reading
+Fourier Aurora SDK 1.0.1 is the C++17 and Python client library for reading
 Aurora robot state and sending commands over FourierDDS. Applications use
 SDK-owned types; generated DDS messages stay behind the SDK boundary.
 
@@ -24,7 +24,7 @@ Install the wheel supplied for your platform, then create only the endpoints
 your program uses:
 
 ```bash
-python3 -m pip install fourier_aurora_client-3.0.0-*.whl
+python3 -m pip install fourier_aurora_client-1.0.1-*.whl
 ```
 
 ```python
@@ -58,7 +58,7 @@ still does not guarantee that the robot is ready to execute a command.
 After installing the Debian package, link the exported CMake target:
 
 ```cmake
-find_package(fourier_aurora_sdk 2.0 CONFIG REQUIRED)
+find_package(fourier_aurora_sdk 1.0 CONFIG REQUIRED)
 target_link_libraries(my_app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
 target_compile_features(my_app PRIVATE cxx_std_17)
 ```

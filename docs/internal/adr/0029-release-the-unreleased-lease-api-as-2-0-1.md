@@ -1,8 +1,11 @@
 ---
-status: accepted
+status: superseded
 ---
 
 # Release the unreleased lease API as 2.0.1
+
+This decision was superseded before release when the first supported package
+and ABI line was reset to 1.0.1.
 
 SDK 2.0.0 has not been released. The lease-capable C++/Python surface therefore
 becomes the first supported API on ABI line 2 and is published as 2.0.1 with

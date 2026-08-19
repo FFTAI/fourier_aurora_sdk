@@ -11,8 +11,20 @@ fi
 version="$(tr -d '[:space:]' < "${project_root}/VERSION")"
 version_regex="${version//./\\.}"
 filename="$(basename "${wheel}")"
-if [[ ! "${filename}" =~ ^fourier_aurora_client-${version_regex}(-1g[0-9a-f]{8})?-cp310-cp310-linux_x86_64\.whl$ ]]; then
-    echo "Unexpected stage-one wheel filename: ${filename}" >&2
+if [[ ! "${filename}" =~ ^fourier_aurora_client-${version_regex}(-1g[0-9a-f]{8})?-(cp(310|311|312|313))-(cp(310|311|312|313))-linux_x86_64\.whl$ ]]; then
+    echo "Unexpected wheel filename: ${filename}" >&2
+    exit 1
+fi
+python_tag="${BASH_REMATCH[2]}"
+python_digits="${BASH_REMATCH[3]}"
+abi_tag="${BASH_REMATCH[4]}"
+if [[ "${python_tag}" != "${abi_tag}" ]]; then
+    echo "Python and ABI tags must match: ${python_tag} != ${abi_tag}" >&2
+    exit 1
+fi
+soversion="$(sed -nE 's/^[[:space:]]*set\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+([0-9]+)\).*$/\1/p' "${project_root}/CMakeLists.txt")"
+if [[ -z "${soversion}" ]]; then
+    echo "Unable to read FOURIER_AURORA_SDK_SOVERSION." >&2
     exit 1
 fi
 
@@ -27,8 +39,8 @@ dist_info="${extract_root}/fourier_aurora_client-${version}.dist-info"
 required_files=(
     "${package_dir}/__init__.py"
     "${package_dir}/client.py"
-    "${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-    "${package_dir}/libfourier_aurora_sdk.so.3"
+    "${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-x86_64-linux-gnu.so"
+    "${package_dir}/libfourier_aurora_sdk.so.${soversion}"
     "${dist_info}/METADATA"
     "${dist_info}/WHEEL"
     "${dist_info}/RECORD"
@@ -49,8 +61,8 @@ fi
 cmp "${project_root}/LICENSE" "${dist_info}/licenses/LICENSE"
 grep -Fq 'Name: fourier-aurora-client' "${dist_info}/METADATA"
 grep -Fq "Version: ${version}" "${dist_info}/METADATA"
-grep -Fq 'Requires-Python: <3.14,>=3.9' "${dist_info}/METADATA"
-grep -Fq 'Tag: cp310-cp310-linux_x86_64' "${dist_info}/WHEEL"
+grep -Fq 'Requires-Python: <3.14,>=3.10' "${dist_info}/METADATA"
+grep -Fq "Tag: ${python_tag}-${abi_tag}-linux_x86_64" "${dist_info}/WHEEL"
 
 if find "${extract_root}" -type f -print | grep -Eq '(/examples?/|/tests?/|mock_transport|client_tools|/include/)'; then
     echo "Wheel contains examples, tests, tools, or headers." >&2
@@ -65,13 +77,13 @@ while IFS= read -r entry; do
     fi
 done < <(find "${extract_root}" -type f -print)
 
-extension="${package_dir}/_fourier_aurora_sdk.cpython-310-x86_64-linux-gnu.so"
-sdk_library="${package_dir}/libfourier_aurora_sdk.so.3"
+extension="${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-x86_64-linux-gnu.so"
+sdk_library="${package_dir}/libfourier_aurora_sdk.so.${soversion}"
 extension_dynamic="$(readelf -d "${extension}")"
 sdk_dynamic="$(readelf -d "${sdk_library}")"
 grep -Fq '(RUNPATH)' <<< "${extension_dynamic}"
 grep -Fq '$ORIGIN' <<< "${extension_dynamic}"
-grep -Fq 'Shared library: [libfourier_aurora_sdk.so.3]' <<< "${extension_dynamic}"
+grep -Fq "Shared library: [libfourier_aurora_sdk.so.${soversion}]" <<< "${extension_dynamic}"
 grep -Fq '(RUNPATH)' <<< "${sdk_dynamic}"
 grep -Fq '$ORIGIN' <<< "${sdk_dynamic}"
 grep -Fq '/opt/fftai/fourier_dds_msgs/lib' <<< "${sdk_dynamic}"

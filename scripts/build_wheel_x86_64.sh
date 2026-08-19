@@ -4,6 +4,7 @@ set -euo pipefail
 project_root="$(cd "$(dirname "$0")/.." && pwd)"
 include_commit="${INCLUDE_COMMIT_HASH:-ON}"
 dds_prefix="${FOURIER_AURORA_SDK_DDS_PREFIX:-}"
+python_bin="${PYTHON_BIN:-python3}"
 
 require_external_root() {
     local label="$1"
@@ -43,13 +44,25 @@ case "${include_commit}" in
         ;;
 esac
 
-python_version="$(python3 -c 'import sys; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
-if [[ "${python_version}" != "310" ]]; then
-    echo "Stage-one wheel builds require CPython 3.10; found cp${python_version}." >&2
+if ! command -v "${python_bin}" >/dev/null 2>&1; then
+    echo "Python interpreter is unavailable: ${python_bin}" >&2
     exit 2
 fi
-if ! python3 -c 'import build, pybind11, scikit_build_core' >/dev/null 2>&1; then
-    echo "Install build, pybind11, and scikit-build-core in the active Python environment." >&2
+python_version="$("${python_bin}" -c 'import platform, sys; assert platform.python_implementation() == "CPython"; print(f"{sys.version_info.major}{sys.version_info.minor}")')"
+case "${python_version}" in
+    310|311|312|313) ;;
+    *)
+        echo "Wheel builds require standard-GIL CPython 3.10 through 3.13; found cp${python_version}." >&2
+        exit 2
+        ;;
+esac
+if [[ "$("${python_bin}" -c 'import sysconfig; print(sysconfig.get_config_var("Py_GIL_DISABLED") or 0)')" != "0" ]]; then
+    echo "Free-threaded CPython is not supported: ${python_bin}" >&2
+    exit 2
+fi
+python_tag="cp${python_version}"
+if ! "${python_bin}" -c 'import build, pybind11, scikit_build_core' >/dev/null 2>&1; then
+    echo "Install build, pybind11, and scikit-build-core for ${python_bin}." >&2
     exit 2
 fi
 version="$(tr -d '[:space:]' < "${project_root}/VERSION")"
@@ -81,7 +94,7 @@ if [[ "${include_commit}" == "ON" ]]; then
     build_args+=(--config-setting="wheel.build-tag=${build_tag}")
 fi
 
-python3 -m build "${project_root}" "${build_args[@]}"
+"${python_bin}" -m build "${project_root}" "${build_args[@]}"
 
 cache="${build_dir}/CMakeCache.txt"
 grep -Eq '^SKBUILD:(BOOL|STRING)=(ON|1|2)$' "${cache}"
@@ -96,9 +109,9 @@ grep -Fq "fourier_dds_DIR:PATH=${dds_prefix}/lib/cmake/fourier_dds" "${cache}"
 grep -Fq "FOURIER_AURORA_SDK_MESSAGE_INCLUDE_DIR:PATH=${dds_prefix}/fourier_dds_msgs/include/fourier_dds_msgs" "${cache}"
 
 if [[ "${include_commit}" == "ON" ]]; then
-    expected_name="fourier_aurora_client-${version}-${build_tag}-cp310-cp310-linux_x86_64.whl"
+    expected_name="fourier_aurora_client-${version}-${build_tag}-${python_tag}-${python_tag}-linux_x86_64.whl"
 else
-    expected_name="fourier_aurora_client-${version}-cp310-cp310-linux_x86_64.whl"
+    expected_name="fourier_aurora_client-${version}-${python_tag}-${python_tag}-linux_x86_64.whl"
 fi
 
 mapfile -t wheels < <(find "${artifact_dir}" -maxdepth 1 -type f -name "${expected_name}" -print)

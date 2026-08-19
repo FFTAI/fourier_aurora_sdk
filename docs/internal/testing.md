@@ -71,11 +71,13 @@ FOURIER_AURORA_SDK_DDS_PREFIX=/tmp/aurora_sdk_impl/prefix/opt/fftai \
 
 INCLUDE_COMMIT_HASH=OFF \
 FOURIER_AURORA_SDK_DDS_PREFIX=/tmp/aurora_sdk_impl/prefix/opt/fftai \
+PYTHON_BIN=python3.10 \
   ./scripts/build_wheel_x86_64.sh
 ```
 
-The wheel build requires CPython 3.10, pybind11 2.13.6 or newer,
-`scikit-build-core>=0.9.10`, `build`, and `venv` in the container. Both build
+The wheel build accepts standard-GIL CPython 3.10 through 3.13 and produces one
+wheel for the selected `PYTHON_BIN`. It requires pybind11 2.13.6 or newer,
+`scikit-build-core>=0.9.10`, `build`, and `venv` for that interpreter. Both build
 scripts create unique external build and artifact directories and print the
 resulting artifact path. Install these tools in the active interpreter, use an
 activated virtual environment, or expose a read-only target directory through
@@ -85,14 +87,15 @@ Verify the printed paths:
 
 ```bash
 FOURIER_AURORA_SDK_DDS_PREFIX=/tmp/aurora_sdk_impl/prefix/opt/fftai \
-  ./scripts/check_deb_package.sh /tmp/path/fourier-aurora-sdk_2.0.0_amd64.deb
+  ./scripts/check_deb_package.sh /tmp/path/fourier-aurora-sdk_1.0.1_amd64.deb
 
 ./scripts/check_wheel_package.sh \
-  /tmp/path/fourier_aurora_client-2.0.0-cp310-cp310-linux_x86_64.whl
+  /tmp/path/fourier_aurora_client-1.0.1-cp310-cp310-linux_x86_64.whl
 
 FOURIER_AURORA_SDK_DDS_PREFIX=/tmp/aurora_sdk_impl/prefix/opt/fftai \
+PYTHON_BIN=python3.10 \
   ./scripts/test_python_wheel.sh \
-  /tmp/path/fourier_aurora_client-2.0.0-cp310-cp310-linux_x86_64.whl
+  /tmp/path/fourier_aurora_client-1.0.1-cp310-cp310-linux_x86_64.whl
 ```
 
 The Debian gate checks exact package dependencies and contents, standalone
@@ -110,7 +113,8 @@ public names, subject to `release_checklist.md`.
 
 ## Coverage Limits
 
-Current local package evidence covers Linux amd64 C++ Debian and CPython 3.10.
+Current package validation covers Linux amd64 C++ Debian and separate CPython
+3.10 through 3.13 wheels.
 Required arm64 artifacts are deferred to CI and require an approved arm64
 execution environment plus architecture-matched dependency packages. Hardware
 and real Aurora-runtime recipe validation are separate release records; local

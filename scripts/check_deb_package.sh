@@ -21,6 +21,11 @@ fi
 
 version="$(tr -d '[:space:]' < "${project_root}/VERSION")"
 version_regex="${version//./\\.}"
+soversion="$(sed -nE 's/^[[:space:]]*set\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+([0-9]+)\).*$/\1/p' "${project_root}/CMakeLists.txt")"
+if [[ -z "${soversion}" ]]; then
+    echo "Unable to read FOURIER_AURORA_SDK_SOVERSION." >&2
+    exit 1
+fi
 package_name="$(dpkg-deb -f "${package}" Package)"
 package_version="$(dpkg-deb -f "${package}" Version)"
 package_architecture="$(dpkg-deb -f "${package}" Architecture)"
@@ -95,7 +100,7 @@ if find "${sdk_prefix}/bin" -type f -o -type l | \
     exit 1
 fi
 [[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so" ]]
-[[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.3" ]]
+[[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.${soversion}" ]]
 cmp "${project_root}/LICENSE" "${doc_prefix}/LICENSE"
 
 if find "${sdk_prefix}" -type f -print | grep -Eq '(_fourier_aurora_sdk|mock_transport|/tests?/|__pycache__|\.pyc$)'; then

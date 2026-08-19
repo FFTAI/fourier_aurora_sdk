@@ -1,6 +1,6 @@
 # Release Checklist
 
-SDK versioning is independent from the Aurora runtime version. SDK `3.0.0`
+SDK versioning is independent from the Aurora runtime version. SDK `1.0.1`
 may support an Aurora `4.0.x` runtime when that pair is explicitly tested and
 recorded; matching their major versions would incorrectly imply one shared
 compatibility contract.
@@ -8,20 +8,20 @@ compatibility contract.
 ## Stage One
 
 - Linux amd64 C++ Debian package built with CPython disabled.
-- Linux amd64 CPython 3.10 standard-GIL wheel.
+- Separate Linux amd64 standard-GIL wheels for CPython 3.10 through 3.13.
 - Exact `fourier_dds 1.2.0-1` and `fourier-dds-msgs 0.2.0-1` dependency pair
   recorded in `REVISIONS.yaml` and enforced by Debian metadata.
-- Internal Debian names use `3.0.0+g<eight-character-head>` and internal wheel
+- Internal Debian names use `1.0.1+g<eight-character-head>` and internal wheel
   names use build tag `1g<eight-character-head>`.
 - Commit-bearing builds require a completely clean worktree and a hash that
   resolves to the checked-out `HEAD`.
 - Public-style clean names are verification inputs only. Do not publish or tag
-  `3.0.0` during this internal stage.
+  `1.0.1` during this internal stage.
 
 ## CI Integration
 
-- Build and execute the Linux arm64 Debian and CPython 3.10 cells on an
-  approved arm64 environment.
+- Build and execute the Linux arm64 Debian and CPython 3.10 through 3.13 cells
+  on an approved arm64 environment.
 - Build architecture-matched FourierDDS and generated-message packages from
   the same pinned revisions; do not reuse the amd64 Debian artifacts.
 - Apply the same package manifest, ELF, isolated consumer, and DDS loopback
@@ -31,12 +31,10 @@ compatibility contract.
 
 ## Public Release
 
-- Decide whether any internal `2.0.0+g<hash>` Debian or metadata-version
-  `2.0.0` wheel escaped the controlled channel. If it did, select at least
-  `3.0.0` for a clean public upgrade; never replace distributed content under
-  the same clean version.
+- Confirm that no earlier unreleased development version escaped the controlled
+  channel; never replace distributed content under the same clean version.
 - Produce Linux Debian packages for amd64 and arm64.
-- Produce standard-GIL Linux wheels for CPython 3.9 through 3.13 on amd64 and
+- Produce standard-GIL Linux wheels for CPython 3.10 through 3.13 on amd64 and
   arm64. Exclude free-threaded Python, 32-bit targets, Windows, and macOS.
 - Choose and prove a Linux/glibc policy. Do not relabel an unverified
   `linux_*` wheel as manylinux.
