@@ -8,7 +8,7 @@ for word in ${words[2,-1]}; do
     state|estimator|motion|control-group)
       [[ -z ${area} ]] && area=${word}
       ;;
-    get|list|request|monitor|command|position)
+    get|list|set|monitor)
       [[ -n ${area} && -z ${command} ]] && command=${word}
       ;;
   esac
@@ -28,10 +28,10 @@ fi
 
 if [[ -z ${command} ]]; then
   case ${area} in
-    state) choices=(get list request monitor) ;;
+    state) choices=(get list set monitor) ;;
     estimator) choices=(get monitor) ;;
-    motion) choices=(get monitor command) ;;
-    control-group) choices=(get monitor position) ;;
+    motion) choices=(get monitor set) ;;
+    control-group) choices=(get monitor set) ;;
   esac
   _values 'command or global option' ${choices} \
     '-d[DDS domain ID]' '--domain_id[DDS domain ID]' \
@@ -43,11 +43,15 @@ fi
 choices=(-d --domain_id -s --source_name -h --help)
 case ${command} in
   monitor) choices+=(--interval) ;;
-  command)
-    choices+=(--position --linear-velocity --attitude --angular-velocity
-      --delta-height --gait-type --skills --duration)
+  set)
+    case ${area} in
+      motion)
+        choices+=(--position --linear-velocity --attitude --angular-velocity
+          --delta-height --gait-type --skills --duration)
+        ;;
+      control-group) choices+=(--target --duration --rate) ;;
+    esac
     ;;
-  position) choices+=(--target --duration --rate) ;;
 esac
 if [[ ${words[CURRENT-1]} == --target ]]; then
   choices=(left_leg right_leg waist head left_manipulator right_manipulator

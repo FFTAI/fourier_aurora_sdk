@@ -8,7 +8,7 @@ _aurora_client()
             state|estimator|motion|control-group)
                 [[ -z "${area}" ]] && area="${word}"
                 ;;
-            get|list|request|monitor|command|position)
+            get|list|set|monitor)
                 [[ -n "${area}" && -z "${command}" ]] && command="${word}"
                 ;;
         esac
@@ -22,10 +22,10 @@ _aurora_client()
     fi
     if [[ -z "${command}" ]]; then
         case "${area}" in
-            state) word='get list request monitor -d --domain_id -s --source_name -h --help' ;;
+            state) word='get list set monitor -d --domain_id -s --source_name -h --help' ;;
             estimator) word='get monitor -d --domain_id -s --source_name -h --help' ;;
-            motion) word='get monitor command -d --domain_id -s --source_name -h --help' ;;
-            control-group) word='get monitor position -d --domain_id -s --source_name -h --help' ;;
+            motion) word='get monitor set -d --domain_id -s --source_name -h --help' ;;
+            control-group) word='get monitor set -d --domain_id -s --source_name -h --help' ;;
         esac
         COMPREPLY=( $(compgen -W "${word}" -- "${cur}") )
         return
@@ -34,10 +34,14 @@ _aurora_client()
     word='-d --domain_id -s --source_name -h --help'
     case "${command}" in
         monitor) word="${word} --interval" ;;
-        command)
-            word="${word} --position --linear-velocity --attitude --angular-velocity --delta-height --gait-type --skills --duration"
+        set)
+            case "${area}" in
+                motion)
+                    word="${word} --position --linear-velocity --attitude --angular-velocity --delta-height --gait-type --skills --duration"
+                    ;;
+                control-group) word="${word} --target --duration --rate" ;;
+            esac
             ;;
-        position) word="${word} --target --duration --rate" ;;
     esac
     if [[ "${COMP_WORDS[COMP_CWORD-1]}" == '--target' ]]; then
         word='left_leg right_leg waist head left_manipulator right_manipulator left_end_effector right_end_effector'

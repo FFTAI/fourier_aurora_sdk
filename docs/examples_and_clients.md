@@ -77,19 +77,19 @@ bare value or explicit `ms`/`s` suffixes; the minimum is `10ms`.
 ### `state`
 
 Endpoints are selected by operation: read and monitor operations use
-`AuroraStateSubscriber`; `request` uses `FsmService`.
+`AuroraStateSubscriber`; `set` uses `FsmService`.
 
 ```bash
 aurora-client state get
 aurora-client state list
-aurora-client state request 13
+aurora-client state set 13
 aurora-client state monitor
 aurora-client state monitor --interval 250ms
 ```
 
 - `get` prints robot information, switch status, and current FSM.
 - `list` prints Aurora's advertised state list.
-- `request` sends a numeric FSM request and prints Aurora's immediate reply.
+- `set` sends a numeric FSM request and prints Aurora's immediate reply.
 - `monitor` reads the latest cache until interrupted.
 
 ### `estimator`
@@ -129,11 +129,11 @@ Command fields may be combined into one `MotionCommand`:
 ```
 
 ```bash
-aurora-client motion command \
+aurora-client motion set \
   --linear-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-`motion command` requires at least one field, publishes exactly once, and
+`motion set` requires at least one field, publishes exactly once, and
 registers the `MotionCommand` lease after its selected endpoints match.
 Read-only invocations remain passive and can monitor Aurora while another
 source owns the motion lease.
@@ -142,14 +142,14 @@ Values use SI units.
 
 ### `control-group`
 
-Read and monitor operations use only `ControlGroupStateSubscriber`. A
-`position` also enables `ControlGroupCommandPublisher` and
+Read and monitor operations use only `ControlGroupStateSubscriber`. A `set`
+also enables `ControlGroupCommandPublisher` and
 `ManageLeaseService`.
 
 ```bash
 aurora-client control-group get
 aurora-client control-group monitor
-aurora-client control-group position \
+aurora-client control-group set \
   --target left_manipulator 0.0 0.2 0.0 -0.7 \
   --target right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100

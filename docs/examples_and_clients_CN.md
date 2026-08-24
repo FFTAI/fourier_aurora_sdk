@@ -71,18 +71,18 @@ Monitor 默认间隔为 `500ms`；`--interval` 可使用无后缀毫秒值或 `m
 ### `state`
 
 Endpoint 按操作选择：读取和 monitor 使用 `AuroraStateSubscriber`；
-`request` 使用 `FsmService`。
+`set` 使用 `FsmService`。
 
 ```bash
 aurora-client state get
 aurora-client state list
-aurora-client state request 13
+aurora-client state set 13
 aurora-client state monitor --interval 250ms
 ```
 
 - `get` 打印机器人信息、switch status 和当前 FSM。
 - `list` 打印 Aurora 发布的状态列表。
-- `request` 发送数字 FSM request 并打印即时 reply。
+- `set` 发送数字 FSM request 并打印即时 reply。
 - `monitor` 持续读取最新 cache，直到被中断。
 
 ### `estimator`
@@ -115,24 +115,24 @@ aurora-client motion monitor --interval 500
 ```
 
 ```bash
-aurora-client motion command \
+aurora-client motion set \
   --linear-velocity 0.1 0.0 0.0 --duration 1.0
 ```
 
-`motion command` 至少需要一个字段，只发布一次，并在 endpoint 匹配后注册
+`motion set` 至少需要一个字段，只发布一次，并在 endpoint 匹配后注册
 `MotionCommand` 租约。只读调用保持被动，可在其他 source 持有运动租约时监视
 Aurora。Motion position 使用世界坐标系，线速度与角速度使用机器人机身坐标系。
 数值使用 SI 单位。
 
 ### `control-group`
 
-读取和 monitor 操作只使用 `ControlGroupStateSubscriber`。`position` 额外
+读取和 monitor 操作只使用 `ControlGroupStateSubscriber`。`set` 额外
 启用 `ControlGroupCommandPublisher` 和 `ManageLeaseService`。
 
 ```bash
 aurora-client control-group get
 aurora-client control-group monitor
-aurora-client control-group position \
+aurora-client control-group set \
   --target left_manipulator 0.0 0.2 0.0 -0.7 \
   --target right_manipulator 0.0 -0.2 0.0 -0.7 \
   --duration 3 --rate 100

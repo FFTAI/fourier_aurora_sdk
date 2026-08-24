@@ -10,6 +10,8 @@
   and per-stream sequence, and adopted the pod message namespace.
 - Added the `aurora-client-NNNN` convenience identity for the packaged CLI while
   keeping Source Name explicit for direct C++ and Python callers.
+- Standardized robot-facing CLI writes as `state set`, `motion set`, and
+  `control-group set`.
 - Added separate standard-GIL CPython 3.10 through 3.13 Linux wheels.
 - Established the initial C++ ABI at `SOVERSION 1` and requires
   `fourier-dds-msgs 0.2.0-1`.

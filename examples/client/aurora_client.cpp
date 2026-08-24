@@ -92,7 +92,7 @@ void printStateHelp(std::ostream& output) {
         << "\nCommands:\n"
         << "  get                         Print current Aurora state\n"
         << "  list                        Print advertised FSM states\n"
-        << "  request <state-id>          Request an FSM transition\n"
+        << "  set <state-id>              Request an FSM transition\n"
         << "  monitor [--interval <time>] Monitor state (default: 500ms)\n";
 }
 
@@ -110,8 +110,8 @@ void printMotionHelp(std::ostream& output) {
         << "\nCommands:\n"
         << "  get                         Print motion state\n"
         << "  monitor [--interval <time>] Monitor motion state (default: 500ms)\n"
-        << "  command <fields...>         Publish one motion command\n"
-        << "\nCommand fields (at least one required):\n"
+        << "  set <fields...>             Publish one motion command\n"
+        << "\nSet fields (at least one required):\n"
         << "  --position <x> <y> <z>\n"
         << "  --linear-velocity <vx> <vy> <vz>\n"
         << "  --attitude <roll> <pitch> <yaw>\n"
@@ -128,8 +128,8 @@ void printControlGroupHelp(std::ostream& output) {
         << "\nCommands:\n"
         << "  get                         Print control-group state\n"
         << "  monitor [--interval <time>] Monitor state (default: 500ms)\n"
-        << "  position --target <group> <joint...> [options]\n"
-        << "\nPosition options:\n"
+        << "  set --target <group> <joint...> [options]\n"
+        << "\nSet options:\n"
         << "  --target <group> <joint...> Repeatable joint target\n"
         << "  --duration <seconds>        Interpolation duration (default: 5s)\n"
         << "  --rate <hz>                 Publication rate (default: 100Hz)\n";
@@ -145,8 +145,8 @@ bool printCommandHelp(
                    << command << "\n";
             return true;
         }
-        if (command == "request") {
-            output << "Usage: aurora-client [global options] state request <state-id>\n";
+        if (command == "set") {
+            output << "Usage: aurora-client [global options] state set <state-id>\n";
             return true;
         }
         if (command == "monitor") {
@@ -177,7 +177,7 @@ bool printCommandHelp(
                    << "  --interval <time>  Polling interval (default: 500ms; minimum: 10ms)\n";
             return true;
         }
-        if (command == "command") {
+        if (command == "set") {
             printMotionHelp(output);
             return true;
         }
@@ -192,7 +192,7 @@ bool printCommandHelp(
                    << "  --interval <time>  Polling interval (default: 500ms; minimum: 10ms)\n";
             return true;
         }
-        if (command == "position") {
+        if (command == "set") {
             printControlGroupHelp(output);
             return true;
         }
@@ -361,10 +361,10 @@ bool parseState(
             : StateCommand::Action::List;
         return true;
     }
-    if (action == "request") {
+    if (action == "set") {
         if (options.size() != 1 ||
             !client_example::parseUint32(options.front(), parsed.state_id)) {
-            error = "state request requires one uint32 state ID";
+            error = "state set requires one uint32 state ID";
             return false;
         }
         parsed.action = StateCommand::Action::Request;
@@ -426,7 +426,7 @@ bool parseMotionPublish(
         else if (argument == "--skills") seen = &skills;
         else if (argument == "--duration") seen = &duration;
         else {
-            error = "unknown motion command option: " + argument;
+            error = "unknown motion set option: " + argument;
             return false;
         }
         if (*seen) {
@@ -479,7 +479,7 @@ bool parseMotionPublish(
         }
     }
     if (!any) {
-        error = "motion command requires at least one command field";
+        error = "motion set requires at least one command field";
         return false;
     }
     return true;
@@ -503,7 +503,7 @@ bool parseMotion(
         parsed.action = MotionCommand::Action::Monitor;
         return parseMonitorOptions(options, parsed.interval, error);
     }
-    if (action == "command") {
+    if (action == "set") {
         parsed.action = MotionCommand::Action::Publish;
         return parseMotionPublish(options, parsed, error);
     }
@@ -511,7 +511,7 @@ bool parseMotion(
     return false;
 }
 
-bool parseControlGroupPosition(
+bool parseControlGroupSet(
     const std::vector<std::string>& args,
     ControlGroupCommand& parsed,
     std::string& error) {
@@ -556,12 +556,12 @@ bool parseControlGroupPosition(
                 return false;
             }
         } else {
-            error = "unknown control-group position option: " + argument;
+            error = "unknown control-group set option: " + argument;
             return false;
         }
     }
     if (parsed.targets.empty()) {
-        error = "control-group position requires at least one --target";
+        error = "control-group set requires at least one --target";
         return false;
     }
     return true;
@@ -585,9 +585,9 @@ bool parseControlGroup(
         parsed.action = ControlGroupCommand::Action::Monitor;
         return parseMonitorOptions(options, parsed.interval, error);
     }
-    if (action == "position") {
+    if (action == "set") {
         parsed.action = ControlGroupCommand::Action::Position;
-        return parseControlGroupPosition(options, parsed, error);
+        return parseControlGroupSet(options, parsed, error);
     }
     error = "unknown control-group command: " + action;
     return false;

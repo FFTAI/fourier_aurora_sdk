@@ -51,11 +51,11 @@ The complete state surface is:
 ```text
 state get
 state list
-state request <state-id>
+state set <state-id>
 state monitor [--interval <value>]
 ```
 
-Only one state command is executed per invocation. `state request` reports the
+Only one state command is executed per invocation. `state set` reports the
 immediate request result and does not imply that the asynchronous transition
 has completed. `state monitor` retains a default polling interval of 500 ms and
 allows the caller to override it with `--interval`.
@@ -94,11 +94,11 @@ commands:
 ```text
 motion get
 motion monitor [--interval <duration>]
-motion command [command fields]
+motion set [command fields]
 ```
 
 `get` and `monitor` print the complete motion-state payload. Monitor behavior
-uses the shared interval rules. `command` requires at least one command field,
+uses the shared interval rules. `set` requires at least one command field,
 acquires the `MotionCommand` lease, and publishes exactly once. Any supported
 fields may be combined in that publication:
 
@@ -124,7 +124,7 @@ joint-position commands:
 ```text
 control-group get
 control-group monitor [--interval <duration>]
-control-group position \
+control-group set \
   --target <group-name> <joint0> [joint1 ...] \
   [--target <group-name> <joint0> [joint1 ...]] \
   [--duration <seconds>] \
@@ -132,7 +132,7 @@ control-group position \
 ```
 
 `get` and `monitor` print joint, Cartesian, and commanded state. Monitor
-behavior uses the shared interval rules. `position` requires at least one
+behavior uses the shared interval rules. `set` requires at least one
 repeatable `--target`; each target names a group followed by its joint values.
 The client retains the existing five-second duration and 100 Hz rate defaults,
 validates targets against observed control-group state, infers the required
@@ -205,7 +205,7 @@ usage-error code `2`.
 `--version` prints the SDK/client version. Help and version handling never
 starts the client or initializes DDS. Help text exposes effective defaults,
 including domain ID `123`, source ID `1234`, monitor interval `500ms`, and the
-control-group position defaults of `5s` and `100Hz`.
+control-group set defaults of `5s` and `100Hz`.
 
 ## Endpoint discovery
 
@@ -238,7 +238,7 @@ designed as a stable interface.
 
 Supplying any singleton option more than once is a usage error, even when both
 values are identical. This applies to global connection overrides and all
-command options. The sole repeatable option is control-group position's
+command options. The sole repeatable option is control-group set's
 `--target`, where repetition intentionally builds a simultaneous target set.
 
 ## Process exit contract
