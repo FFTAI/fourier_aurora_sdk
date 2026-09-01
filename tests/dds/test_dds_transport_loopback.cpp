@@ -80,9 +80,17 @@ sdk::ConnectionOptions directOptions() {
     return options;
 }
 
+enum class AuthorityScenario {
+    Canonical,
+    SubsetWithUnknown,
+    Duplicate,
+    Malformed,
+};
+
 void publishState(
     fourier_dds::DdsPublisher<dds_msg::AuroraStatePubSubType>& publisher,
-    uint32_t state_id) {
+    uint32_t state_id,
+    AuthorityScenario scenario = AuthorityScenario::Canonical) {
     static constexpr const char* kResources[] = {
         "left_leg", "right_leg", "waist", "head", "left_manipulator",
         "right_manipulator", "left_end_effector", "right_end_effector",
@@ -95,13 +103,29 @@ void publishState(
     state.current_state().id(state_id);
     state.current_state().name("LoopbackState");
     state.current_state().active(true);
-    for (const auto* name : kResources) {
+    const auto append_resource = [&](const char* name, bool acquired = false,
+                                     const char* holder = "", uint32_t priority = 0) {
         dds_msg::AuthorityResourceState resource;
         resource.resource(name);
-        resource.acquired(false);
-        resource.holder_source_name("");
-        resource.holder_priority(0);
+        resource.acquired(acquired);
+        resource.holder_source_name(holder);
+        resource.holder_priority(priority);
         state.authority_resources().push_back(std::move(resource));
+    };
+    if (scenario == AuthorityScenario::SubsetWithUnknown) {
+        append_resource("cartesian_cmd");
+        append_resource("future_gripper");
+        append_resource("waist", true, "wheel-control");
+        append_resource("motion_cmd");
+    } else if (scenario == AuthorityScenario::Duplicate) {
+        append_resource("motion_cmd");
+        append_resource("motion_cmd");
+    } else if (scenario == AuthorityScenario::Malformed) {
+        append_resource("head", false, "unexpected-holder");
+    } else {
+        for (const auto* name : kResources) {
+            append_resource(name);
+        }
     }
     publisher.publish(state);
 }
@@ -197,11 +221,18 @@ int main() {
         direct.setEstimatorDataHandler({}));
 
     std::atomic<int> state_callbacks{0};
+    std::atomic<bool> subset_resources_valid{false};
     std::atomic<bool> current_stop_rejected{false};
     std::atomic<bool> other_stop_rejected{false};
     direct.setAuroraStateHandler([&](sdk::AuroraState state) {
         if (state.current_state.id == 13) {
             ++state_callbacks;
+            subset_resources_valid =
+                state.authority_resources.size() == 3 &&
+                state.authority_resources[0].resource == sdk::AuroraResource::Waist &&
+                state.authority_resources[0].acquired &&
+                state.authority_resources[1].resource == sdk::AuroraResource::MotionCommand &&
+                state.authority_resources[2].resource == sdk::AuroraResource::CartesianCommand;
         }
         try {
             direct.stop();
@@ -214,12 +245,13 @@ int main() {
             other_stop_rejected = true;
         }
     });
-    publishState(state_publisher, 13);
+    publishState(state_publisher, 13, AuthorityScenario::SubsetWithUnknown);
     SDK_CHECK(
         test,
         waitUntil([&] { return state_callbacks.load() == 1; }, 3s));
     SDK_CHECK(test, current_stop_rejected);
     SDK_CHECK(test, other_stop_rejected);
+    SDK_CHECK(test, subset_resources_valid);
 
     sdk::MotionCommand direct_command;
     sdk::detail::LeaseToken direct_token{9001, 0};
@@ -275,6 +307,14 @@ int main() {
                        observed.current_state.id == 12;
             },
             3s));
+    publishState(state_publisher, 14, AuthorityScenario::Duplicate);
+    std::this_thread::sleep_for(200ms);
+    SDK_CHECK(test, client.getAuroraState(observed).success());
+    SDK_CHECK(test, observed.current_state.id == 12);
+    publishState(state_publisher, 15, AuthorityScenario::Malformed);
+    std::this_thread::sleep_for(200ms);
+    SDK_CHECK(test, client.getAuroraState(observed).success());
+    SDK_CHECK(test, observed.current_state.id == 12);
     result = client.requestFsmState(12);
     SDK_CHECK(test, result.code == 213);
     SDK_CHECK(test, result.message == "state=12");

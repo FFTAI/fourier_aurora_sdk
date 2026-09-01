@@ -187,7 +187,7 @@ All data types below have a zero/default constructor and writable attributes.
 | `switch_status` | Aurora state-switch status integer. |
 | `current_state` | Current `StateInfo`. |
 | `available_states` | List of reported `StateInfo` objects. |
-| `authority_resources` | Advisory per-resource authority objects with `resource`, `acquired`, `holder_source_name`, and `holder_priority`. |
+| `authority_resources` | Supported recognized resources and their advisory authority state. Missing resources are unsupported; unknown future resources are ignored. |
 
 ### `MotionState`
 

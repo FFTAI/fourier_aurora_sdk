@@ -9,6 +9,7 @@
 #include <iostream>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -75,6 +76,29 @@ constexpr std::array<const char *, 10> kResourceNames{"left_leg",
                                                       "right_end_effector",
                                                       "motion_cmd",
                                                       "cartesian_cmd"};
+
+void warnUnknownAuthorityResource(const std::string &resource_name) {
+  static std::mutex mutex;
+  static std::chrono::steady_clock::time_point last_log;
+  static uint32_t suppressed = 0;
+  static bool initialized = false;
+
+  const auto now = std::chrono::steady_clock::now();
+  std::lock_guard<std::mutex> lock(mutex);
+  if (initialized && now - last_log < std::chrono::seconds(5)) {
+    ++suppressed;
+    return;
+  }
+  std::cerr << "[fourier_aurora_sdk] unknown authority resource '"
+            << resource_name << "' ignored";
+  if (suppressed != 0) {
+    std::cerr << " (" << suppressed << " similar warnings suppressed)";
+  }
+  std::cerr << std::endl;
+  initialized = true;
+  last_log = now;
+  suppressed = 0;
+}
 
 bool validSourceName(const std::string &name) {
   return !name.empty() && name.size() <= 64 &&
@@ -182,24 +206,48 @@ AuroraState convertAuroraState(const dds_msg::AuroraState &msg) {
   for (const auto &state : msg.available_states()) {
     out.available_states.push_back(convertStateInfo(state));
   }
-  if (msg.authority_resources().size() != kResourceNames.size()) {
-    throw std::runtime_error("AuroraState.authority_resources must contain " +
-                             std::to_string(kResourceNames.size()) +
-                             " entries");
+  std::array<std::optional<AuthorityResourceStatus>, kResourceNames.size()>
+      decoded_resources;
+  for (const auto &resource : msg.authority_resources()) {
+    const std::string resource_name{resource.resource().c_str()};
+    if (resource_name.empty()) {
+      throw std::runtime_error("authority resource name is empty");
+    }
+    const auto name_it =
+        std::find(kResourceNames.begin(), kResourceNames.end(), resource_name);
+    if (name_it == kResourceNames.end()) {
+      warnUnknownAuthorityResource(resource_name);
+      continue;
+    }
+    const auto index = static_cast<std::size_t>(
+        std::distance(kResourceNames.begin(), name_it));
+    if (decoded_resources[index].has_value()) {
+      throw std::runtime_error("duplicate authority resource '" +
+                               resource_name + "'");
+    }
+    const std::string holder_name = resource.holder_source_name().to_string();
+    if (resource.holder_priority() != 0 && resource.holder_priority() != 9) {
+      throw std::runtime_error("authority resource '" + resource_name +
+                               "' has invalid holder priority");
+    }
+    if (resource.acquired() && !validSourceName(holder_name)) {
+      throw std::runtime_error("acquired authority resource '" + resource_name +
+                               "' has an invalid holder source name");
+    }
+    if (!resource.acquired() &&
+        (!holder_name.empty() || resource.holder_priority() != 0)) {
+      throw std::runtime_error("unacquired authority resource '" +
+                               resource_name + "' contains holder state");
+    }
+    decoded_resources[index] = AuthorityResourceStatus{
+        static_cast<AuroraResource>(index), resource.acquired(), holder_name,
+        static_cast<LeasePriority>(resource.holder_priority())};
   }
   out.authority_resources.reserve(kResourceNames.size());
-  for (std::size_t index = 0; index < kResourceNames.size(); ++index) {
-    const auto &resource = msg.authority_resources()[index];
-    const std::string holder_name = resource.holder_source_name().to_string();
-    if (resource.resource() != kResourceNames[index] ||
-        (resource.holder_priority() != 0 && resource.holder_priority() != 9) ||
-        (resource.acquired() && !validSourceName(holder_name)) ||
-        (!resource.acquired() && !holder_name.empty())) {
-      throw std::runtime_error("malformed Aurora authority resource snapshot");
+  for (auto &resource : decoded_resources) {
+    if (resource.has_value()) {
+      out.authority_resources.push_back(std::move(*resource));
     }
-    out.authority_resources.push_back(AuthorityResourceStatus{
-        static_cast<AuroraResource>(index), resource.acquired(), holder_name,
-        static_cast<LeasePriority>(resource.holder_priority())});
   }
   return out;
 }

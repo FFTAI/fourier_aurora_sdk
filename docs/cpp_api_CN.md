@@ -167,7 +167,7 @@ label，`received_time` 是 SDK 本地接收时间。
 | `switch_status` | Aurora 状态切换状态值。 |
 | `current_state` | 当前 `StateInfo`。 |
 | `available_states` | Aurora 当前报告的状态列表。 |
-| `authority_resources` | 每个资源的租约持有者快照。 |
+| `authority_resources` | 当前机器人支持且 SDK 可识别的租约资源及其持有者快照。缺失资源表示不支持；未知的未来资源会被忽略。 |
 
 ### `MotionState`
 
@@ -338,7 +338,7 @@ Quaternion 长度为 4，其他空间 vector 长度为 3。
 
 `resource` 指定资源，`acquired` 表示是否有 holder，`holder_source_name`
 标识 holder，`holder_priority` 为其优先级。该数据仅为
-状态快照，实际指令授权使用 SDK 管理的租约。
+状态快照，实际指令授权使用 SDK 管理的租约。SDK 按资源名称解析并以规范顺序输出条目；允许缺失已知资源，拒绝重复的已知资源，并以限频警告忽略未知的未来资源。
 
 ## 电机配置类型
 

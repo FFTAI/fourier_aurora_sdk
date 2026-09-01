@@ -34,9 +34,7 @@ constexpr const char* kNamespace = "aurora_sdk_wheel_loopback";
 void publishState(
     fourier_dds::DdsPublisher<dds_msg::AuroraStatePubSubType>& publisher) {
     static constexpr const char* kResources[] = {
-        "left_leg", "right_leg", "waist", "head", "left_manipulator",
-        "right_manipulator", "left_end_effector", "right_end_effector",
-        "motion_cmd", "cartesian_cmd",
+        "waist", "motion_cmd", "cartesian_cmd",
     };
     dds_msg::AuroraState state;
     state.robot_info().robot_type("wheel_loopback_robot");

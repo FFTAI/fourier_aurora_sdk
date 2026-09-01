@@ -190,7 +190,7 @@ Each exception has an explicit/inherited constructor taking a message string.
 | `switch_status` | `uint8_t` | Aurora state-switch status value. |
 | `current_state` | `StateInfo` | Current FSM state. |
 | `available_states` | `std::vector<StateInfo>` | States currently reported by Aurora. |
-| `authority_resources` | `std::vector<AuthorityResourceStatus>` | Advisory lease-holder snapshot per resource. |
+| `authority_resources` | `std::vector<AuthorityResourceStatus>` | Supported recognized lease resources and their advisory holder state. Missing resources are unsupported; unknown future resources are ignored. |
 
 ### `MotionState`
 
@@ -426,7 +426,7 @@ Aurora authority permission.
 | `holder_source_name` | Holder identity. |
 | `holder_priority` | Holder lease priority. |
 
-This state is advisory; command authorization uses the SDK-managed lease.
+This state is advisory; command authorization uses the SDK-managed lease. Entries are decoded by resource name in canonical order. Missing recognized resources are allowed, duplicate recognized resources are rejected, and unknown future resource names are ignored with a throttled warning.
 
 ## Motor-configuration types
 

@@ -161,7 +161,7 @@ SDK 本地接收时间；`frame_id` 是坐标系或来源字符串。
 | `switch_status` | Aurora 状态切换值。 |
 | `current_state` | 当前 `StateInfo`。 |
 | `available_states` | 可用 `StateInfo` 列表。 |
-| `authority_resources` | 每项包含 `resource`、`acquired`、`holder_source_name`、`holder_priority` 的权限快照。 |
+| `authority_resources` | 当前机器人支持且 SDK 可识别的权限资源快照；缺失资源表示不支持，未知的未来资源会被忽略。每项包含 `resource`、`acquired`、`holder_source_name`、`holder_priority`。 |
 
 ### `MotionState`
 
