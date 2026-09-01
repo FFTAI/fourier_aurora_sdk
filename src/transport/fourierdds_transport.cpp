@@ -65,9 +65,10 @@ namespace dds_srv = fourier_msgs::srv;
 
 namespace {
 
-constexpr std::array<const char*, 9> kResourceNames{
+constexpr std::array<const char*, 10> kResourceNames{
     "left_leg", "right_leg", "waist", "head", "left_manipulator",
-    "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd"};
+    "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd",
+    "cartesian_cmd"};
 
 bool validSourceName(const std::string& name) {
     return !name.empty() && name.size() <= 64 &&
@@ -169,11 +170,13 @@ AuroraState convertAuroraState(const dds_msg::AuroraState& msg) {
     for (const auto& state : msg.available_states()) {
         out.available_states.push_back(convertStateInfo(state));
     }
-    if (msg.authority_resources().size() != 9) {
-        throw std::runtime_error("AuroraState.authority_resources must contain 9 entries");
+    if (msg.authority_resources().size() != kResourceNames.size()) {
+        throw std::runtime_error(
+            "AuroraState.authority_resources must contain " +
+            std::to_string(kResourceNames.size()) + " entries");
     }
-    out.authority_resources.reserve(9);
-    for (std::size_t index = 0; index < 9; ++index) {
+    out.authority_resources.reserve(kResourceNames.size());
+    for (std::size_t index = 0; index < kResourceNames.size(); ++index) {
         const auto& resource = msg.authority_resources()[index];
         const std::string holder_name = resource.holder_source_name().to_string();
         if (resource.resource() != kResourceNames[index] ||
@@ -226,6 +229,15 @@ CartesianStateEntry convertCartesianEntry(const dds_msg::CartesianState& entry) 
     return out;
 }
 
+CartesianCommand convertCartesianCommandEntry(const dds_msg::CartesianState& entry) {
+    CartesianCommand out;
+    out.link_name = entry.link_name();
+    out.pose = entry.pose();
+    out.twist = entry.twist();
+    out.wrench = entry.wrench();
+    return out;
+}
+
 ControlGroupState convertControlGroupState(const dds_msg::RobotControlGroupState& msg) {
     const auto received_time = std::chrono::system_clock::now();
     ControlGroupState out;
@@ -244,7 +256,7 @@ ControlGroupState convertControlGroupState(const dds_msg::RobotControlGroupState
     }
     out.cartesian_cmd.reserve(msg.cartesian_cmd().size());
     for (const auto& entry : msg.cartesian_cmd()) {
-        out.cartesian_cmd.push_back(convertCartesianEntry(entry));
+        out.cartesian_cmd.push_back(convertCartesianCommandEntry(entry));
     }
     return out;
 }
@@ -343,7 +355,17 @@ dds_msg::RobotControlGroupCmd convertControlGroupCommand(
     }
     msg.joint_cmd(std::move(joint_cmds));
 
-    msg.cartesian_cmd({});
+  std::vector<dds_msg::CartesianCmd> cartesian_cmds;
+  cartesian_cmds.reserve(command.cartesian_cmd.size());
+  for (const auto &command_entry : command.cartesian_cmd) {
+    dds_msg::CartesianCmd entry;
+    entry.link_name(command_entry.link_name);
+    entry.pose(command_entry.pose);
+    entry.twist(command_entry.twist);
+    entry.wrench(command_entry.wrench);
+    cartesian_cmds.push_back(std::move(entry));
+  }
+  msg.cartesian_cmd(std::move(cartesian_cmds));
     return msg;
 }
 

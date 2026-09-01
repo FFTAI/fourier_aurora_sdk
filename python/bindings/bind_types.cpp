@@ -195,6 +195,13 @@ void bind_types(py::module_& m) {
         .def_readwrite("twist", &sdk::CartesianStateEntry::twist)
         .def_readwrite("wrench", &sdk::CartesianStateEntry::wrench);
 
+    py::class_<sdk::CartesianCommand>(m, "CartesianCommand")
+        .def(py::init<>())
+        .def_readwrite("link_name", &sdk::CartesianCommand::link_name)
+        .def_readwrite("pose", &sdk::CartesianCommand::pose)
+        .def_readwrite("twist", &sdk::CartesianCommand::twist)
+        .def_readwrite("wrench", &sdk::CartesianCommand::wrench);
+
     py::class_<sdk::ControlGroupState>(m, "ControlGroupState")
         .def(py::init<>())
         .def_readwrite("header", &sdk::ControlGroupState::header)
@@ -215,7 +222,8 @@ void bind_types(py::module_& m) {
     py::class_<sdk::ControlGroupCommand>(m, "ControlGroupCommand")
         .def(py::init<>())
         .def_readwrite("header", &sdk::ControlGroupCommand::header)
-        .def_readwrite("joint_cmd", &sdk::ControlGroupCommand::joint_cmd);
+        .def_readwrite("joint_cmd", &sdk::ControlGroupCommand::joint_cmd)
+        .def_readwrite("cartesian_cmd", &sdk::ControlGroupCommand::cartesian_cmd);
 
     py::class_<sdk::BaseData>(m, "BaseData")
         .def(py::init<>())
@@ -292,7 +300,8 @@ void bind_types(py::module_& m) {
         .value("RIGHT_MANIPULATOR", sdk::AuroraResource::RightManipulator)
         .value("LEFT_END_EFFECTOR", sdk::AuroraResource::LeftEndEffector)
         .value("RIGHT_END_EFFECTOR", sdk::AuroraResource::RightEndEffector)
-        .value("MOTION_COMMAND", sdk::AuroraResource::MotionCommand);
+        .value("MOTION_COMMAND", sdk::AuroraResource::MotionCommand)
+        .value("CARTESIAN_COMMAND", sdk::AuroraResource::CartesianCommand);
 
     py::enum_<sdk::LeasePriority>(m, "LeasePriority")
         .value("NORMAL", sdk::LeasePriority::Normal)

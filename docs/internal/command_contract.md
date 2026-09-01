@@ -102,10 +102,12 @@ not an absolute world orientation.
 ## Cartesian Scope
 
 Cartesian state pose and twist are read-only and expressed in the robot base
-frame. Cartesian command publishing is not supported in the first public SDK
-because the corresponding Aurora command path is not implemented.
+frame. Cartesian commands use an opaque non-empty `link_name` key and sparse
+pose, twist, and wrench vectors. Empty vectors mean that field is not commanded;
+present vectors must have lengths 7, 6, and 6 respectively and contain finite
+values. Aurora stores these values without frame conversion or quaternion
+normalization, so the caller and consuming task own frame semantics.
 
-The DDS IDL retains `cartesian_cmd` as a reserved field for future protocol
-compatibility. Its presence in the wire schema does not mean that clients may
-use it. A later release must define controller, frame, and failure semantics
-before exposing Cartesian pose, twist, or wrench commands.
+Publishing any Cartesian entry requires the generic `cartesian_cmd` lease
+resource. Repeated keys in one message are invalid, and a committed entry fully
+replaces the previous value for that key rather than merging omitted fields.

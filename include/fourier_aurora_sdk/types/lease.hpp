@@ -21,6 +21,7 @@ enum class AuroraResource : uint8_t {
     LeftEndEffector = 6,
     RightEndEffector = 7,
     MotionCommand = 8,
+    CartesianCommand = 9,
 };
 
 enum class LeasePriority : uint8_t { Normal = 0, Emergency = 9 };

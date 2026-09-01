@@ -24,7 +24,7 @@ All names are in `fourier::aurora_sdk`. The library requires C++17.
 | Results and errors | [`OperationResult`](#operationresult), [`AuroraSdkError`](#exceptions), [`ConnectionError`](#exceptions), [`InvalidArgumentError`](#exceptions), [`InvalidStateError`](#exceptions) |
 | Common and robot state | [`MessageHeader`](#messageheader), [`RobotInfo`](#robotinfo), [`StateInfo`](#stateinfo), [`AuroraState`](#aurorastate) |
 | Motion | [`MotionState`](#motionstate), [`MotionCommand`](#motioncommand) |
-| Control groups | [`JointControlType`](#jointcontroltype), [`MotorMode`](#motormode), [`JointField`](#jointfield), [`ControlGroupStateEntry`](#controlgroupstateentry), [`CartesianStateEntry`](#cartesianstateentry), [`ControlGroupState`](#controlgroupstate), [`JointCommand`](#jointcommand), [`ControlGroupCommand`](#controlgroupcommand) |
+| Control groups | [`JointControlType`](#jointcontroltype), [`MotorMode`](#motormode), [`JointField`](#jointfield), [`ControlGroupStateEntry`](#controlgroupstateentry), [`CartesianStateEntry`](#cartesianstateentry), [`CartesianCommand`](#cartesiancommand), [`ControlGroupState`](#controlgroupstate), [`JointCommand`](#jointcommand), [`ControlGroupCommand`](#controlgroupcommand) |
 | Estimator | [`BaseData`](#basedata), [`ContactData`](#contactdata), [`EstimatorData`](#estimatordata) |
 | Sub-controller | [`GroupOverrideParam`](#groupoverrideparam), [`ControllerParam`](#controllerparam), [`SubControllerCommand`](#subcontrollercommand) |
 | Errors | [`ErrorCodeEntry`](#errorcodeentry), [`ErrorCodes`](#errorcodes) |
@@ -251,6 +251,17 @@ projection getters.
 | `twist` | `std::array<double, 6>` | Linear and angular velocity. |
 | `wrench` | `std::array<double, 6>` | Force and torque. |
 
+### `CartesianCommand`
+
+| Member | Type | Description |
+|---|---|---|
+| `link_name` | `std::string` | Opaque, caller-defined lookup key; empty is invalid. |
+| `pose` | `std::vector<double>` | Optional raw seven-element pose payload. |
+| `twist` | `std::vector<double>` | Optional raw six-element twist payload. |
+| `wrench` | `std::vector<double>` | Optional raw six-element wrench payload. |
+
+At least one payload must be supplied. Empty vectors mean “not commanded.” Aurora stores the values unchanged; the caller and consuming task own frame semantics.
+
 ### `ControlGroupState`
 
 | Member | Description |
@@ -259,7 +270,7 @@ projection getters.
 | `joint_state` | Measured joint entries. |
 | `joint_cmd` | Joint commands observed by Aurora. |
 | `cartesian_state` | Measured Cartesian entries for configured URDF links. |
-| `cartesian_cmd` | Observed Cartesian command entries; read-only in this release. |
+| `cartesian_cmd` | Latest observed sparse `CartesianCommand` entries. |
 
 ### `JointCommand`
 
@@ -275,7 +286,9 @@ projection getters.
 ### `ControlGroupCommand`
 
 `header` is outgoing metadata; `joint_cmd` is the list of `JointCommand`
-entries. Every targeted joint resource must be covered by the active lease.
+entries and `cartesian_cmd` is the list of sparse `CartesianCommand` entries.
+Every targeted joint resource must be covered by the active lease. A non-empty
+`cartesian_cmd` additionally requires `AuroraResource::CartesianCommand`.
 
 ### `BaseData`
 
@@ -349,8 +362,8 @@ code.
 ### `AuroraResource`
 
 Values: `LeftLeg`, `RightLeg`, `Waist`, `Head`, `LeftManipulator`,
-`RightManipulator`, `LeftEndEffector`, `RightEndEffector`, and
-`MotionCommand`.
+`RightManipulator`, `LeftEndEffector`, `RightEndEffector`, `MotionCommand`, and
+`CartesianCommand`.
 
 ### `LeasePriority`
 
@@ -773,12 +786,14 @@ OperationResult getCartesianState(const std::string& link_name, CartesianStateEn
 Declaration:
 
 ```cpp
-OperationResult getCartesianCommand(const std::string& link_name, CartesianStateEntry& output) const;
+OperationResult getCartesianCommand(const std::string& link_name, CartesianCommand& output) const;
 ```
 
-- Description: Selects an observed Cartesian command by URDF link name.
-- Parameters: `link_name` — requested URDF link; `output` — receives its command.
+- Description: Selects the latest observed sparse Cartesian command by its opaque key.
+- Parameters: `link_name` — exact lookup key; `output` — receives its raw command.
 - Returns: Operation status; failure leaves `output` unchanged.
+
+The `CartesianStateEntry` output overload remains available for source compatibility; omitted fields become zero arrays. New code should use `CartesianCommand` so field absence is preserved.
 
 #### `waitForFsmState`
 
@@ -869,7 +884,7 @@ Declaration:
 OperationResult publishControlGroupCommand(const ControlGroupCommand& command);
 ```
 
-- Description: Publishes joint commands after checking every targeted joint resource.
+- Description: Publishes joint and/or sparse Cartesian commands after checking all required resources.
 - Parameters: `command` — complete control-group command.
 - Returns: Publication or lease-check status.
 

@@ -40,12 +40,19 @@ struct CartesianStateEntry {
     std::array<double, 6> wrench{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 };
 
+struct CartesianCommand {
+    std::string link_name;
+    std::vector<double> pose;
+    std::vector<double> twist;
+    std::vector<double> wrench;
+};
+
 struct ControlGroupState {
     MessageHeader header;
     std::vector<ControlGroupStateEntry> joint_state;
     std::vector<ControlGroupStateEntry> joint_cmd;
     std::vector<CartesianStateEntry> cartesian_state;
-    std::vector<CartesianStateEntry> cartesian_cmd;
+    std::vector<CartesianCommand> cartesian_cmd;
 };
 
 struct JointCommand {
@@ -60,6 +67,7 @@ struct JointCommand {
 struct ControlGroupCommand {
     MessageHeader header;
     std::vector<JointCommand> joint_cmd;
+    std::vector<CartesianCommand> cartesian_cmd;
 };
 
 }  // namespace fourier::aurora_sdk

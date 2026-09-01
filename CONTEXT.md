@@ -84,3 +84,19 @@ from the body-fixed base frame used by motion linear and angular velocity.
 **Nominal standing attitude**:
 Aurora's reference standing orientation from which motion-command roll, pitch,
 and yaw offsets are measured.
+
+**Cartesian command target**:
+An opaque, nonempty caller-defined key used to publish and retrieve the latest
+Cartesian command. It may be a robot link or an application alias.
+_Avoid_: Validated URDF link, inferred control group
+
+**Sparse Cartesian command**:
+A Cartesian command whose pose, twist, and wrench fields are independently
+optional. An empty field means “not commanded,” while a new entry fully
+replaces the previous entry for its target.
+_Avoid_: Zero-filled command, merged Cartesian update
+
+**Cartesian command authority**:
+The generic `CartesianCommand` resource required by every publication that
+contains one or more Cartesian command targets.
+_Avoid_: Per-link resource, any-active-lease authorization

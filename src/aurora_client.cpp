@@ -215,9 +215,10 @@ void validateJointField(JointField field) {
     throw InvalidArgumentError("unsupported JointField");
 }
 
-const std::array<const char*, 9> kResourceNames{
+const std::array<const char*, 10> kResourceNames{
     "left_leg", "right_leg", "waist", "head", "left_manipulator",
-    "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd"};
+    "right_manipulator", "left_end_effector", "right_end_effector", "motion_cmd",
+    "cartesian_cmd"};
 
 std::size_t resourceIndex(AuroraResource resource) {
     const auto index = static_cast<std::size_t>(resource);
@@ -232,7 +233,7 @@ std::vector<AuroraResource> canonicalResources(
     if (resources.empty()) {
         throw InvalidArgumentError("lease resource set must not be empty");
     }
-    std::array<bool, 9> seen{};
+  std::array<bool, kResourceNames.size()> seen{};
     for (const auto resource : resources) {
         const auto index = resourceIndex(resource);
         if (seen[index]) {
@@ -1775,7 +1776,7 @@ OperationResult AuroraClient::getCartesianState(
 // Finds and returns one named link's observed Cartesian command.
 OperationResult AuroraClient::getCartesianCommand(
     const std::string& link_name,
-    CartesianStateEntry& output) const {
+    CartesianCommand& output) const {
     ControlGroupState state;
     const auto result = impl_->readCached(
         Endpoint::ControlGroupStateSubscriber,
@@ -1787,7 +1788,7 @@ OperationResult AuroraClient::getCartesianCommand(
     const auto it = std::find_if(
         state.cartesian_cmd.begin(),
         state.cartesian_cmd.end(),
-        [&](const CartesianStateEntry& entry) {
+        [&](const CartesianCommand& entry) {
             return entry.link_name == link_name;
         });
     if (it == state.cartesian_cmd.end()) {
@@ -1797,6 +1798,28 @@ OperationResult AuroraClient::getCartesianCommand(
     }
     output = *it;
     return makeResult(result_codes::SUCCESS);
+}
+
+OperationResult AuroraClient::getCartesianCommand(
+    const std::string& link_name,
+    CartesianStateEntry& output) const {
+    CartesianCommand sparse;
+    const auto result = getCartesianCommand(link_name, sparse);
+    if (!result.success()) {
+        return result;
+    }
+    output = {};
+    output.link_name = sparse.link_name;
+    if (sparse.pose.size() == output.pose.size()) {
+        std::copy(sparse.pose.begin(), sparse.pose.end(), output.pose.begin());
+    }
+    if (sparse.twist.size() == output.twist.size()) {
+        std::copy(sparse.twist.begin(), sparse.twist.end(), output.twist.begin());
+    }
+    if (sparse.wrench.size() == output.wrench.size()) {
+        std::copy(sparse.wrench.begin(), sparse.wrench.end(), output.wrench.begin());
+    }
+    return result;
 }
 
 // Returns the last motion command successfully transmitted by this client.
@@ -1886,7 +1909,8 @@ OperationResult AuroraClient::publishControlGroupCommand(
     const ControlGroupCommand& command) {
     const std::vector<AuroraResource> required = [&] {
         std::vector<AuroraResource> values;
-        values.reserve(command.joint_cmd.size());
+    values.reserve(command.joint_cmd.size() +
+                   (command.cartesian_cmd.empty() ? 0 : 1));
         for (const auto& group : command.joint_cmd) {
             const auto resource = groupResource(group.group_name);
             if (!resource.has_value()) {
@@ -1895,6 +1919,28 @@ OperationResult AuroraClient::publishControlGroupCommand(
             }
             values.push_back(*resource);
         }
+    std::set<std::string> links;
+    for (const auto &cartesian : command.cartesian_cmd) {
+      const auto valid_field = [](const std::vector<double> &field,
+                                  std::size_t dimension) {
+        return field.empty() ||
+               (field.size() == dimension &&
+                std::all_of(field.begin(), field.end(),
+                            [](double value) { return std::isfinite(value); }));
+      };
+      if (cartesian.link_name.empty() ||
+          !links.insert(cartesian.link_name).second ||
+          (cartesian.pose.empty() && cartesian.twist.empty() &&
+           cartesian.wrench.empty()) ||
+          !valid_field(cartesian.pose, 7) || !valid_field(cartesian.twist, 6) ||
+          !valid_field(cartesian.wrench, 6)) {
+        throw InvalidArgumentError("invalid Cartesian command for link: " +
+                                   cartesian.link_name);
+      }
+    }
+    if (!command.cartesian_cmd.empty()) {
+      values.push_back(AuroraResource::CartesianCommand);
+    }
         return canonicalResources(values);
     }();
     std::lock_guard<std::mutex> stream_lock(impl_->command_mutexes[1]);

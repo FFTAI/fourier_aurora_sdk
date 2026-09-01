@@ -43,8 +43,12 @@ void testTraitsAndDefaults(testing::TestHarness& test) {
     static_assert(!std::is_move_constructible_v<sdk::AuroraClient>);
     static_assert(!std::is_move_assignable_v<sdk::AuroraClient>);
     static_assert(!std::is_destructible_v<sdk::AuroraClient>);
-    static_assert(
-        !HasCartesianCommandMember<sdk::ControlGroupCommand>::value);
+    static_assert(HasCartesianCommandMember<sdk::ControlGroupCommand>::value);
+    const sdk::CartesianCommand default_cartesian;
+    SDK_CHECK(test, default_cartesian.link_name.empty());
+    SDK_CHECK(test, default_cartesian.pose.empty());
+    SDK_CHECK(test, default_cartesian.twist.empty());
+    SDK_CHECK(test, default_cartesian.wrench.empty());
 
     auto& client = testing::resetClientFixture();
     auto& alias = sdk::AuroraClient::getInstance();
@@ -232,7 +236,10 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
     link.link_name = "left_foot";
     link.pose[0] = 9.0;
     groups.cartesian_state.push_back(link);
-    groups.cartesian_cmd.push_back(link);
+  sdk::CartesianCommand observed_command;
+  observed_command.link_name = "left_foot";
+  observed_command.pose = {9.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
+  groups.cartesian_cmd.push_back(observed_command);
     session->injectControlGroupState(groups);
 
     std::vector<double> values{99.0};
@@ -253,8 +260,16 @@ void testEndpointAndGetterSemantics(testing::TestHarness& test) {
     result = client.getCartesianState("left_foot", cartesian);
     SDK_CHECK(test, result.success());
     SDK_CHECK(test, cartesian.pose[0] == 9.0);
+  sdk::CartesianCommand sparse_cartesian;
+  result = client.getCartesianCommand("left_foot", sparse_cartesian);
+  SDK_CHECK(test, result.success());
+  SDK_CHECK(test, sparse_cartesian.pose == observed_command.pose);
+  result = client.getCartesianCommand("missing_link", sparse_cartesian);
+  SDK_CHECK(test, result.code == sdk::result_codes::CLIENT_ERROR);
+  SDK_CHECK(test, result.message.find("missing_link") != std::string::npos);
     result = client.getCartesianCommand("left_foot", cartesian);
     SDK_CHECK(test, result.success());
+  SDK_CHECK(test, cartesian.pose[0] == 9.0);
 
     SDK_CHECK_THROWS(
         test,
@@ -407,6 +422,7 @@ void testPublicationAndCommandCaches(testing::TestHarness& test) {
     const auto lease = client.registerLease({
         sdk::AuroraResource::MotionCommand,
         sdk::AuroraResource::LeftLeg,
+      sdk::AuroraResource::CartesianCommand,
     });
     SDK_CHECK(test, lease.success());
     SDK_CHECK(test, lease.usable());
@@ -461,6 +477,10 @@ void testPublicationAndCommandCaches(testing::TestHarness& test) {
     joint.motor_mode = static_cast<sdk::MotorMode>(201);
     joint.position = {1.0, 2.0, 3.0};
     group_command.joint_cmd.push_back(joint);
+  sdk::CartesianCommand cartesian_command;
+  cartesian_command.link_name = "base_link_world";
+  cartesian_command.pose = {0.0, 0.0, 0.8, 0.0, 0.0, 0.0, 1.0};
+  group_command.cartesian_cmd.push_back(cartesian_command);
     result = client.publishControlGroupCommand(group_command);
     SDK_CHECK(test, result.success());
     {
@@ -472,7 +492,16 @@ void testPublicationAndCommandCaches(testing::TestHarness& test) {
             test,
             static_cast<uint8_t>(forwarded.control_type) == 200);
         SDK_CHECK(test, static_cast<uint8_t>(forwarded.motor_mode) == 201);
+    const auto &forwarded_cartesian =
+        session->control_group_commands.front().cartesian_cmd.front();
+    SDK_CHECK(test, forwarded_cartesian.link_name == "base_link_world");
+    SDK_CHECK(test, forwarded_cartesian.pose == cartesian_command.pose);
     }
+
+  sdk::ControlGroupCommand invalid_cartesian;
+  invalid_cartesian.cartesian_cmd.push_back({});
+  SDK_CHECK_THROWS(test, sdk::InvalidArgumentError,
+                   client.publishControlGroupCommand(invalid_cartesian));
 
     result = client.resetUnicontroller();
     SDK_CHECK(test, result.success());

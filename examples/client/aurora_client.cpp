@@ -714,7 +714,8 @@ void printGroup(
     std::cout << "\n";
 }
 
-void printCartesian(const sdk::CartesianStateEntry& state) {
+template <typename CartesianEntry>
+void printCartesian(const CartesianEntry &state) {
     std::cout << "link_name: " << state.link_name << "\npose: ";
     client_example::printRange(state.pose);
     std::cout << "\ntwist: "; client_example::printRange(state.twist);

@@ -36,7 +36,7 @@ void publishState(
     static constexpr const char* kResources[] = {
         "left_leg", "right_leg", "waist", "head", "left_manipulator",
         "right_manipulator", "left_end_effector", "right_end_effector",
-        "motion_cmd",
+        "motion_cmd", "cartesian_cmd",
     };
     dds_msg::AuroraState state;
     state.robot_info().robot_type("wheel_loopback_robot");

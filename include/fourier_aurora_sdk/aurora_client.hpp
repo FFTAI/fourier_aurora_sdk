@@ -76,6 +76,10 @@ public:
         CartesianStateEntry& output) const;
     [[nodiscard]] OperationResult getCartesianCommand(
         const std::string& link_name,
+        CartesianCommand& output) const;
+    // Compatibility overload. Omitted sparse fields are returned as zero arrays.
+    [[nodiscard]] OperationResult getCartesianCommand(
+        const std::string& link_name,
         CartesianStateEntry& output) const;
     [[nodiscard]] bool waitForFsmState(
         uint32_t state_id,

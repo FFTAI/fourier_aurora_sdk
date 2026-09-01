@@ -24,7 +24,7 @@ client = aurora.AuroraClient.get_instance()
 | 返回值与异常 | [`OperationResult`](#operationresult)、[`AuroraSdkError`](#异常)、[`ConnectionError`](#异常)、[`InvalidArgumentError`](#异常)、[`InvalidStateError`](#异常) |
 | 通用与机器人状态 | [`MessageHeader`](#messageheader)、[`RobotInfo`](#robotinfo)、[`StateInfo`](#stateinfo)、[`AuroraState`](#aurorastate) |
 | 运动 | [`MotionState`](#motionstate)、[`MotionCommand`](#motioncommand) |
-| 控制组 | [`JointControlType`](#jointcontroltype)、[`MotorMode`](#motormode)、[`JointField`](#jointfield)、[`ControlGroupStateEntry`](#controlgroupstateentry)、[`CartesianStateEntry`](#cartesianstateentry)、[`ControlGroupState`](#controlgroupstate)、[`JointCommand`](#jointcommand)、[`ControlGroupCommand`](#controlgroupcommand) |
+| 控制组 | [`JointControlType`](#jointcontroltype)、[`MotorMode`](#motormode)、[`JointField`](#jointfield)、[`ControlGroupStateEntry`](#controlgroupstateentry)、[`CartesianStateEntry`](#cartesianstateentry)、[`CartesianCommand`](#cartesiancommand)、[`ControlGroupState`](#controlgroupstate)、[`JointCommand`](#jointcommand)、[`ControlGroupCommand`](#controlgroupcommand) |
 | 估计器 | [`BaseData`](#basedata)、[`ContactData`](#contactdata)、[`EstimatorData`](#estimatordata) |
 | 子控制器 | [`GroupOverrideParam`](#groupoverrideparam)、[`ControllerParam`](#controllerparam)、[`SubControllerCommand`](#subcontrollercommand) |
 | 错误 | [`ErrorCodeEntry`](#errorcodeentry)、[`ErrorCodes`](#errorcodes) |
@@ -198,11 +198,17 @@ SDK 本地接收时间；`frame_id` 是坐标系或来源字符串。
 `link_name` 为 URDF link；`pose` 为七元素 position + XYZW quaternion；
 `twist` 为六元素线/角速度；`wrench` 为六元素力/力矩。
 
+### `CartesianCommand`
+
+`link_name` 是调用方定义的非空查询 key。`pose`、`twist`、`wrench` 默认为空
+列表，空表示未指令该字段；至少提供一项，提供时长度分别为 7、6、6。Aurora
+原样保存数值，坐标系由调用方与消费任务管理。
+
 ### `ControlGroupState`
 
 `header` 为元数据；`joint_state` 为测量关节列表；`joint_cmd` 为观测到的指令；
-`cartesian_state` 为测量 Cartesian 列表；`cartesian_cmd` 为观测到的
-Cartesian 指令，本版本只读。
+`cartesian_state` 为测量 Cartesian 列表；`cartesian_cmd` 为最新观测到的
+稀疏 `CartesianCommand` 列表。
 
 ### `JointCommand`
 
@@ -211,7 +217,9 @@ Cartesian 指令，本版本只读。
 
 ### `ControlGroupCommand`
 
-`header` 为出站元数据；`joint_cmd` 为 `JointCommand` 列表。
+`header` 为出站元数据；`joint_cmd` 为 `JointCommand` 列表，`cartesian_cmd`
+为 `CartesianCommand` 列表。Cartesian 条目要求
+`AuroraResource.CARTESIAN_COMMAND`。
 
 ### `BaseData`
 
@@ -263,7 +271,7 @@ Cartesian 指令，本版本只读。
 
 取值：`LEFT_LEG`、`RIGHT_LEG`、`WAIST`、`HEAD`、`LEFT_MANIPULATOR`、
 `RIGHT_MANIPULATOR`、`LEFT_END_EFFECTOR`、`RIGHT_END_EFFECTOR`、
-`MOTION_COMMAND`。
+`MOTION_COMMAND`、`CARTESIAN_COMMAND`。
 
 ### `LeasePriority`
 
@@ -634,9 +642,9 @@ client.get_cartesian_state(link_name)
 client.get_cartesian_command(link_name)
 ```
 
-- 说明：按 URDF link 名读取观测到的 Cartesian 指令。
-- 参数：`link_name` — 目标 URDF link。
-- 返回：`(OperationResult, CartesianStateEntry)`。
+- 说明：按精确 key 读取最新观测到的稀疏 Cartesian 指令。
+- 参数：`link_name` — 不透明查询 key。
+- 返回：`(OperationResult, CartesianCommand)`；key 不存在时返回失败。
 
 #### `wait_for_fsm_state`
 
@@ -726,7 +734,7 @@ client.publish_motion_command(command)
 client.publish_control_group_command(command)
 ```
 
-- 说明：检查全部目标 resource 后发布 Joint 指令。
+- 说明：检查全部所需 resource 后发布 Joint 和/或稀疏 Cartesian 指令。
 - 参数：`command` — 要发布的 `ControlGroupCommand`。
 - 返回：Publish 与租约检查的 `OperationResult`。
 

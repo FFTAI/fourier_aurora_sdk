@@ -25,7 +25,7 @@ separately for standard-GIL CPython 3.10 through 3.13.
 | Results and errors | [`OperationResult`](#operationresult), [`AuroraSdkError`](#exceptions), [`ConnectionError`](#exceptions), [`InvalidArgumentError`](#exceptions), [`InvalidStateError`](#exceptions) |
 | Common and robot state | [`MessageHeader`](#messageheader), [`RobotInfo`](#robotinfo), [`StateInfo`](#stateinfo), [`AuroraState`](#aurorastate) |
 | Motion | [`MotionState`](#motionstate), [`MotionCommand`](#motioncommand) |
-| Control groups | [`JointControlType`](#jointcontroltype), [`MotorMode`](#motormode), [`JointField`](#jointfield), [`ControlGroupStateEntry`](#controlgroupstateentry), [`CartesianStateEntry`](#cartesianstateentry), [`ControlGroupState`](#controlgroupstate), [`JointCommand`](#jointcommand), [`ControlGroupCommand`](#controlgroupcommand) |
+| Control groups | [`JointControlType`](#jointcontroltype), [`MotorMode`](#motormode), [`JointField`](#jointfield), [`ControlGroupStateEntry`](#controlgroupstateentry), [`CartesianStateEntry`](#cartesianstateentry), [`CartesianCommand`](#cartesiancommand), [`ControlGroupState`](#controlgroupstate), [`JointCommand`](#jointcommand), [`ControlGroupCommand`](#controlgroupcommand) |
 | Estimator | [`BaseData`](#basedata), [`ContactData`](#contactdata), [`EstimatorData`](#estimatordata) |
 | Sub-controller | [`GroupOverrideParam`](#groupoverrideparam), [`ControllerParam`](#controllerparam), [`SubControllerCommand`](#subcontrollercommand) |
 | Errors | [`ErrorCodeEntry`](#errorcodeentry), [`ErrorCodes`](#errorcodes) |
@@ -242,6 +242,13 @@ Values: `POSITION`, `VELOCITY`, and `EFFORT`.
 | `twist` | Six-element linear/angular velocity. |
 | `wrench` | Six-element force/torque. |
 
+### `CartesianCommand`
+
+`link_name` is an opaque, non-empty lookup key. `pose`, `twist`, and `wrench`
+are lists that default to empty and mean “not commanded” when empty. At least
+one must be supplied; present lengths are 7, 6, and 6. Aurora stores the raw
+values unchanged, so the caller and task own frame semantics.
+
 ### `ControlGroupState`
 
 | Attribute | Description |
@@ -250,7 +257,7 @@ Values: `POSITION`, `VELOCITY`, and `EFFORT`.
 | `joint_state` | Measured `ControlGroupStateEntry` list. |
 | `joint_cmd` | Observed commanded entry list. |
 | `cartesian_state` | Measured `CartesianStateEntry` list. |
-| `cartesian_cmd` | Observed Cartesian command list; read-only in this release. |
+| `cartesian_cmd` | Latest observed sparse `CartesianCommand` list. |
 
 ### `JointCommand`
 
@@ -265,7 +272,9 @@ Values: `POSITION`, `VELOCITY`, and `EFFORT`.
 
 ### `ControlGroupCommand`
 
-`header` is outgoing metadata; `joint_cmd` is a list of `JointCommand` values.
+`header` is outgoing metadata; `joint_cmd` is a list of `JointCommand` values
+and `cartesian_cmd` is a list of `CartesianCommand` values. Cartesian entries
+require `AuroraResource.CARTESIAN_COMMAND`.
 
 ### `BaseData`
 
@@ -322,8 +331,8 @@ global activation/blend rate, and `group_override_params` contains
 ### `AuroraResource`
 
 Values: `LEFT_LEG`, `RIGHT_LEG`, `WAIST`, `HEAD`, `LEFT_MANIPULATOR`,
-`RIGHT_MANIPULATOR`, `LEFT_END_EFFECTOR`, `RIGHT_END_EFFECTOR`, and
-`MOTION_COMMAND`.
+`RIGHT_MANIPULATOR`, `LEFT_END_EFFECTOR`, `RIGHT_END_EFFECTOR`,
+`MOTION_COMMAND`, and `CARTESIAN_COMMAND`.
 
 ### `LeasePriority`
 
@@ -706,9 +715,9 @@ Declaration:
 client.get_cartesian_command(link_name)
 ```
 
-- Description: Selects an observed Cartesian command by URDF link name.
-- Parameters: `link_name` — requested URDF link.
-- Returns: `(OperationResult, CartesianStateEntry)`.
+- Description: Selects the latest observed sparse Cartesian command by exact key.
+- Parameters: `link_name` — opaque lookup key.
+- Returns: `(OperationResult, CartesianCommand)`; an absent key returns failure.
 
 #### `wait_for_fsm_state`
 
@@ -799,7 +808,7 @@ Declaration:
 client.publish_control_group_command(command)
 ```
 
-- Description: Publishes joint commands after checking all targeted resources.
+- Description: Publishes joint and/or sparse Cartesian commands after checking all required resources.
 - Parameters: `command` — `ControlGroupCommand` to publish.
 - Returns: `OperationResult` for publication and lease checks.
 

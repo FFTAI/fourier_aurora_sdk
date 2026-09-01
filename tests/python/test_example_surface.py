@@ -44,6 +44,7 @@ def test_cpp_recipes_do_not_include_shared_example_helpers():
 def test_recipe_python_api_surface_exists():
     required = (
         "AuroraClient",
+        "CartesianCommand",
         "ControlGroupCommand",
         "Endpoint",
         "JointCommand",

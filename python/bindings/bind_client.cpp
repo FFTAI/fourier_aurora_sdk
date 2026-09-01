@@ -292,7 +292,7 @@ void bind_client(py::module_& m) {
             "get_cartesian_command",
             [](const sdk::AuroraClient& client,
                const std::string& link_name) {
-                sdk::CartesianStateEntry output;
+                sdk::CartesianCommand output;
                 const auto result =
                     client.getCartesianCommand(link_name, output);
                 return py::make_tuple(result, output);

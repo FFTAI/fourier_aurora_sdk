@@ -31,11 +31,20 @@ int main() {
     sdk::LeaseOption lease_option;
     lease_option.duration = std::chrono::milliseconds{400};
     auto lease = client.registerLease(
-        {sdk::AuroraResource::LeftLeg, sdk::AuroraResource::MotionCommand},
+        {sdk::AuroraResource::LeftLeg, sdk::AuroraResource::MotionCommand,
+         sdk::AuroraResource::CartesianCommand},
         lease_option);
     SDK_CHECK(test, lease.success());
     SDK_CHECK(test, lease.usable());
     SDK_CHECK(test, lease.source_name == "lease-contract-test");
+
+    sdk::ControlGroupCommand cartesian_group;
+    sdk::CartesianCommand cartesian;
+    cartesian.link_name = "base_link_world";
+    cartesian.twist = {0.0, 0.0, 0.0, 0.0, 0.0, 0.1};
+    cartesian_group.cartesian_cmd.push_back(cartesian);
+    command_result = client.publishControlGroupCommand(cartesian_group);
+    SDK_CHECK(test, command_result.success());
 
     command_result = client.publishMotionCommand(motion);
     SDK_CHECK(test, command_result.success());
