@@ -83,6 +83,7 @@ Endpoints are selected by operation: read and monitor operations use
 aurora-client state get
 aurora-client state list
 aurora-client state set 13
+aurora-client state set 13 --force
 aurora-client state monitor
 aurora-client state monitor --interval 250ms
 ```
@@ -90,6 +91,7 @@ aurora-client state monitor --interval 250ms
 - `get` prints robot information, switch status, and current FSM.
 - `list` prints Aurora's advertised state list.
 - `set` sends a numeric FSM request and prints Aurora's immediate reply.
+  `--force` skips target-task `enter_check()` calls only.
 - `monitor` reads the latest cache until interrupted.
 
 ### `estimator`

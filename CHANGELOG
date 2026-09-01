@@ -12,6 +12,9 @@
   keeping Source Name explicit for direct C++ and Python callers.
 - Standardized robot-facing CLI writes as `state set`, `motion set`, and
   `control-group set`.
+- Replaced the generic FSM `SetInt` service payload with attributed,
+  machine-readable state-switch requests and added explicit forced admission
+  through the C++, Python, and CLI clients.
 - Added separate standard-GIL CPython 3.10 through 3.13 Linux wheels.
 - Established the initial C++ ABI at `SOVERSION 1` and requires
   `fourier-dds-msgs 0.2.0-1`.

@@ -45,6 +45,7 @@ case ${command} in
   monitor) choices+=(--interval) ;;
   set)
     case ${area} in
+      state) choices+=(--force) ;;
       motion)
         choices+=(--position --linear-velocity --attitude --angular-velocity
           --delta-height --gait-type --skills --duration)

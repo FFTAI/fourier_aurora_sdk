@@ -36,6 +36,7 @@ _aurora_client()
         monitor) word="${word} --interval" ;;
         set)
             case "${area}" in
+                state) word="${word} --force" ;;
                 motion)
                     word="${word} --position --linear-velocity --attitude --angular-velocity --delta-height --gait-type --skills --duration"
                     ;;

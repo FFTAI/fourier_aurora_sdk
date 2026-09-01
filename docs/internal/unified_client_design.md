@@ -51,13 +51,14 @@ The complete state surface is:
 ```text
 state get
 state list
-state set <state-id>
+state set <state-id> [--force]
 state monitor [--interval <value>]
 ```
 
 Only one state command is executed per invocation. `state set` reports the
 immediate request result and does not imply that the asynchronous transition
-has completed. `state monitor` retains a default polling interval of 500 ms and
+has completed. `--force` skips target-task `enter_check()` calls only.
+`state monitor` retains a default polling interval of 500 ms and
 allows the caller to override it with `--interval`.
 
 Monitor intervals are positive durations. A bare value is interpreted as

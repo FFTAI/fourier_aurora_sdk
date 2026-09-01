@@ -77,12 +77,14 @@ Endpoint 按操作选择：读取和 monitor 使用 `AuroraStateSubscriber`；
 aurora-client state get
 aurora-client state list
 aurora-client state set 13
+aurora-client state set 13 --force
 aurora-client state monitor --interval 250ms
 ```
 
 - `get` 打印机器人信息、switch status 和当前 FSM。
 - `list` 打印 Aurora 发布的状态列表。
-- `set` 发送数字 FSM request 并打印即时 reply。
+- `set` 发送数字 FSM request 并打印即时 reply；`--force` 只跳过目标任务的
+  `enter_check()`。
 - `monitor` 持续读取最新 cache，直到被中断。
 
 ### `estimator`

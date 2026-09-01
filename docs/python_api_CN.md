@@ -767,12 +767,13 @@ client.set_sub_controller(command)
 声明：
 
 ```python
-client.request_fsm_state(state_id)
+client.request_fsm_state(state_id, force_switch=False)
 ```
 
 - 说明：无租约请求一个 Aurora FSM 状态。
-- 参数：`state_id` — `uint32` 范围内整数。
-- 返回：Aurora FSM Service 的 `OperationResult`。
+- 参数：`state_id` — `uint32` 范围内整数；`force_switch` — 跳过目标任务的
+  `enter_check()`，但仍保留生命周期检查。
+- 返回：Aurora FSM 的详细 admission `OperationResult`。
 
 #### `set_velocity`
 

@@ -136,13 +136,15 @@ public:
         return response;
     }
 
-    OperationResult requestFsmState(uint32_t state_id) override {
+    OperationResult requestFsmState(uint32_t state_id,
+                                    bool force_switch) override {
         std::unique_lock<std::mutex> lock(session_->mutex);
         if (session_->stopped) {
             return notRunningResult();
         }
         ++session_->request_calls;
         session_->fsm_requests.push_back(state_id);
+        session_->fsm_force_switches.push_back(force_switch);
         session_->changed.notify_all();
         session_->changed.wait(lock, [this] {
             return !session_->block_request || session_->release_request;

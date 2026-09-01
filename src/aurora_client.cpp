@@ -2029,12 +2029,17 @@ LeaseResult AuroraClient::getLease() const {
 
 // Sends one typed FSM request and preserves Aurora's returned result.
 OperationResult AuroraClient::requestFsmState(uint32_t state_id) {
+  return requestFsmState(state_id, false);
+}
+
+OperationResult AuroraClient::requestFsmState(uint32_t state_id,
+                                              bool force_switch) {
   OperationResult failure;
   auto admission = impl_->beginOperation(Endpoint::FsmService, failure);
   if (!admission) {
     return failure;
   }
-  return admission.transport()->requestFsmState(state_id);
+  return admission.transport()->requestFsmState(state_id, force_switch);
 }
 
 // Converts user-facing base-frame velocities into a complete motion command.

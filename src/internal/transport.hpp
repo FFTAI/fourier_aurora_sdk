@@ -60,7 +60,8 @@ public:
         const SubControllerCommand& command) = 0;
     virtual LeaseManagementResponse manageLease(
         const LeaseManagementRequest& request, uint32_t timeout_ms) = 0;
-    virtual OperationResult requestFsmState(uint32_t state_id) = 0;
+    virtual OperationResult requestFsmState(uint32_t state_id,
+                                            bool force_switch) = 0;
 
     [[nodiscard]] virtual EndpointMatchStatus endpointMatchStatus() const = 0;
     virtual void stop() = 0;

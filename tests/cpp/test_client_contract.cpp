@@ -63,6 +63,12 @@ void testTraitsAndDefaults(testing::TestHarness &test) {
   SDK_CHECK(test, !default_result.message.empty());
   SDK_CHECK(test, sdk::resultCodeName(999) == "UNKNOWN_RESULT_CODE");
   SDK_CHECK(test, sdk::defaultResultMessage(999) == "unknown result code");
+  SDK_CHECK(test, sdk::resultCodeName(sdk::result_codes::FSM_STATE_NOT_FOUND) ==
+                      "FSM_STATE_NOT_FOUND");
+  SDK_CHECK(test,
+            sdk::defaultResultMessage(
+                sdk::result_codes::FSM_ENTER_CHECK_FAILED) ==
+                "FSM enter check failed");
 }
 
 void testConfiguration(testing::TestHarness &test) {
@@ -350,6 +356,10 @@ void testFsmObservationGenerations(testing::TestHarness &test) {
   auto result = client.requestFsmState(7);
   SDK_CHECK(test, result.code == 1);
   SDK_CHECK(test, result.message == "legacy rejected");
+  SDK_CHECK(test, !session->fsm_force_switches.back());
+  result = client.requestFsmState(7, true);
+  SDK_CHECK(test, result.code == 1);
+  SDK_CHECK(test, session->fsm_force_switches.back());
   session->fsm_result = {2, ""};
   result = client.requestFsmState(8);
   SDK_CHECK(test, result.code == 2);

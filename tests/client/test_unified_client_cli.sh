@@ -27,6 +27,7 @@ expect_status 0 "${client}" state
 grep -Fq 'set <state-id>' /tmp/aurora-client-test.out
 expect_status 0 "${client}" state set --help
 grep -Fq 'state set <state-id>' /tmp/aurora-client-test.out
+grep -Fq -- '--force' /tmp/aurora-client-test.out
 expect_status 0 "${client}" motion set --help
 grep -Fq -- '--linear-velocity' /tmp/aurora-client-test.out
 expect_status 0 "${client}" control-group set --help
@@ -58,6 +59,8 @@ expect_status 2 "${client}" control-group set --duration 1
 grep -Fq 'requires at least one --target' /tmp/aurora-client-test.err
 expect_status 2 "${client}" state request 13
 grep -Fq 'unknown state command: request' /tmp/aurora-client-test.err
+expect_status 2 "${client}" state set 13 --force --force
+grep -Fq -- '--force specified more than once' /tmp/aurora-client-test.err
 expect_status 2 "${client}" motion command --position 0 0 0
 grep -Fq 'unknown motion command: command' /tmp/aurora-client-test.err
 expect_status 2 "${client}" control-group position --target head 0 0
@@ -77,6 +80,10 @@ COMP_WORDS=(aurora-client state s)
 COMP_CWORD=2
 _aurora_client
 [[ " ${COMPREPLY[*]} " == *' set '* ]]
+COMP_WORDS=(aurora-client state set --fo)
+COMP_CWORD=3
+_aurora_client
+[[ " ${COMPREPLY[*]} " == *' --force '* ]]
 COMP_WORDS=(aurora-client motion set --lin)
 COMP_CWORD=3
 _aurora_client

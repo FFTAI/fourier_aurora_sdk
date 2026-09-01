@@ -19,8 +19,8 @@
 #include "ManageLease/ManageLeasePubSubTypes.hpp"
 #include "RobotMotionCmd/RobotMotionCmd.hpp"
 #include "RobotMotionCmd/RobotMotionCmdPubSubTypes.hpp"
-#include "SetInt/SetInt.hpp"
-#include "SetInt/SetIntPubSubTypes.hpp"
+#include "FsmStateSwitch/FsmStateSwitch.hpp"
+#include "FsmStateSwitch/FsmStateSwitchPubSubTypes.hpp"
 
 #include "test_harness.hpp"
 
@@ -149,22 +149,29 @@ int main() {
             fourier_dds::SubscriptionDurability::Volatile);
 
     std::atomic<int> service_delay_ms{0};
+    std::atomic<uint32_t> fsm_wire_result{
+        dds_srv::FSM_SWITCH_RESULT_ACCEPTED};
+    std::string last_fsm_source;
+    bool last_fsm_force_switch = false;
     fourier_dds::DdsServer<
-        dds_srv::SetInt_RequestPubSubType,
-        dds_srv::SetInt_ResponsePubSubType>
+        dds_srv::FsmStateSwitch_RequestPubSubType,
+        dds_srv::FsmStateSwitch_ResponsePubSubType>
         fsm_server(
             peer,
             "aurora/whole_body_fsm_state_change_service",
-            [&](const dds_srv::SetInt_Request& request,
-                dds_srv::SetInt_Response& response) {
+            [&](const dds_srv::FsmStateSwitch_Request& request,
+                dds_srv::FsmStateSwitch_Response& response) {
                 const auto delay = service_delay_ms.load();
                 if (delay != 0) {
                     std::this_thread::sleep_for(
                         std::chrono::milliseconds(delay));
                 }
-                response.result(213);
+                last_fsm_source = request.source_name().to_string();
+                last_fsm_force_switch = request.force_switch();
+                response.header(request.header());
+                response.result(fsm_wire_result.load());
                 response.message(
-                    "state=" + std::to_string(request.data()));
+                    "state=" + std::to_string(request.target_state_id()));
             });
     fsm_server.run();
 
@@ -265,8 +272,21 @@ int main() {
         waitUntil([&] { return motion_samples.load() >= 1; }, 3s));
 
     result = direct.requestFsmState(13);
-    SDK_CHECK(test, result.code == 213);
+    SDK_CHECK(test, result.success());
     SDK_CHECK(test, result.message == "state=13");
+    SDK_CHECK(test, last_fsm_source == "dds-loopback");
+    SDK_CHECK(test, !last_fsm_force_switch);
+    result = direct.requestFsmState(14, true);
+    SDK_CHECK(test, result.success());
+    SDK_CHECK(test, result.message == "state=14");
+    SDK_CHECK(test, last_fsm_force_switch);
+    fsm_wire_result = dds_srv::FSM_SWITCH_RESULT_ALREADY_ACTIVE;
+    result = direct.requestFsmState(14);
+    SDK_CHECK(test, result.success());
+    fsm_wire_result = dds_srv::FSM_SWITCH_RESULT_ENTER_CHECK_FAILED;
+    result = direct.requestFsmState(15);
+    SDK_CHECK(test, result.code == sdk::result_codes::FSM_ENTER_CHECK_FAILED);
+    fsm_wire_result = dds_srv::FSM_SWITCH_RESULT_ACCEPTED;
 
     auto timeout_options = directOptions();
     timeout_options.service_timeout_ms = 10;
@@ -316,7 +336,7 @@ int main() {
     SDK_CHECK(test, client.getAuroraState(observed).success());
     SDK_CHECK(test, observed.current_state.id == 12);
     result = client.requestFsmState(12);
-    SDK_CHECK(test, result.code == 213);
+    SDK_CHECK(test, result.success());
     SDK_CHECK(test, result.message == "state=12");
     result = client.setVelocity(0.2, 0.0, 0.0, 0.1);
     SDK_CHECK(test, result.success());

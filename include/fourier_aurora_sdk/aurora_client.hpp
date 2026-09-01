@@ -102,6 +102,8 @@ public:
   [[nodiscard]] OperationResult
   setSubController(const SubControllerCommand &command);
   [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
+  [[nodiscard]] OperationResult requestFsmState(uint32_t state_id,
+                                                bool force_switch);
 
   // Explicitly manages the one module-level lease owned by this client.
   [[nodiscard]] LeaseResult

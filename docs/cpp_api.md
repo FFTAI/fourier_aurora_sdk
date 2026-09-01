@@ -918,11 +918,14 @@ Declaration:
 
 ```cpp
 OperationResult requestFsmState(uint32_t state_id);
+OperationResult requestFsmState(uint32_t state_id, bool force_switch);
 ```
 
 - Description: Requests one Aurora FSM state without a lease.
-- Parameters: `state_id` — requested FSM state ID.
-- Returns: Aurora's FSM service result.
+- Parameters: `state_id` — requested FSM state ID; `force_switch` — skip the
+  target tasks' `enter_check()` calls while retaining all lifecycle checks.
+- Returns: Aurora's detailed FSM admission result. An already-active state is
+  returned as success; accepted requests still complete asynchronously.
 
 #### `setVelocity`
 

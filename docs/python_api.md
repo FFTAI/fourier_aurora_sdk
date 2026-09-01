@@ -841,12 +841,13 @@ client.set_sub_controller(command)
 Declaration:
 
 ```python
-client.request_fsm_state(state_id)
+client.request_fsm_state(state_id, force_switch=False)
 ```
 
 - Description: Requests one Aurora FSM state without a lease.
-- Parameters: `state_id` — integer in the `uint32` range.
-- Returns: Aurora's FSM-service `OperationResult`.
+- Parameters: `state_id` — integer in the `uint32` range; `force_switch` — skip
+  the target tasks' `enter_check()` calls while retaining lifecycle checks.
+- Returns: Aurora's detailed FSM admission `OperationResult`.
 
 #### `set_velocity`
 

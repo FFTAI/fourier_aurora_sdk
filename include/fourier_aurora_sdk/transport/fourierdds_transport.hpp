@@ -44,6 +44,8 @@ public:
     [[nodiscard]] detail::LeaseManagementResponse manageLease(
         const detail::LeaseManagementRequest& request, uint32_t timeout_ms);
     [[nodiscard]] OperationResult requestFsmState(uint32_t state_id);
+    [[nodiscard]] OperationResult requestFsmState(uint32_t state_id,
+                                                  bool force_switch);
 
     [[nodiscard]] EndpointMatchStatus endpointMatchStatus() const;
     [[nodiscard]] bool isFsmServiceMatched() const;

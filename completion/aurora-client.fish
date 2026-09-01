@@ -14,6 +14,7 @@ complete -c aurora-client -n '__fish_seen_subcommand_from motion; and not __fish
 complete -c aurora-client -n '__fish_seen_subcommand_from control-group; and not __fish_seen_subcommand_from get monitor set' -a 'get monitor set'
 
 complete -c aurora-client -n '__fish_seen_subcommand_from monitor' -l interval -r -d 'Polling interval (default: 500ms)'
+complete -c aurora-client -n '__fish_seen_subcommand_from state; and __fish_seen_subcommand_from set' -l force -d 'Skip target task enter_check() calls'
 complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l position -r
 complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l linear-velocity -r
 complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l attitude -r

@@ -815,11 +815,14 @@ OperationResult setSubController(const SubControllerCommand& command);
 
 ```cpp
 OperationResult requestFsmState(uint32_t state_id);
+OperationResult requestFsmState(uint32_t state_id, bool force_switch);
 ```
 
 - 说明：无租约请求一个 Aurora FSM 状态。
-- 参数：`state_id` — 目标 FSM ID。
-- 返回：Aurora FSM Service 结果。
+- 参数：`state_id` — 目标 FSM ID；`force_switch` — 跳过目标任务的
+  `enter_check()`，但仍保留所有生命周期检查。
+- 返回：Aurora FSM 的详细 admission 结果；目标已激活时返回成功，接受请求后
+  状态切换仍异步完成。
 
 #### `setVelocity`
 

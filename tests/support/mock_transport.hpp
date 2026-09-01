@@ -53,6 +53,7 @@ struct MockSession {
     std::size_t request_calls = 0;
     std::thread::id stop_thread;
     std::vector<uint32_t> fsm_requests;
+    std::vector<bool> fsm_force_switches;
     std::vector<MotionCommand> motion_commands;
     std::vector<detail::LeaseToken> motion_tokens;
     std::vector<ControlGroupCommand> control_group_commands;

@@ -62,6 +62,15 @@ inline constexpr uint32_t TRANSPORT_ERROR = 106;
 inline constexpr uint32_t INVALID_AURORA_RESPONSE = 107;
 inline constexpr uint32_t STATE_NOT_RECEIVED = 108;
 
+inline constexpr uint32_t FSM_INVALID_REQUEST = 200;
+inline constexpr uint32_t FSM_STATE_NOT_FOUND = 201;
+inline constexpr uint32_t FSM_ENTER_CHECK_FAILED = 202;
+inline constexpr uint32_t FSM_SWITCH_BLOCKER_UNHEALTHY = 203;
+inline constexpr uint32_t FSM_SWITCH_BUSY = 204;
+inline constexpr uint32_t FSM_SHUTTING_DOWN = 205;
+inline constexpr uint32_t FSM_STATE_MANAGER_UNAVAILABLE = 206;
+inline constexpr uint32_t FSM_INTERNAL_ERROR = 207;
+
 inline constexpr uint32_t LEASE_INVALID_REQUEST = 300;
 inline constexpr uint32_t LEASE_UNKNOWN_RESOURCE = 301;
 inline constexpr uint32_t LEASE_PRIORITY_NOT_ALLOWED = 302;
@@ -106,6 +115,14 @@ inline constexpr uint32_t SUB_CONTROLLER_INTERNAL_ERROR = 323;
             return "INVALID_AURORA_RESPONSE";
         case result_codes::STATE_NOT_RECEIVED:
             return "STATE_NOT_RECEIVED";
+        case result_codes::FSM_INVALID_REQUEST: return "FSM_INVALID_REQUEST";
+        case result_codes::FSM_STATE_NOT_FOUND: return "FSM_STATE_NOT_FOUND";
+        case result_codes::FSM_ENTER_CHECK_FAILED: return "FSM_ENTER_CHECK_FAILED";
+        case result_codes::FSM_SWITCH_BLOCKER_UNHEALTHY: return "FSM_SWITCH_BLOCKER_UNHEALTHY";
+        case result_codes::FSM_SWITCH_BUSY: return "FSM_SWITCH_BUSY";
+        case result_codes::FSM_SHUTTING_DOWN: return "FSM_SHUTTING_DOWN";
+        case result_codes::FSM_STATE_MANAGER_UNAVAILABLE: return "FSM_STATE_MANAGER_UNAVAILABLE";
+        case result_codes::FSM_INTERNAL_ERROR: return "FSM_INTERNAL_ERROR";
         case result_codes::LEASE_INVALID_REQUEST: return "LEASE_INVALID_REQUEST";
         case result_codes::LEASE_UNKNOWN_RESOURCE: return "LEASE_UNKNOWN_RESOURCE";
         case result_codes::LEASE_PRIORITY_NOT_ALLOWED: return "LEASE_PRIORITY_NOT_ALLOWED";
@@ -152,6 +169,14 @@ inline constexpr uint32_t SUB_CONTROLLER_INTERNAL_ERROR = 323;
             return "Aurora returned a malformed response";
         case result_codes::STATE_NOT_RECEIVED:
             return "state has not been received";
+        case result_codes::FSM_INVALID_REQUEST: return "FSM switch request is invalid";
+        case result_codes::FSM_STATE_NOT_FOUND: return "FSM state was not found";
+        case result_codes::FSM_ENTER_CHECK_FAILED: return "FSM enter check failed";
+        case result_codes::FSM_SWITCH_BLOCKER_UNHEALTHY: return "FSM switch blocker is unhealthy";
+        case result_codes::FSM_SWITCH_BUSY: return "FSM state switch is busy";
+        case result_codes::FSM_SHUTTING_DOWN: return "Aurora is shutting down";
+        case result_codes::FSM_STATE_MANAGER_UNAVAILABLE: return "FSM state manager is unavailable";
+        case result_codes::FSM_INTERNAL_ERROR: return "FSM state switch failed";
         case result_codes::LEASE_INVALID_REQUEST: return "lease request is invalid";
         case result_codes::LEASE_UNKNOWN_RESOURCE: return "lease resource is unknown";
         case result_codes::LEASE_PRIORITY_NOT_ALLOWED: return "lease priority is not allowed";

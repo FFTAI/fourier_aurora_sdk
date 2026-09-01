@@ -18,8 +18,8 @@
 #include "ManageLease/ManageLeasePubSubTypes.hpp"
 #include "RobotMotionCmd/RobotMotionCmd.hpp"
 #include "RobotMotionCmd/RobotMotionCmdPubSubTypes.hpp"
-#include "SetInt/SetInt.hpp"
-#include "SetInt/SetIntPubSubTypes.hpp"
+#include "FsmStateSwitch/FsmStateSwitch.hpp"
+#include "FsmStateSwitch/FsmStateSwitchPubSubTypes.hpp"
 
 namespace dds_msg = fourier_msgs::msg;
 namespace dds_srv = fourier_msgs::srv;
@@ -81,16 +81,18 @@ int main() {
 
     std::atomic<bool> request_received{false};
     fourier_dds::DdsServer<
-        dds_srv::SetInt_RequestPubSubType,
-        dds_srv::SetInt_ResponsePubSubType>
+        dds_srv::FsmStateSwitch_RequestPubSubType,
+        dds_srv::FsmStateSwitch_ResponsePubSubType>
         fsm_server(
             node,
             "aurora/whole_body_fsm_state_change_service",
-            [&](const dds_srv::SetInt_Request& request,
-                dds_srv::SetInt_Response& response) {
+            [&](const dds_srv::FsmStateSwitch_Request& request,
+                dds_srv::FsmStateSwitch_Response& response) {
                 request_received = true;
-                response.result(213);
-                response.message("state=" + std::to_string(request.data()));
+                response.header(request.header());
+                response.result(dds_srv::FSM_SWITCH_RESULT_ACCEPTED);
+                response.message(
+                    "state=" + std::to_string(request.target_state_id()));
             });
     fsm_server.run();
 

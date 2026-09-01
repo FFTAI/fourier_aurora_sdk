@@ -131,7 +131,7 @@ if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT)
         SubControllerService
         LeaseInfo
         ManageLease
-        SetInt
+        FsmStateSwitch
         TracerHeader
         Header
         Time

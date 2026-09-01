@@ -100,3 +100,15 @@ _Avoid_: Zero-filled command, merged Cartesian update
 The generic `CartesianCommand` resource required by every publication that
 contains one or more Cartesian command targets.
 _Avoid_: Per-link resource, any-active-lease authorization
+
+**FSM switch source**:
+The validated `ConnectionOptions.source_name` sent with each SDK FSM-switch
+request. It attributes the requesting module but does not currently require or
+prove lease ownership.
+_Avoid_: Lease holder, authenticated identity, DDS participant name
+
+**Forced FSM switch request**:
+An explicit FSM request that asks Aurora to skip target-task `enter_check()`
+calls while retaining all other lifecycle admission checks. The default SDK
+request and CLI behavior are never forced.
+_Avoid_: Unconditional switch, lifecycle bypass, default transition

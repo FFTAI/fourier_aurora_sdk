@@ -67,8 +67,10 @@ Robot-independent C++ diagnostic tools live directly under `examples/client/`.
 They may share internal CLI helpers and accept explicit connection and operation
 arguments; they are distinct from short, hardcoded robot recipes.
 
-`requestFsmState(id)` only confirms that Aurora accepted the transition
-request. The transition itself is asynchronous. Applications can use
+`requestFsmState(id)` and `requestFsmState(id, force_switch)` only confirm
+Aurora's admission result. The forced overload skips target-task
+`enter_check()` calls but retains lifecycle gates, and the transition itself is
+asynchronous. Applications can use
 `waitForFsmState(id, timeout)` to observe `AuroraState.current_state.id`, and
 command examples must wait for the required state before publishing motion.
 

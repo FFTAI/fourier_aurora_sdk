@@ -49,8 +49,8 @@
 #include "RobotMotionCmd/RobotMotionCmdPubSubTypes.hpp"
 #include "RobotMotionState/RobotMotionState.hpp"
 #include "RobotMotionState/RobotMotionStatePubSubTypes.hpp"
-#include "SetInt/SetInt.hpp"
-#include "SetInt/SetIntPubSubTypes.hpp"
+#include "FsmStateSwitch/FsmStateSwitch.hpp"
+#include "FsmStateSwitch/FsmStateSwitchPubSubTypes.hpp"
 #include "SubControllerCmd/SubControllerCmd.hpp"
 #include "SubControllerCmd/SubControllerCmdPubSubTypes.hpp"
 #include "SubControllerService/SubControllerService.hpp"
@@ -608,8 +608,9 @@ struct FourierDdsTransport::Impl
       fourier_dds::DdsSubscription<dds_msg::EstimatorDataPubSubType>;
   using ErrorCodesSubscription =
       fourier_dds::DdsSubscription<dds_msg::ErrorCodesPubSubType>;
-  using FsmClient = fourier_dds::DdsClient<dds_srv::SetInt_RequestPubSubType,
-                                           dds_srv::SetInt_ResponsePubSubType>;
+  using FsmClient =
+      fourier_dds::DdsClient<dds_srv::FsmStateSwitch_RequestPubSubType,
+                             dds_srv::FsmStateSwitch_ResponsePubSubType>;
   using ManageLeaseClient =
       fourier_dds::DdsClient<dds_srv::ManageLease_RequestPubSubType,
                              dds_srv::ManageLease_ResponsePubSubType>;
@@ -1014,7 +1015,7 @@ struct FourierDdsTransport::Impl
     }
   }
 
-  OperationResult requestFsmState(uint32_t state_id) {
+  OperationResult requestFsmState(uint32_t state_id, bool force_switch) {
     OperationResult failure;
     auto admission = beginOperation(Endpoint::FsmService, failure);
     if (!admission) {
@@ -1027,10 +1028,12 @@ struct FourierDdsTransport::Impl
       return makeResult(result_codes::ENDPOINT_UNMATCHED);
     }
 
-    dds_srv::SetInt_Request request;
+    dds_srv::FsmStateSwitch_Request request;
     request.header(makeTracerHeader(std::chrono::system_clock::now()));
-    request.data(static_cast<uint64_t>(state_id));
-    dds_srv::SetInt_Response response;
+    request.source_name(options.public_options.source_name);
+    request.target_state_id(state_id);
+    request.force_switch(force_switch);
+    dds_srv::FsmStateSwitch_Response response;
     const auto start = std::chrono::steady_clock::now();
     try {
       const bool received = fsm_service->send_request(
@@ -1057,13 +1060,42 @@ struct FourierDdsTransport::Impl
                         "non-standard DDS service failure");
     }
 
-    const auto wire_result = response.result();
-    if (wire_result < 0) {
+    uint32_t result_code = result_codes::INVALID_AURORA_RESPONSE;
+    switch (response.result()) {
+    case dds_srv::FSM_SWITCH_RESULT_ACCEPTED:
+    case dds_srv::FSM_SWITCH_RESULT_ALREADY_ACTIVE:
+      result_code = result_codes::SUCCESS;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_INVALID_REQUEST:
+      result_code = result_codes::FSM_INVALID_REQUEST;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_STATE_NOT_FOUND:
+      result_code = result_codes::FSM_STATE_NOT_FOUND;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_ENTER_CHECK_FAILED:
+      result_code = result_codes::FSM_ENTER_CHECK_FAILED;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_SWITCH_BLOCKER_UNHEALTHY:
+      result_code = result_codes::FSM_SWITCH_BLOCKER_UNHEALTHY;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_BUSY:
+      result_code = result_codes::FSM_SWITCH_BUSY;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_SHUTTING_DOWN:
+      result_code = result_codes::FSM_SHUTTING_DOWN;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_STATE_MANAGER_UNAVAILABLE:
+      result_code = result_codes::FSM_STATE_MANAGER_UNAVAILABLE;
+      break;
+    case dds_srv::FSM_SWITCH_RESULT_INTERNAL_ERROR:
+      result_code = result_codes::FSM_INTERNAL_ERROR;
+      break;
+    default:
       return makeResult(result_codes::INVALID_AURORA_RESPONSE);
     }
     return OperationResult{
-        static_cast<uint32_t>(wire_result),
-        response.message(),
+        result_code,
+        response.message().to_string(),
     };
   }
 
@@ -1478,7 +1510,12 @@ FourierDdsTransport::manageLease(const detail::LeaseManagementRequest &request,
 }
 
 OperationResult FourierDdsTransport::requestFsmState(uint32_t state_id) {
-  return impl_->requestFsmState(state_id);
+  return requestFsmState(state_id, false);
+}
+
+OperationResult FourierDdsTransport::requestFsmState(uint32_t state_id,
+                                                     bool force_switch) {
+  return impl_->requestFsmState(state_id, force_switch);
 }
 
 EndpointMatchStatus FourierDdsTransport::endpointMatchStatus() const {
@@ -1625,7 +1662,10 @@ FourierDdsTransport::manageLease(const detail::LeaseManagementRequest &,
   };
   return response;
 }
-OperationResult FourierDdsTransport::requestFsmState(uint32_t) {
+OperationResult FourierDdsTransport::requestFsmState(uint32_t state_id) {
+  return requestFsmState(state_id, false);
+}
+OperationResult FourierDdsTransport::requestFsmState(uint32_t, bool) {
   return OperationResult{
       result_codes::CLIENT_NOT_RUNNING,
       std::string(defaultResultMessage(result_codes::CLIENT_NOT_RUNNING)),
@@ -1726,8 +1766,9 @@ public:
     return transport_->manageLease(request, timeout_ms);
   }
 
-  OperationResult requestFsmState(uint32_t state_id) override {
-    return transport_->requestFsmState(state_id);
+  OperationResult requestFsmState(uint32_t state_id,
+                                  bool force_switch) override {
+    return transport_->requestFsmState(state_id, force_switch);
   }
 
   EndpointMatchStatus endpointMatchStatus() const override {

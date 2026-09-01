@@ -305,15 +305,16 @@ void bind_client(py::module_ &m) {
                  });
            })
       .def("request_fsm_state",
-           [](sdk::AuroraClient &client, const py::object &state_id) {
+           [](sdk::AuroraClient &client, const py::object &state_id,
+              bool force_switch) {
              const auto native_state_id = requireUint32(state_id, "state_id");
              sdk::OperationResult result;
              {
                py::gil_scoped_release release;
-               result = client.requestFsmState(native_state_id);
+               result = client.requestFsmState(native_state_id, force_switch);
              }
              return result;
-           })
+           }, py::arg("state_id"), py::arg("force_switch") = false)
       .def("set_velocity", &sdk::AuroraClient::setVelocity, py::arg("vx"),
            py::arg("vy"), py::arg("yaw"), py::arg("duration"),
            py::arg("gait_type") = 0)

@@ -37,6 +37,7 @@ enum class ReadMode { Get, Monitor };
 struct StateCommand {
   enum class Action { Get, List, Request, Monitor } action;
   uint32_t state_id = 0;
+  bool force_switch = false;
   std::chrono::milliseconds interval = kDefaultMonitorInterval;
 };
 
@@ -88,7 +89,7 @@ void printStateHelp(std::ostream &output) {
          << "\nCommands:\n"
          << "  get                         Print current Aurora state\n"
          << "  list                        Print advertised FSM states\n"
-         << "  set <state-id>              Request an FSM transition\n"
+         << "  set <state-id> [--force]    Request an FSM transition\n"
          << "  monitor [--interval <time>] Monitor state (default: 500ms)\n";
 }
 
@@ -141,7 +142,9 @@ bool printCommandHelp(const std::string &area, const std::string &command,
       return true;
     }
     if (command == "set") {
-      output << "Usage: aurora-client [global options] state set <state-id>\n";
+      output << "Usage: aurora-client [global options] state set <state-id> "
+                "[--force]\n"
+             << "  --force  Skip target task enter_check() calls\n";
       return true;
     }
     if (command == "monitor") {
@@ -348,9 +351,25 @@ bool parseState(const std::vector<std::string> &args, StateCommand &parsed,
     return true;
   }
   if (action == "set") {
-    if (options.size() != 1 ||
-        !client_example::parseUint32(options.front(), parsed.state_id)) {
-      error = "state set requires one uint32 state ID";
+    bool state_id_seen = false;
+    for (const auto &option : options) {
+      if (option == "--force") {
+        if (parsed.force_switch) {
+          error = "--force specified more than once";
+          return false;
+        }
+        parsed.force_switch = true;
+        continue;
+      }
+      if (state_id_seen ||
+          !client_example::parseUint32(option, parsed.state_id)) {
+        error = "state set requires one uint32 state ID and optional --force";
+        return false;
+      }
+      state_id_seen = true;
+    }
+    if (!state_id_seen) {
+      error = "state set requires one uint32 state ID and optional --force";
       return false;
     }
     parsed.action = StateCommand::Action::Request;
@@ -897,7 +916,8 @@ int setPositions(sdk::AuroraClient &client, const ControlGroupCommand &parsed) {
 
 int execute(sdk::AuroraClient &client, const StateCommand &command) {
   if (command.action == StateCommand::Action::Request) {
-    const auto result = client.requestFsmState(command.state_id);
+    const auto result =
+        client.requestFsmState(command.state_id, command.force_switch);
     client_example::printResult("requestFsmState", result, std::cout);
     return result.success() ? client_example::kSuccess
                             : client_example::kRuntimeFailure;
