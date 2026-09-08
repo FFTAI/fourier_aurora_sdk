@@ -5,3 +5,4 @@
 __pycache__/
 *.so
 dist/
+/fcb-output/
