@@ -1,68 +1,153 @@
 # Fourier Aurora SDK
 
-This is the SDK repository for **Fourier Aurora** *(Advanced Unified Robot Operation and Resource Architecture)*.
+[中文](README_CN.md)
 
-If you are new to Aurora, please refer to the fourier document center to learn about the system:
+Fourier Aurora SDK 1.0.1 is the C++17 and Python client library for reading
+Aurora robot state and sending commands over FourierDDS. Applications use
+SDK-owned types; generated DDS messages stay behind the SDK boundary.
 
-- [Fourier Document Center](https://support.fftai.com)
+## Choose a package
 
-## v1.3.0 Release
+- Install the `fourier-aurora-sdk` Debian package for C++ headers, the shared
+  library, CMake package files, diagnostic clients, and GR3 examples.
+- Install the `fourier-aurora-client` wheel for the Python package
+  `fourier_aurora_client`.
+- Build from source when developing the SDK or producing packages for a
+  deployment. See the [SDK overview and build guide](docs/overview.md).
 
-Support Robots:
+The matching `fourier_dds` and `fourier-dds-msgs` runtime packages must be
+installed first. The supported revisions are recorded in `REVISIONS.yaml`.
 
-- GR-1P
-- GR-2
-- GR-3
-- Fourier-N1
+## Python quick start: read robot state
 
-Prerequisites:
+Install the wheel supplied for your platform, then create only the endpoints
+your program uses:
 
-- Actuator version:
-  - Communication firmware version 0.3.12.31 or above.
-  - Driver firmware version 0.2.10.30 or above.
-  - NOTE: Actuator version can be upgraded using **FSA Assistant**. Click [FSA Assistant for Linux](https://fsa-1302548221.cos.ap-shanghai.myqcloud.com/tool/FSA_Assistant/FSA_Assistant_V0.0.1.24_155_31_x64_Linux_2025-07-08.tar.gz) to download the latest version.
- 
-## Repository Structure
-
-```
-fourier_aurora_sdk/
-├── config/               # Configuration files
-│   └── config.yaml      # Main configuration file
-├── python/              # Python SDK
-│   ├── example/        # Example scripts for each robot model
-│   │   ├── fouriern1/  # Fourier-N1 examples
-│   │   ├── gr1p/       # GR-1P examples
-│   │   ├── gr2/        # GR-2 examples
-│   │   └── gr3/        # GR-3 examples
-│   └── docs/           # API documentation
-│       ├── CN/         # Chinese API docs
-│       └── EN/         # English API docs
-├── sim/                 # Simulation tools
-│   └── mujoco/         # MuJoCo simulator integration
-├── docker_run.bash      # Docker run script
-├── LICENSE              # Apache 2.0 License
-├── README.md            # This file
-├── README_CN.md         # Chinese README
-├── CHANGELOG            # Version history
-└── VERSION              # Current version
+```bash
+python3 -m pip install fourier_aurora_client-1.0.1-*.whl
 ```
 
-## Installation
+```python
+from fourier_aurora_client import AuroraClient, Endpoint
 
-### Aurora
+client = AuroraClient.get_instance()
+options = client.config()
+options.domain_id = 123
+options.enabled_endpoints = [Endpoint.AURORA_STATE_SUBSCRIBER]
+client.configure(options)
 
-please refer to [Fourier Document Center](https://support.fftai.com).
+try:
+    client.start()
+    if not client.wait_for_endpoints(5.0):
+        raise RuntimeError("Aurora state endpoint did not match")
 
-## Fourier Aurora Client
-
+    result, state = client.get_aurora_state()
+    if not result.success():
+        raise RuntimeError(f"[{result.code}] {result.message}")
+    print(state.robot_info.robot_type, state.current_state.name)
+finally:
+    client.stop()
 ```
-pip install fourier_aurora_client==0.1.8
+
+Python timeout values are seconds. `Running` means the local transport has
+started; use `wait_for_endpoints()` to check DDS discovery. A matched endpoint
+still does not guarantee that the robot is ready to execute a command.
+
+## C++ quick start: read robot state
+
+After installing the Debian package, link the exported CMake target:
+
+```cmake
+find_package(fourier_aurora_sdk 1.0 CONFIG REQUIRED)
+target_link_libraries(my_app PRIVATE fourier_aurora_sdk::fourier_aurora_sdk)
+target_compile_features(my_app PRIVATE cxx_std_17)
 ```
 
-## Issues
+```cpp
+#include <chrono>
+#include <iostream>
+#include "fourier_aurora_sdk/aurora_client.hpp"
 
-Please report any issues or bugs! We will do our best to fix them.
+namespace sdk = fourier::aurora_sdk;
+
+int main() {
+    auto& client = sdk::AuroraClient::getInstance();
+    auto options = client.config();
+    options.domain_id = 123;
+    options.source_name = "state-reader";
+    options.enabled_endpoints = {sdk::Endpoint::AuroraStateSubscriber};
+    client.configure(options);
+
+    try {
+        client.start();
+        if (!client.waitForEndpoints(std::chrono::seconds(5))) {
+            client.stop();
+            return 1;
+        }
+        sdk::AuroraState state;
+        const auto result = client.getAuroraState(state);
+        if (result.success()) {
+            std::cout << state.robot_info.robot_type << " "
+                      << state.current_state.name << "\n";
+        }
+        client.stop();
+        return result.success() ? 0 : 1;
+    } catch (...) {
+        try { client.stop(); } catch (...) {}
+        throw;
+    }
+}
+```
+
+C++ timeout values use `std::chrono`. Call `stop()` explicitly during normal
+shutdown.
+
+## Sending a protected command
+
+Motion, control-group, and temporary motor-configuration publishers require a
+control lease. Every direct SDK client supplies a human-readable `source_name`
+matching `[A-Za-z0-9._-]{1,64}`. Use distinct names for concurrently running
+modules so that authority state and logs remain unambiguous.
+
+```cpp
+options.source_name = "walking-controller";
+options.enabled_endpoints = {
+    sdk::Endpoint::ManageLeaseService,
+    sdk::Endpoint::MotionCommandPublisher,
+};
+client.configure(options);
+client.start();
+client.waitForEndpoints(std::chrono::seconds(5));
+
+const auto lease = client.registerLease({sdk::AuroraResource::MotionCommand});
+if (lease.usable()) {
+    const auto result = client.setVelocity(0.1, 0.0, 0.0, 1.0);
+}
+client.releaseLease();
+client.stop();
+```
+
+The SDK automatically renews an active lease. `replaceLease()` atomically asks
+for a new complete resource set; a definitive rejection preserves the old
+lease while it remains valid. Lease state is memory-only and is not recovered
+after process restart.
+
+Local publish success only means DDS accepted the sample. Observe Aurora state
+and error telemetry to determine the robot outcome. Keep the robot supported,
+clear the work area, and test control changes at conservative limits.
+
+## Documentation
+
+- [SDK overview, architecture, dependencies, and build guide](docs/overview.md)
+- [C++ API reference](docs/cpp_api.md)
+- [Python API reference](docs/python_api.md)
+- [Examples and diagnostic clients](docs/examples_and_clients.md)
+- [中文文档入口](README_CN.md)
+
+Design records, implementation contracts, test profiles, and release work are
+kept in the source tree under `docs/internal/`. They are maintainer material,
+not a supported application API and are not installed with binary packages.
 
 ## License
 
-[Apache 2.0](LICENSE) © Fourier
+[Apache License 2.0](LICENSE)

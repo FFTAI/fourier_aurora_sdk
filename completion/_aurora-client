@@ -1,0 +1,61 @@
+#compdef aurora-client
+
+local area command word
+local -a choices
+
+for word in ${words[2,-1]}; do
+  case ${word} in
+    state|estimator|motion|control-group)
+      [[ -z ${area} ]] && area=${word}
+      ;;
+    get|list|set|monitor)
+      [[ -n ${area} && -z ${command} ]] && command=${word}
+      ;;
+  esac
+done
+
+if [[ -z ${area} ]]; then
+  _values 'area or global option' \
+    'state[Aurora and FSM state]' \
+    'estimator[read-only estimator telemetry]' \
+    'motion[motion state and commands]' \
+    'control-group[control-group state and commands]' \
+    '-d[DDS domain ID]' '--domain_id[DDS domain ID]' \
+    '-s[Source Name]' '--source_name[Source Name]' \
+    '-h[show help]' '--help[show help]' '--version[show version]'
+  return
+fi
+
+if [[ -z ${command} ]]; then
+  case ${area} in
+    state) choices=(get list set monitor) ;;
+    estimator) choices=(get monitor) ;;
+    motion) choices=(get monitor set) ;;
+    control-group) choices=(get monitor set) ;;
+  esac
+  _values 'command or global option' ${choices} \
+    '-d[DDS domain ID]' '--domain_id[DDS domain ID]' \
+    '-s[Source Name]' '--source_name[Source Name]' \
+    '-h[show help]' '--help[show help]'
+  return
+fi
+
+choices=(-d --domain_id -s --source_name -h --help)
+case ${command} in
+  monitor) choices+=(--interval) ;;
+  set)
+    case ${area} in
+      state) choices+=(--force) ;;
+      motion)
+        choices+=(--position --linear-velocity --attitude --angular-velocity
+          --delta-height --gait-type --skills --duration)
+        ;;
+      control-group) choices+=(--target --duration --rate) ;;
+    esac
+    ;;
+esac
+if [[ ${words[CURRENT-1]} == --target ]]; then
+  choices=(left_leg right_leg waist head left_manipulator right_manipulator
+    left_end_effector right_end_effector)
+fi
+_values 'option' ${choices}

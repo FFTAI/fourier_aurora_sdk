@@ -1,0 +1,29 @@
+#pragma once
+
+#include "fourier_aurora_sdk/aurora_client.hpp"
+#include "mock_transport.hpp"
+
+namespace fourier::aurora_sdk::testing {
+
+inline AuroraClient& resetClientFixture() {
+    auto& client = AuroraClient::getInstance();
+    try {
+        client.stop();
+    } catch (...) {
+    }
+    client.onAuroraState({});
+    client.onMotionState({});
+    client.onControlGroupState({});
+    client.onMotorConfigurationState({});
+    client.onEstimatorData({});
+    client.onErrorCodes({});
+    client.onLeaseChanged({});
+    ConnectionOptions options;
+    options.domain_id = 123;
+    options.source_name = "test-client";
+    client.configure(options);
+    resetMockTransportFixture();
+    return client;
+}
+
+}  // namespace fourier::aurora_sdk::testing

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["scikit-build-core>=0.9.10", "pybind11>=2.13.6"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "fourier-aurora-client"
+dynamic = ["version"]
+description = "Aurora C++ SDK with Python bindings"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10,<3.14"
+
+[tool.scikit-build]
+minimum-version = "0.9"
+cmake.version = ">=3.16"
+wheel.packages = ["python/fourier_aurora_client"]
+sdist.include = [
+  "VERSION",
+  "LICENSE",
+  "README.md",
+  "README_CN.md",
+  "CHANGELOG",
+  "docs/*.md",
+]
+
+[tool.scikit-build.metadata.version]
+provider = "scikit_build_core.metadata.regex"
+input = "VERSION"
+regex = "^(?P<value>[0-9]+\\.[0-9]+\\.[0-9]+)\\n?$"

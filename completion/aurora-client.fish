@@ -1,0 +1,28 @@
+complete -c aurora-client -s d -l domain_id -r -d 'DDS domain ID (default: 123)'
+complete -c aurora-client -s s -l source_name -r -d 'Source Name (default: aurora-client-NNNN)'
+complete -c aurora-client -s h -l help -d 'Show help'
+complete -c aurora-client -l version -d 'Show version'
+
+complete -c aurora-client -n 'not __fish_seen_subcommand_from state estimator motion control-group' -a state -d 'Aurora and FSM state'
+complete -c aurora-client -n 'not __fish_seen_subcommand_from state estimator motion control-group' -a estimator -d 'Estimator telemetry'
+complete -c aurora-client -n 'not __fish_seen_subcommand_from state estimator motion control-group' -a motion -d 'Motion state and commands'
+complete -c aurora-client -n 'not __fish_seen_subcommand_from state estimator motion control-group' -a control-group -d 'Control-group state and commands'
+
+complete -c aurora-client -n '__fish_seen_subcommand_from state; and not __fish_seen_subcommand_from get list set monitor' -a 'get list set monitor'
+complete -c aurora-client -n '__fish_seen_subcommand_from estimator; and not __fish_seen_subcommand_from get monitor' -a 'get monitor'
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and not __fish_seen_subcommand_from get monitor set' -a 'get monitor set'
+complete -c aurora-client -n '__fish_seen_subcommand_from control-group; and not __fish_seen_subcommand_from get monitor set' -a 'get monitor set'
+
+complete -c aurora-client -n '__fish_seen_subcommand_from monitor' -l interval -r -d 'Polling interval (default: 500ms)'
+complete -c aurora-client -n '__fish_seen_subcommand_from state; and __fish_seen_subcommand_from set' -l force -d 'Skip target task enter_check() calls'
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l position -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l linear-velocity -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l attitude -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l angular-velocity -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l delta-height -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l gait-type -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l skills -r
+complete -c aurora-client -n '__fish_seen_subcommand_from motion; and __fish_seen_subcommand_from set' -l duration -r
+complete -c aurora-client -n '__fish_seen_subcommand_from control-group; and __fish_seen_subcommand_from set' -l target -r -a 'left_leg right_leg waist head left_manipulator right_manipulator left_end_effector right_end_effector'
+complete -c aurora-client -n '__fish_seen_subcommand_from control-group; and __fish_seen_subcommand_from set' -l duration -r
+complete -c aurora-client -n '__fish_seen_subcommand_from control-group; and __fish_seen_subcommand_from set' -l rate -r

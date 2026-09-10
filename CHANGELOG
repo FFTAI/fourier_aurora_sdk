@@ -1,31 +1,20 @@
-### Version v1.0.0.0
+### Version 1.0.1 (unreleased)
 
-- Initial release.
-
-### Version v1.1.0
-
- - Refactored version definition to match the format of other SDKs.
-
-### Version v1.2.0
-
-- Added support for GR-1P and GR-3 robots.
-- Updated installation instructions and Docker images.
-- Updated python client examples and documentation.
-- Removed custom controllers, refer to developer guide for details.
-
-### Version v1.2.1
-
-- Added support for Fourier-N1 robot.
-- Updated GR-1P Docker images to v1.2.3.
-- Updated GR-2 Docker image to v1.2.1.
-- Updated GR-3 Docker image to v1.2.1.
-- Updated installation instructions and Docker images.
-- Updated python client examples and documentation.
-
-### Version v1.3.0
-
-- Updated Fourier-N1 Docker image to v1.3.0.
-- Updated GR-2 Docker image to v1.3.0.
-- Updated GR-3 Docker image to v1.3.0.
-- Python client updated to v0.1.8.
-- Migrate documentation to fourier document center.
+- Refactored the SDK around one canonical C++ implementation and pybind11
+  bindings under the existing `fourier_aurora_client` import.
+- Added an explicit restartable singleton lifecycle, selective endpoints,
+  SDK-owned data types, robot-independent diagnostic clients, standalone GR3
+  recipes, and deterministic Debian and wheel verification.
+- Replaced numeric lease Source IDs with required, human-readable Source Names.
+- Reduced protected-command Lease Information to the authority-issued Lease ID
+  and per-stream sequence, and adopted the pod message namespace.
+- Added the `aurora-client-NNNN` convenience identity for the packaged CLI while
+  keeping Source Name explicit for direct C++ and Python callers.
+- Standardized robot-facing CLI writes as `state set`, `motion set`, and
+  `control-group set`.
+- Replaced the generic FSM `SetInt` service payload with attributed,
+  machine-readable state-switch requests and added explicit forced admission
+  through the C++, Python, and CLI clients.
+- Added separate standard-GIL CPython 3.10 through 3.13 Linux wheels.
+- Established the initial C++ ABI at `SOVERSION 1` and requires
+  `fourier-dds-msgs 0.2.0-1`.
