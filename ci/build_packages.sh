@@ -5,15 +5,28 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 dist_dir="${repo_root}/dist"
 jobs="${JOBS:-8}"
 arch="${ARCH:-amd64}"
+case "${arch}" in
+    amd64|x86_64) arch=amd64 ;;
+    arm64|aarch64) arch=arm64 ;;
+    *)
+        echo "Unsupported ARCH for the Fourier Aurora SDK CI recipe: ${arch}." >&2
+        exit 2
+        ;;
+esac
 python_versions="${FOURIER_AURORA_SDK_PY_VERSIONS:-3.10 3.11 3.12 3.13}"
+# arm64 按 thor 镜像（noble, python3.12）收敛为单 ABI；需要矩阵时用 env 覆盖。
+arm_python_versions="${FOURIER_AURORA_SDK_ARM_PY_VERSIONS:-3.12}"
 python_apt_repo="${FOURIER_AURORA_SDK_PYTHON_APT_REPO:-http://nexus.fftaicorp.com/repository/deadsnakes-ppa-ubuntu-jammy}"
 
-if [[ "${arch}" != "amd64" && "${arch}" != "x86_64" ]]; then
-    echo "The current Fourier Aurora SDK CI recipe supports amd64 only; received ARCH=${arch}." >&2
+if [[ ! -x "${repo_root}/scripts/build_deb.sh" ]]; then
+    echo "Fourier Aurora SDK package scripts are missing under ${repo_root}/scripts." >&2
     exit 2
 fi
-if [[ ! -x "${repo_root}/scripts/build_deb.sh" ||
-      ! -x "${repo_root}/scripts/build_wheel_x86_64.sh" ]]; then
+if [[ "${arch}" == "amd64" && ! -x "${repo_root}/scripts/build_wheel_x86_64.sh" ]]; then
+    echo "Fourier Aurora SDK package scripts are missing under ${repo_root}/scripts." >&2
+    exit 2
+fi
+if [[ "${arch}" == "arm64" && ! -x "${repo_root}/scripts/build_wheel_arm64.sh" ]]; then
     echo "Fourier Aurora SDK package scripts are missing under ${repo_root}/scripts." >&2
     exit 2
 fi
@@ -73,8 +86,6 @@ install_python_matrix() {
     done
 }
 
-install_python_matrix
-
 work_root="${FOURIER_AURORA_SDK_CI_ROOT:-/tmp/fourier-aurora-sdk-ci}"
 build_root="${work_root}/build"
 artifact_root="${work_root}/artifacts"
@@ -89,49 +100,102 @@ common_env=(
     "INCLUDE_COMMIT_HASH=${INCLUDE_COMMIT_HASH:-ON}"
     "JOBS=${jobs}"
 )
-env "${common_env[@]}" "${repo_root}/scripts/build_deb.sh"
 
-common_env[0]="ARTIFACT_ROOT=${artifact_root}/wheel"
-for python_version in ${python_versions}; do
-    python_tag="cp${python_version/./}"
-    venv_dir="${work_root}/venvs/${python_tag}"
-    "python${python_version}" -m venv "${venv_dir}"
-    "${venv_dir}/bin/python" -m pip install \
-        --disable-pip-version-check \
-        --no-compile \
-        --retries "${FOURIER_AURORA_SDK_PIP_RETRIES:-2}" \
-        --timeout "${FOURIER_AURORA_SDK_PIP_TIMEOUT:-120}" \
-        --upgrade \
-        "build==1.4.0" \
-        "cmake==3.22.1" \
-        "pybind11==3.0.4" \
-        "scikit-build-core==1.0.3"
-    "${venv_dir}/bin/python" -c "${dependency_check}"
-    env "${common_env[@]}" \
-        "PYTHON_BIN=${venv_dir}/bin/python" \
-        "${repo_root}/scripts/build_wheel_x86_64.sh"
-done
+if [[ "${arch}" == "arm64" ]]; then
+    # --- arm64 交叉流程 -----------------------------------------------------
+    # deb 经 toolchain 文件交叉编译（DDS 前缀由 FIND_ROOT_PATH re-root 到
+    # sysroot）；wheel 由 build_wheel_arm64.sh 直接驱动交叉编译器并按
+    # linux_aarch64 手工组装（scikit-build-core 只会按宿主解释器打标签）。
+    effective_sysroot="${FCB_SYSROOT:-${USER_SYSROOT:-${SYSROOT:-}}}"
+    if [[ -z "${effective_sysroot}" || ! -d "${effective_sysroot}" ]]; then
+        echo "arm64 cross build requires FCB_SYSROOT/USER_SYSROOT/SYSROOT pointing at the arm64 sysroot." >&2
+        exit 2
+    fi
 
-mapfile -t debs < <(find "${artifact_root}/deb" -type f -name 'fourier-aurora-sdk_*.deb' -print)
-mapfile -t wheels < <(find "${artifact_root}/wheel" -type f -name 'fourier_aurora_client-*.whl' -print)
-expected_wheel_count=0
-for python_version in ${python_versions}; do
-    expected_wheel_count=$((expected_wheel_count + 1))
-    python_tag="cp${python_version/./}"
-    matching_wheels=()
-    for wheel in "${wheels[@]}"; do
-        [[ "$(basename "${wheel}")" == *"-${python_tag}-${python_tag}-linux_x86_64.whl" ]] && \
-            matching_wheels+=("${wheel}")
-    done
-    if [[ "${#matching_wheels[@]}" -ne 1 ]]; then
-        echo "Expected exactly one ${python_tag} SDK wheel; found ${#matching_wheels[@]}." >&2
+    env "${common_env[@]}" "ARCH=arm64" "${repo_root}/scripts/build_deb.sh"
+
+    mapfile -t debs < <(find "${artifact_root}/deb" -type f -name 'fourier-aurora-sdk_*.deb' -print)
+    if [[ "${#debs[@]}" -ne 1 ]]; then
+        echo "Expected one arm64 SDK DEB; found ${#debs[@]}." >&2
         exit 1
     fi
-    "${repo_root}/scripts/check_wheel_package.sh" "${matching_wheels[0]}"
-done
-if [[ "${#debs[@]}" -ne 1 || "${#wheels[@]}" -ne "${expected_wheel_count}" ]]; then
-    echo "Expected one SDK DEB and ${expected_wheel_count} SDK wheels; found ${#debs[@]} DEB(s) and ${#wheels[@]} wheel(s)." >&2
-    exit 1
+
+    env "${common_env[@]}" \
+        "ARCH=arm64" \
+        "ARTIFACT_ROOT=${artifact_root}/wheel" \
+        "SDK_DEB=${debs[0]}" \
+        "FOURIER_AURORA_SDK_ARM_PY_VERSIONS=${arm_python_versions}" \
+        "${repo_root}/scripts/build_wheel_arm64.sh"
+
+    mapfile -t wheels < <(find "${artifact_root}/wheel" -type f -name 'fourier_aurora_client-*.whl' -print)
+    expected_wheel_count=0
+    for python_version in ${arm_python_versions}; do
+        expected_wheel_count=$((expected_wheel_count + 1))
+        python_tag="cp${python_version/./}"
+        matching_wheels=()
+        for wheel in "${wheels[@]}"; do
+            [[ "$(basename "${wheel}")" == *"-${python_tag}-${python_tag}-linux_aarch64.whl" ]] && \
+                matching_wheels+=("${wheel}")
+        done
+        if [[ "${#matching_wheels[@]}" -ne 1 ]]; then
+            echo "Expected exactly one ${python_tag} arm64 SDK wheel; found ${#matching_wheels[@]}." >&2
+            exit 1
+        fi
+        EXPECTED_PLATFORM=linux_aarch64 \
+            "${repo_root}/scripts/check_wheel_package.sh" "${matching_wheels[0]}"
+    done
+    if [[ "${#wheels[@]}" -ne "${expected_wheel_count}" ]]; then
+        echo "Expected ${expected_wheel_count} arm64 SDK wheel(s); found ${#wheels[@]}." >&2
+        exit 1
+    fi
+else
+    # --- amd64 原生流程 -----------------------------------------------------
+    install_python_matrix
+
+    env "${common_env[@]}" "${repo_root}/scripts/build_deb.sh"
+
+    common_env[0]="ARTIFACT_ROOT=${artifact_root}/wheel"
+    for python_version in ${python_versions}; do
+        python_tag="cp${python_version/./}"
+        venv_dir="${work_root}/venvs/${python_tag}"
+        "python${python_version}" -m venv "${venv_dir}"
+        "${venv_dir}/bin/python" -m pip install \
+            --disable-pip-version-check \
+            --no-compile \
+            --retries "${FOURIER_AURORA_SDK_PIP_RETRIES:-2}" \
+            --timeout "${FOURIER_AURORA_SDK_PIP_TIMEOUT:-120}" \
+            --upgrade \
+            "build==1.4.0" \
+            "cmake==3.22.1" \
+            "pybind11==3.0.4" \
+            "scikit-build-core==1.0.3"
+        "${venv_dir}/bin/python" -c "${dependency_check}"
+        env "${common_env[@]}" \
+            "PYTHON_BIN=${venv_dir}/bin/python" \
+            "${repo_root}/scripts/build_wheel_x86_64.sh"
+    done
+
+    mapfile -t debs < <(find "${artifact_root}/deb" -type f -name 'fourier-aurora-sdk_*.deb' -print)
+    mapfile -t wheels < <(find "${artifact_root}/wheel" -type f -name 'fourier_aurora_client-*.whl' -print)
+    expected_wheel_count=0
+    for python_version in ${python_versions}; do
+        expected_wheel_count=$((expected_wheel_count + 1))
+        python_tag="cp${python_version/./}"
+        matching_wheels=()
+        for wheel in "${wheels[@]}"; do
+            [[ "$(basename "${wheel}")" == *"-${python_tag}-${python_tag}-linux_x86_64.whl" ]] && \
+                matching_wheels+=("${wheel}")
+        done
+        if [[ "${#matching_wheels[@]}" -ne 1 ]]; then
+            echo "Expected exactly one ${python_tag} SDK wheel; found ${#matching_wheels[@]}." >&2
+            exit 1
+        fi
+        "${repo_root}/scripts/check_wheel_package.sh" "${matching_wheels[0]}"
+    done
+    if [[ "${#debs[@]}" -ne 1 || "${#wheels[@]}" -ne "${expected_wheel_count}" ]]; then
+        echo "Expected one SDK DEB and ${expected_wheel_count} SDK wheels; found ${#debs[@]} DEB(s) and ${#wheels[@]} wheel(s)." >&2
+        exit 1
+    fi
 fi
 
 cp "${debs[0]}" "${wheels[@]}" "${dist_dir}/"
