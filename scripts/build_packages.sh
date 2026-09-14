@@ -100,11 +100,15 @@ artifact_root="${work_root}/artifacts"
 rm -rf "${work_root}" "${dist_dir}"
 mkdir -p "${build_root}" "${artifact_root}/deb" "${artifact_root}/wheel" "${dist_dir}"
 
+# FCB may pass a sysroot symlink. Match the toolchain's canonical root so CMake
+# does not prepend that root again to an already staged dependency path.
+dds_prefix="$(realpath -e "${FOURIER_AURORA_SDK_DDS_PREFIX:-${SYSROOT:-}/opt/fftai}")"
+
 common_env=(
     "ARTIFACT_ROOT=${artifact_root}/deb"
     "BUILD_ROOT=${build_root}"
     "FOURIER_AURORA_SDK_COMMIT=${MODULE_HASH:-}"
-    "FOURIER_AURORA_SDK_DDS_PREFIX=${FOURIER_AURORA_SDK_DDS_PREFIX:-${SYSROOT:-}/opt/fftai}"
+    "FOURIER_AURORA_SDK_DDS_PREFIX=${dds_prefix}"
     "INCLUDE_COMMIT_HASH=${INCLUDE_COMMIT_HASH:-ON}"
     "JOBS=${jobs}"
 )
