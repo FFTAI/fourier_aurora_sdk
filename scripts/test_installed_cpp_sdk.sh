@@ -29,6 +29,7 @@ trap cleanup EXIT
 
 cmake -S "${project_root}/tests/installed" -B "${test_root}/consumer-build" \
     -DFOURIER_AURORA_SDK_PREFIX="${sdk_prefix}" \
+    -DCMAKE_EXE_LINKER_FLAGS="-Wl,-rpath-link,${dds_prefix}/lib -Wl,-rpath-link,${dds_prefix}/fourier_dds_msgs/lib" \
     -DCMAKE_FIND_USE_PACKAGE_REGISTRY=FALSE \
     -DCMAKE_FIND_USE_SYSTEM_PACKAGE_REGISTRY=FALSE
 cmake --build "${test_root}/consumer-build" --parallel "${JOBS:-4}"

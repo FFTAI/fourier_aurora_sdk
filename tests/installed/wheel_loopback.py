@@ -53,7 +53,7 @@ def main():
             time.sleep(0.05)
 
         result = client.request_fsm_state(13)
-        assert result.code == 213
+        assert result.success(), (result.code, result.message)
         assert result.message == "state=13"
 
         result = client.set_velocity(0.1, 0.0, 0.0, 0.1)

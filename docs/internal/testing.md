@@ -113,9 +113,30 @@ public names, subject to `release_checklist.md`.
 
 ## Coverage Limits
 
-Current package validation covers Linux amd64 C++ Debian and separate CPython
-3.10 through 3.13 wheels.
-Required arm64 artifacts are deferred to CI and require an approved arm64
-execution environment plus architecture-matched dependency packages. Hardware
-and real Aurora-runtime recipe validation are separate release records; local
-DDS loopback does not claim robot readiness or command execution.
+The amd64 CI recipe retains its separate CPython 3.10 through 3.13 wheels.
+The ARM64 recipe builds the ABI provided by the selected image's target SDK
+(`TARGET_PYTHON_VERSION`, Python 3.12 for the Thor Noble image). It rejects a
+requested Python version that lacks a matching target SDK rather than using
+host-only development headers. The host build interpreter must have the same
+major/minor version as the target; Python discovery for compiled bindings uses
+only the target development headers. No target interpreter is executed during
+cross compilation.
+
+Run `ARCH=arm64 JOBS=4 bash ci/build_packages.sh` inside the Thor cross image,
+after staging the manifest-pinned fourierddsmsgs and fourierdds DEBs into
+`SYSROOT`. The image must supply `CMAKE_TOOLCHAIN_FILE` and
+`TARGET_PYTHON_VERSION`; the recipe uses `${SYSROOT}/opt/fftai` by default.
+It generates an arm64 DEB and a `cp312-cp312-linux_aarch64` wheel for Thor.
+Both scripts validate the package architecture against the actual ELF objects.
+Use `INCLUDE_COMMIT_HASH=OFF` only for development iterations; final builds
+require a clean commit as described above.
+
+Validate runtime behavior on a native ARM64 Linux container matching the target
+OS: extract the DDS dependencies and SDK DEB into isolated prefixes, then run
+`test_installed_cpp_sdk.sh` and `test_python_wheel.sh` using those prefixes. The
+wheel checker accepts both x86_64 and aarch64 and checks ELF machine, tags,
+metadata, private-library loading, and exported content. The runtime tests
+exercise state subscription, lease registration, FSM RPC, and motion publishing
+against a local test peer. The peer supplies its own namespace and does not
+query a robot's BMS or configuration. Hardware and real Aurora-runtime acceptance
+remain separate; local DDS loopback does not establish robot readiness.

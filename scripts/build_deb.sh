@@ -85,6 +85,24 @@ if [[ "${#packages[@]}" -ne 1 ]]; then
 fi
 package="${artifact_dir}/$(basename "${packages[0]}")"
 cp -- "${packages[0]}" "${package}"
+case "${ARCH:-$(uname -m)}" in
+    amd64|x86_64) expected_arch=amd64; expected_machine="Advanced Micro Devices X86-64" ;;
+    arm64|aarch64) expected_arch=arm64; expected_machine=AArch64 ;;
+    *) echo "Unsupported package architecture: ${ARCH:-}" >&2; exit 2 ;;
+esac
+[[ "$(dpkg-deb -f "${package}" Architecture)" == "${expected_arch}" ]]
+check_dir="$(mktemp -d "${build_root%/}/sdk-deb-check.XXXXXX")"
+trap 'rm -rf "${check_dir}"' EXIT
+dpkg-deb -x "${package}" "${check_dir}"
+elf_count=0
+while IFS= read -r -d '' binary; do
+    if header="$(readelf -h "${binary}" 2>/dev/null)"; then
+        grep -Fq "${expected_machine}" <<< "${header}"
+        elf_count=$((elf_count + 1))
+    fi
+done < <(find "${check_dir}" -type f -print0)
+[[ "${elf_count}" -gt 0 ]]
+echo "DEB architecture verified: ${expected_arch}, ${elf_count} ELF files"
 
 echo "Built ${package}"
 echo "Build directory: ${build_dir}"

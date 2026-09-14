@@ -11,13 +11,14 @@ fi
 version="$(tr -d '[:space:]' < "${project_root}/VERSION")"
 version_regex="${version//./\\.}"
 filename="$(basename "${wheel}")"
-if [[ ! "${filename}" =~ ^fourier_aurora_client-${version_regex}(-1g[0-9a-f]{8})?-(cp(310|311|312|313))-(cp(310|311|312|313))-linux_x86_64\.whl$ ]]; then
+if [[ ! "${filename}" =~ ^fourier_aurora_client-${version_regex}(-1g[0-9a-f]{8})?-(cp(310|311|312|313))-(cp(310|311|312|313))-linux_(x86_64|aarch64)\.whl$ ]]; then
     echo "Unexpected wheel filename: ${filename}" >&2
     exit 1
 fi
 python_tag="${BASH_REMATCH[2]}"
 python_digits="${BASH_REMATCH[3]}"
 abi_tag="${BASH_REMATCH[4]}"
+wheel_arch="${BASH_REMATCH[6]}"
 if [[ "${python_tag}" != "${abi_tag}" ]]; then
     echo "Python and ABI tags must match: ${python_tag} != ${abi_tag}" >&2
     exit 1
@@ -39,7 +40,7 @@ dist_info="${extract_root}/fourier_aurora_client-${version}.dist-info"
 required_files=(
     "${package_dir}/__init__.py"
     "${package_dir}/client.py"
-    "${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-x86_64-linux-gnu.so"
+    "${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-${wheel_arch}-linux-gnu.so"
     "${package_dir}/libfourier_aurora_sdk.so.${soversion}"
     "${dist_info}/METADATA"
     "${dist_info}/WHEEL"
@@ -62,7 +63,7 @@ cmp "${project_root}/LICENSE" "${dist_info}/licenses/LICENSE"
 grep -Fq 'Name: fourier-aurora-client' "${dist_info}/METADATA"
 grep -Fq "Version: ${version}" "${dist_info}/METADATA"
 grep -Fq 'Requires-Python: <3.14,>=3.10' "${dist_info}/METADATA"
-grep -Fq "Tag: ${python_tag}-${abi_tag}-linux_x86_64" "${dist_info}/WHEEL"
+grep -Fq "Tag: ${python_tag}-${abi_tag}-linux_${wheel_arch}" "${dist_info}/WHEEL"
 
 if find "${extract_root}" -type f -print | grep -Eq '(/examples?/|/tests?/|mock_transport|client_tools|/include/)'; then
     echo "Wheel contains examples, tests, tools, or headers." >&2
@@ -77,8 +78,13 @@ while IFS= read -r entry; do
     fi
 done < <(find "${extract_root}" -type f -print)
 
-extension="${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-x86_64-linux-gnu.so"
+extension="${package_dir}/_fourier_aurora_sdk.cpython-${python_digits}-${wheel_arch}-linux-gnu.so"
 sdk_library="${package_dir}/libfourier_aurora_sdk.so.${soversion}"
+expected_machine="Advanced Micro Devices X86-64"
+[[ "${wheel_arch}" == aarch64 ]] && expected_machine=AArch64
+for binary in "${extension}" "${sdk_library}"; do
+    readelf -h "${binary}" | grep -Fq "${expected_machine}"
+done
 extension_dynamic="$(readelf -d "${extension}")"
 sdk_dynamic="$(readelf -d "${sdk_library}")"
 grep -Fq '(RUNPATH)' <<< "${extension_dynamic}"

@@ -233,8 +233,17 @@ if(NOT SKBUILD)
 endif()
 
 if(FOURIER_AURORA_SDK_BUILD_PYTHON)
-    find_package(Python COMPONENTS Interpreter Development REQUIRED)
-    set(_fourier_aurora_sdk_python "${Python_EXECUTABLE}")
+    if(CMAKE_CROSSCOMPILING)
+        # Python runs the build backend on the host; headers belong to the target.
+        find_package(Python COMPONENTS Development.Module REQUIRED)
+        if(NOT FOURIER_AURORA_SDK_HOST_PYTHON OR NOT FOURIER_AURORA_SDK_PYTHON_SUFFIX)
+            message(FATAL_ERROR "Cross Python builds require explicit host Python and target extension suffix")
+        endif()
+        set(_fourier_aurora_sdk_python "${FOURIER_AURORA_SDK_HOST_PYTHON}")
+    else()
+        find_package(Python COMPONENTS Interpreter Development REQUIRED)
+        set(_fourier_aurora_sdk_python "${Python_EXECUTABLE}")
+    endif()
     execute_process(
         COMMAND
             "${_fourier_aurora_sdk_python}" -m pybind11 --cmakedir
@@ -254,13 +263,17 @@ if(FOURIER_AURORA_SDK_BUILD_PYTHON)
     set(PYBIND11_FINDPYTHON ON)
     find_package(pybind11 2.13.6 CONFIG REQUIRED
         PATHS "${_fourier_aurora_sdk_pybind11_dir}"
-        NO_DEFAULT_PATH
+        NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
     )
     pybind11_add_module(_fourier_aurora_sdk
         python/bindings/module.cpp
         python/bindings/bind_client.cpp
         python/bindings/bind_types.cpp
     )
+    if(CMAKE_CROSSCOMPILING)
+        set_target_properties(_fourier_aurora_sdk PROPERTIES
+            SUFFIX "${FOURIER_AURORA_SDK_PYTHON_SUFFIX}")
+    endif()
     target_link_libraries(_fourier_aurora_sdk PRIVATE fourier_aurora_sdk)
     set_target_properties(_fourier_aurora_sdk PROPERTIES
         INSTALL_RPATH "$ORIGIN"
