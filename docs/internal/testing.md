@@ -122,10 +122,28 @@ major/minor version as the target; Python discovery for compiled bindings uses
 only the target development headers. No target interpreter is executed during
 cross compilation.
 
-Run `ARCH=arm64 JOBS=4 bash ci/build_packages.sh` inside the Thor cross image,
+Like Aurora, FCB enters through `ci/fcb_build.sh`: the shared helper normalizes
+architecture, sysroot and parallelism; the module adapter maps the toolchain and
+DDS prefix; `scripts/build_packages.sh` builds the packages; the helper collects
+both DEB and wheel into `fcb-output`. The manifest only selects this entrypoint.
+`FCB_TOOLCHAIN_FILE` takes precedence over the image's `CMAKE_TOOLCHAIN_FILE`.
+For ARM, the default DDS prefix is `${FCB_SYSROOT}/opt/fftai`; for amd64 it is
+`/opt/fftai`. An explicit `FOURIER_AURORA_SDK_DDS_PREFIX` overrides either default.
+
+For the same entrypoint used by CI, run:
+
+```bash
+FCB_HELPER_DIR=/path/to/fcb/shell FCB_ARCH=arm64 FCB_JOBS=4 \
+  FCB_SYSROOT="$SYSROOT" FCB_TOOLCHAIN_FILE="$CMAKE_TOOLCHAIN_FILE" \
+  bash ci/fcb_build.sh
+```
+
+For standalone packaging, run
+`ARCH=arm64 JOBS=4 bash scripts/build_packages.sh` inside the Thor cross image,
 after staging the manifest-pinned fourierddsmsgs and fourierdds DEBs into
 `SYSROOT`. The image must supply `CMAKE_TOOLCHAIN_FILE` and
 `TARGET_PYTHON_VERSION`; the recipe uses `${SYSROOT}/opt/fftai` by default.
+`ci/build_packages.sh` remains a compatibility wrapper for existing callers.
 It generates an arm64 DEB and a `cp312-cp312-linux_aarch64` wheel for Thor.
 Both scripts validate the package architecture against the actual ELF objects.
 Use `INCLUDE_COMMIT_HASH=OFF` only for development iterations; final builds
