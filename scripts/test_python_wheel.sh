@@ -15,13 +15,18 @@ if [[ -z "${dds_prefix}" || ! -d "${dds_prefix}" ]]; then
     exit 2
 fi
 filename="$(basename "${wheel}")"
-if [[ ! "${filename}" =~ -(cp(310|311|312|313))-(cp(310|311|312|313))-linux_x86_64\.whl$ ]]; then
+if [[ ! "${filename}" =~ -(cp(310|311|312|313))-(cp(310|311|312|313))-linux_(x86_64|aarch64)\.whl$ ]]; then
     echo "Cannot determine the supported CPython version from ${filename}." >&2
     exit 2
 fi
 wheel_python_tag="${BASH_REMATCH[1]}"
 wheel_python_digits="${BASH_REMATCH[2]}"
 wheel_abi_tag="${BASH_REMATCH[3]}"
+wheel_arch="${BASH_REMATCH[5]}"
+if [[ "$(uname -m)" != "${wheel_arch}" ]]; then
+    echo "Run the wheel runtime check on a native ${wheel_arch} host." >&2
+    exit 2
+fi
 if [[ "${wheel_python_tag}" != "${wheel_abi_tag}" ]]; then
     echo "Python and ABI tags must match: ${wheel_python_tag} != ${wheel_abi_tag}" >&2
     exit 2
@@ -70,7 +75,7 @@ cmake --build "${test_root}/build" --target dds_wheel_peer --parallel "${JOBS:-4
 
 site_packages="$("${test_root}/venv/bin/python" -c 'import sysconfig; print(sysconfig.get_path("platlib"))')"
 package_dir="${site_packages}/fourier_aurora_client"
-extension="${package_dir}/_fourier_aurora_sdk.cpython-${wheel_python_digits}-x86_64-linux-gnu.so"
+extension="${package_dir}/_fourier_aurora_sdk.cpython-${wheel_python_digits}-${wheel_arch}-linux-gnu.so"
 sdk_library="${package_dir}/libfourier_aurora_sdk.so.${soversion}"
 loader_path="${dds_prefix}/lib:${dds_prefix}/fourier_dds_msgs/lib:/usr/local/lib"
 

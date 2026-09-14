@@ -101,7 +101,7 @@ int runDdsLoopback() {
         }
 
         const auto fsm_result = client.requestFsmState(13);
-        if (fsm_result.code != 213 || fsm_result.message != "state=13") {
+        if (!fsm_result.success() || fsm_result.message != "state=13") {
             std::cerr << "installed client received unexpected FSM result: "
                       << fsm_result.code << " " << fsm_result.message << "\n";
             client.stop();

@@ -61,7 +61,7 @@ int main() {
         kDomainId,
         0,
         std::optional<bool>(false),
-        true,
+        false,  // Tests provide a namespace below; never query robot BMS/config.
         std::optional<bool>(false));
     node->setNamespace(kNamespace);
 

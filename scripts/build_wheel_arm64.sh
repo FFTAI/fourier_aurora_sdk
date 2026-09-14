@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
-
-echo "arm64 wheel build requires the internal arm64 sysroot and matching fourierdds packages." >&2
-exit 1
+export FOURIER_AURORA_SDK_WHEEL_ARCH=aarch64
+exec bash "$(dirname "$0")/build_wheel.sh"
