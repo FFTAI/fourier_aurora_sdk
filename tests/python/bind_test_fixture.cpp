@@ -36,6 +36,9 @@ void bind_test_fixture(py::module_& module) {
         state.stable_level = stable_level;
         requireSession()->injectMotionState(std::move(state));
     });
+    module.def("_testing_inject_estimator_data", [](const sdk::EstimatorData& state) {
+        requireSession()->injectEstimatorData(state);
+    });
     module.def(
         "_testing_set_fsm_result",
         [](uint32_t code, const std::string& message) {

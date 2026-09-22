@@ -189,7 +189,7 @@ ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 获得匹配的 DDS package，再安装：
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_1.0.1*.deb
+sudo apt install ./fourier-aurora-sdk_2.0.0*.deb
 ```
 
 ### 构建 Python wheel
@@ -229,7 +229,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python 应用
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-1.0.1-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-2.0.0-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 

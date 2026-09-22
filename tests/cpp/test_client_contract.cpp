@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "client_fixture.hpp"
+#include "internal/estimator_root_link.hpp"
 #include "test_harness.hpp"
 
 namespace sdk = fourier::aurora_sdk;
@@ -36,6 +37,19 @@ struct HasCartesianCommandMember<
     : std::true_type {};
 
 void testTraitsAndDefaults(testing::TestHarness &test) {
+  struct LegacyEstimatorMessage {};
+  struct CurrentEstimatorMessage {
+    std::string root_link() const { return "torso_link"; }
+  };
+  SDK_CHECK(test, sdk::detail::estimatorRootLink(LegacyEstimatorMessage{}, 0).empty());
+  SDK_CHECK(test, sdk::detail::estimatorRootLink(CurrentEstimatorMessage{}, 0) == "torso_link");
+  // The legacy positional initializer still starts with header and quaternion.
+  const sdk::EstimatorData legacy_estimator{{}, {0.0, 0.0, 0.0, 1.0}};
+  const sdk::BaseData legacy_base{{}, {0.0, 0.0, 0.0, 1.0}};
+  SDK_CHECK(test, legacy_estimator.root_link.empty());
+  SDK_CHECK(test, legacy_base.root_link.empty());
+  SDK_CHECK(test, legacy_estimator.quat_xyzw[3] == 1.0);
+  SDK_CHECK(test, legacy_base.quat_xyzw[3] == 1.0);
   static_assert(!std::is_copy_constructible_v<sdk::AuroraClient>);
   static_assert(!std::is_copy_assignable_v<sdk::AuroraClient>);
   static_assert(!std::is_move_constructible_v<sdk::AuroraClient>);
@@ -264,6 +278,8 @@ void testEndpointAndGetterSemantics(testing::TestHarness &test) {
                        "left_leg", static_cast<sdk::JointField>(99), values));
 
   sdk::EstimatorData estimator;
+  estimator.root_link = "torso_link";
+  estimator.header.frame_id = "world";
   estimator.rpy = {0.1, 0.2, 0.3};
   estimator.contact_force = {10.0, 20.0};
   estimator.stable_level = 8;
@@ -271,6 +287,11 @@ void testEndpointAndGetterSemantics(testing::TestHarness &test) {
   sdk::BaseData base;
   sdk::ContactData contacts;
   SDK_CHECK(test, client.getBaseData(base).success());
+  SDK_CHECK(test, base.root_link == "torso_link");
+  SDK_CHECK(test, base.header.frame_id == "world");
+  sdk::EstimatorData estimator_output;
+  SDK_CHECK(test, client.getEstimatorData(estimator_output).success());
+  SDK_CHECK(test, estimator_output.root_link == "torso_link");
   SDK_CHECK(test, base.rpy == estimator.rpy);
   SDK_CHECK(test, base.stable_level == 8);
   SDK_CHECK(test, client.getContactData(contacts).success());

@@ -6,6 +6,16 @@ import pytest
 import fourier_aurora_client as sdk
 
 
+@pytest.mark.parametrize("data_type", [sdk.EstimatorData, sdk.BaseData])
+def test_estimator_root_link_is_distinct_from_reference_frame(data_type):
+    data = data_type()
+    assert data.root_link == ""
+    data.header.frame_id = "world"
+    data.root_link = "torso_link"
+    assert data.root_link == "torso_link"
+    assert data.header.frame_id == "world"
+
+
 def test_singleton_wrapper_identity_and_defaults():
     client = sdk.AuroraClient.get_instance()
     assert client is sdk.AuroraClient.get_instance()

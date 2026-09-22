@@ -2,11 +2,20 @@
 
 [中文](README_CN.md)
 
-Fourier Aurora SDK 1.0.1 is the C++17 and Python client library for reading
+Fourier Aurora SDK 2.0.0 is the C++17 and Python client library for reading
 Aurora robot state and sending commands over FourierDDS. Applications use
 SDK-owned types; generated DDS messages stay behind the SDK boundary.
 
 ## Choose a package
+
+GRW support adds `root_link` to `EstimatorData` and its `BaseData` projection,
+accessible through the existing C++ and Python getters and C++ callbacks. It
+identifies the robot link being estimated, independently of `header.frame_id`.
+Existing API signatures and aggregate member order remain source-compatible;
+older generated DDS headers produce an empty string (legacy model-root pose).
+Native consumers must be rebuilt because the structs grew (SONAME 2).
+DDS runtimes and message packages must still match the publisher's schema;
+support for older headers does not imply interoperability between IDL versions.
 
 - Install the `fourier-aurora-sdk` Debian package for C++ headers, the shared
   library, CMake package files, diagnostic clients, and GR3 examples.
@@ -24,7 +33,7 @@ Install the wheel supplied for your platform, then create only the endpoints
 your program uses:
 
 ```bash
-python3 -m pip install fourier_aurora_client-1.0.1-*.whl
+python3 -m pip install fourier_aurora_client-2.0.0-*.whl
 ```
 
 ```python

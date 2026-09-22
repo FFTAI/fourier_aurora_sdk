@@ -1,3 +1,11 @@
+### Version 2.0.0 (unreleased)
+
+- Expose EstimatorData.root_link in C++/Python getters and C++ callbacks,
+  including the BaseData projection. Existing methods and positional aggregate
+  members remain source-compatible; older DDS headers yield an empty root_link.
+- Increase SONAME to 2 because the public estimator structs grow; rebuild
+  native consumers and Python extensions before using the new library.
+
 ### Version 1.0.1 (unreleased)
 
 - Refactored the SDK around one canonical C++ implementation and pybind11

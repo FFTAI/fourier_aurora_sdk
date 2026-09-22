@@ -80,6 +80,27 @@ def test_exact_fsm_result_passthrough():
     client.stop()
 
 
+def test_estimator_getters_preserve_root_link_and_legacy_empty_value():
+    client = sdk.AuroraClient.get_instance()
+    options = client.config()
+    options.enabled_endpoints = [sdk.Endpoint.ESTIMATOR_DATA_SUBSCRIBER]
+    client.configure(options)
+    client.start()
+    for root_link in ("torso_link", ""):
+        state = sdk.EstimatorData()
+        state.root_link = root_link
+        state.header.frame_id = "world"
+        state.pos_W = [1.0, 2.0, 3.0]
+        native._testing_inject_estimator_data(state)
+        for getter in (client.get_estimator_data, client.get_base_data):
+            result, data = getter()
+            assert result.success()
+            assert data.root_link == root_link
+            assert data.header.frame_id == "world"
+            assert data.pos_W == [1.0, 2.0, 3.0]
+    client.stop()
+
+
 def test_blocking_bindings_release_gil_in_bounded_subprocess():
     script = textwrap.dedent(
         """

@@ -1544,6 +1544,7 @@ OperationResult AuroraClient::getBaseData(BaseData &output) const {
 
   BaseData value;
   value.header = estimator.header;
+  value.root_link = estimator.root_link;
   value.quat_xyzw = estimator.quat_xyzw;
   value.quat_wxyz = estimator.quat_wxyz;
   value.rpy = estimator.rpy;

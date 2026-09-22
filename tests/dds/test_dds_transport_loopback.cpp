@@ -8,6 +8,7 @@
 #include "fourier_aurora_sdk/aurora_client.hpp"
 #include "fourier_aurora_sdk/transport/fourierdds_transport.hpp"
 #include "internal/transport.hpp"
+#include "internal/estimator_root_link.hpp"
 #include "fourier_dds/dds_node.hpp"
 #include "fourier_dds/dds_publisher.hpp"
 #include "fourier_dds/dds_server.hpp"
@@ -15,6 +16,8 @@
 
 #include "AuroraState/AuroraState.hpp"
 #include "AuroraState/AuroraStatePubSubTypes.hpp"
+#include "EstimatorData/EstimatorData.hpp"
+#include "EstimatorData/EstimatorDataPubSubTypes.hpp"
 #include "ManageLease/ManageLease.hpp"
 #include "ManageLease/ManageLeasePubSubTypes.hpp"
 #include "RobotMotionCmd/RobotMotionCmd.hpp"
@@ -35,6 +38,13 @@ using namespace std::chrono_literals;
 
 constexpr uint32_t kDomainId = 214;
 constexpr const char* kNamespace = "aurora_sdk_loopback";
+
+template <typename Message>
+auto setRootLink(Message& message, int) -> decltype(message.root_link("torso_link"), void()) {
+    message.root_link("torso_link");
+}
+template <typename Message>
+void setRootLink(Message&, ...) {}
 
 template <typename Predicate>
 bool waitUntil(Predicate&& predicate, std::chrono::milliseconds timeout) {
@@ -402,6 +412,35 @@ int main() {
             [&] { return plain_motion_samples.load() == 1; },
             3s));
     plain_direct.stop();
+
+    auto estimator_options = directOptions();
+    estimator_options.enabled_endpoints = {sdk::Endpoint::EstimatorDataSubscriber};
+    sdk::FourierDdsTransport estimator_transport(estimator_options);
+    fourier_dds::DdsPublisher<dds_msg::EstimatorDataPubSubType> estimator_publisher(
+        makePeerNode(true), "aurora/estimator_data");
+    std::atomic<bool> received_root{false};
+    dds_msg::EstimatorData estimator;
+    setRootLink(estimator, 0);
+    const auto expected_root = sdk::detail::estimatorRootLink(estimator, 0);
+    estimator_transport.setEstimatorDataHandler([&](sdk::EstimatorData data) {
+        received_root.store(data.root_link == expected_root && data.header.frame_id == "world");
+    });
+    estimator.header().frame_id("world");
+    estimator.quat_xyzw({0.0, 0.0, 0.0, 1.0});
+    estimator.quat_wxyz({1.0, 0.0, 0.0, 0.0});
+    estimator.rpy({0.0, 0.0, 0.0});
+    estimator.omega_W({0.0, 0.0, 0.0});
+    estimator.acc_W({0.0, 0.0, 0.0});
+    estimator.omega_B({0.0, 0.0, 0.0});
+    estimator.acc_B({0.0, 0.0, 0.0});
+    estimator.vel_W({0.0, 0.0, 0.0});
+    estimator.pos_W({0.0, 0.0, 1.0});
+    estimator.vel_B({0.0, 0.0, 0.0});
+    SDK_CHECK(test, waitUntil([&] {
+        estimator_publisher.publish(estimator);
+        return received_root.load();
+    }, 5s));
+    estimator_transport.stop();
 
     return test.result();
 }

@@ -205,7 +205,7 @@ The output is named
 matching DDS packages available:
 
 ```bash
-sudo apt install ./fourier-aurora-sdk_1.0.1*.deb
+sudo apt install ./fourier-aurora-sdk_2.0.0*.deb
 ```
 
 ### Build a Python wheel
@@ -247,7 +247,7 @@ target_compile_features(app PRIVATE cxx_std_17)
 ### Python consumer
 
 ```bash
-python3 -m pip install /path/to/fourier_aurora_client-1.0.1-*.whl
+python3 -m pip install /path/to/fourier_aurora_client-2.0.0-*.whl
 python3 -c 'import fourier_aurora_client; print("Aurora SDK ready")'
 ```
 

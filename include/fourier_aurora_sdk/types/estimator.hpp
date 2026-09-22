@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "fourier_aurora_sdk/types/common.hpp"
@@ -21,6 +22,9 @@ struct BaseData {
     std::array<double, 3> pos_W{0.0, 0.0, 0.0};
     std::array<double, 3> vel_B{0.0, 0.0, 0.0};
     uint8_t stable_level = 0;
+    // Appended to preserve existing aggregate initializers. Empty for legacy messages.
+    // Robot link whose pose is estimated; distinct from header.frame_id.
+    std::string root_link;
 };
 
 struct ContactData {
@@ -44,6 +48,9 @@ struct EstimatorData {
     std::vector<double> contact_force;
     std::vector<double> contact_prob;
     uint8_t stable_level = 0;
+    // Appended to preserve existing aggregate initializers. Empty for legacy messages.
+    // Robot link whose pose is estimated; distinct from header.frame_id.
+    std::string root_link;
 };
 
 }  // namespace fourier::aurora_sdk
