@@ -16,9 +16,13 @@ fi
 grep -Fq 'dynamic = ["version"]' "${project_root}/pyproject.toml"
 grep -Fq 'provider = "scikit_build_core.metadata.regex"' "${project_root}/pyproject.toml"
 grep -Fq 'input = "VERSION"' "${project_root}/pyproject.toml"
-version_major="${version%%.*}"
-grep -Eq "set\\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+${version_major}\\)" \
-    "${project_root}/CMakeLists.txt"
+# Package releases and binary ABI have independent versions. In particular,
+# 1.0.2 appends estimator fields and uses ABI 2 while preserving source APIs.
+soversion="$(sed -nE 's/^[[:space:]]*set\(FOURIER_AURORA_SDK_SOVERSION[[:space:]]+([0-9]+)\).*$/\1/p' "${project_root}/CMakeLists.txt")"
+[[ "${soversion}" =~ ^[0-9]+$ ]] || {
+    echo "FOURIER_AURORA_SDK_SOVERSION must be an explicit numeric ABI version." >&2
+    exit 1
+}
 grep -Fq "### Version ${version} (unreleased)" "${project_root}/CHANGELOG"
 
 build_root="${BUILD_ROOT:-/tmp}"

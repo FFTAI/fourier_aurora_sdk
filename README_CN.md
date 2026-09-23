@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-Fourier Aurora SDK 2.0.0 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
+Fourier Aurora SDK 1.0.2 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制
 命令的 C++17/Python 客户端库。应用只接触 SDK 自有类型，生成的 DDS 消息类型
 不会暴露到 SDK 边界之外。
 
@@ -13,7 +13,7 @@ GRW 扩展：`getEstimatorData()` / Python `get_estimator_data()` 返回的
 `get_base_data()` 也保留该字段；它与 `header.frame_id` 的参考坐标系不同。
 原有 getter、回调签名和字段保持不变，新字段追加在结构体末尾，旧 DDS 消息
 头文件没有此字段时返回空字符串。console 对空值沿用模型根位姿解释。
-SDK 2.0.0 保持源码 API 兼容，但结构体大小发生变化，C++ 应用和 Python 原生
+SDK 1.0.2 保持源码 API 兼容，但结构体大小发生变化，C++ 应用和 Python 原生
 扩展需重新编译（SONAME 升至 2）。DDS runtime 和消息包仍须与发布端匹配；
 兼容旧头文件不表示不同 IDL 版本可以直接互通。
 
@@ -38,7 +38,7 @@ if result.success():
 安装与你的平台匹配的 wheel，并且只创建程序实际需要的 endpoint：
 
 ```bash
-python3 -m pip install fourier_aurora_client-2.0.0-*.whl
+python3 -m pip install fourier_aurora_client-1.0.2-*.whl
 ```
 
 ```python

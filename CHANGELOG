@@ -1,4 +1,4 @@
-### Version 2.0.0 (unreleased)
+### Version 1.0.2 (unreleased)
 
 - Expose EstimatorData.root_link in C++/Python getters and C++ callbacks,
   including the BaseData projection. Existing methods and positional aggregate

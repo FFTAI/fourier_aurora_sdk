@@ -66,7 +66,7 @@ set(FOURIER_AURORA_SDK_DDS_PREFIX "/opt/fftai" CACHE PATH
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-# Estimator structs grew in 2.0.0; preserve source API, separate binary ABI.
+# Estimator structs grew in 1.0.2; preserve source API, separate binary ABI.
 set(FOURIER_AURORA_SDK_SOVERSION 2)
 
 add_library(fourier_aurora_sdk SHARED
