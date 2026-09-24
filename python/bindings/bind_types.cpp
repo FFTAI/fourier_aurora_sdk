@@ -261,7 +261,8 @@ void bind_types(py::module_ &m) {
       .def_readwrite("vel_B", &sdk::EstimatorData::vel_B)
       .def_readwrite("contact_force", &sdk::EstimatorData::contact_force)
       .def_readwrite("contact_prob", &sdk::EstimatorData::contact_prob)
-      .def_readwrite("stable_level", &sdk::EstimatorData::stable_level);
+      .def_readwrite("stable_level", &sdk::EstimatorData::stable_level)
+      .def_readwrite("hanging_level", &sdk::EstimatorData::hanging_level);
 
   py::class_<sdk::GroupOverrideParam>(m, "GroupOverrideParam")
       .def(py::init<>())

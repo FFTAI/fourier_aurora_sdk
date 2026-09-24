@@ -20,6 +20,7 @@
 #include "internal/callback_context.hpp"
 #include "internal/connection_options.hpp"
 #include "internal/estimator_root_link.hpp"
+#include "internal/estimator_hanging_level.hpp"
 #include "internal/teardown_coordinator.hpp"
 #include "internal/transport.hpp"
 
@@ -337,6 +338,7 @@ EstimatorData convertEstimatorData(const dds_msg::EstimatorData &msg) {
   EstimatorData out;
   out.header = convertHeader(msg.header(), received_time);
   out.root_link = detail::estimatorRootLink(msg, 0);
+  out.hanging_level = detail::estimatorHangingLevel(msg, 0);
   out.quat_xyzw = toArray<4>(msg.quat_xyzw(), "EstimatorData.quat_xyzw");
   out.quat_wxyz = toArray<4>(msg.quat_wxyz(), "EstimatorData.quat_wxyz");
   out.rpy = toArray<3>(msg.rpy(), "EstimatorData.rpy");

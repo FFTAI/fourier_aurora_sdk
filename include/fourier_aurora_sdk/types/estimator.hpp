@@ -51,6 +51,8 @@ struct EstimatorData {
     // Appended to preserve existing aggregate initializers. Empty for legacy messages.
     // Robot link whose pose is estimated; distinct from header.frame_id.
     std::string root_link;
+    // kindyn hanging_level * 0.1 (currently 0~50); zero for legacy messages.
+    uint8_t hanging_level = 0;
 };
 
 }  // namespace fourier::aurora_sdk

@@ -9,6 +9,7 @@
 #include "fourier_aurora_sdk/transport/fourierdds_transport.hpp"
 #include "internal/transport.hpp"
 #include "internal/estimator_root_link.hpp"
+#include "internal/estimator_hanging_level.hpp"
 #include "fourier_dds/dds_node.hpp"
 #include "fourier_dds/dds_publisher.hpp"
 #include "fourier_dds/dds_server.hpp"
@@ -45,6 +46,13 @@ auto setRootLink(Message& message, int) -> decltype(message.root_link("torso_lin
 }
 template <typename Message>
 void setRootLink(Message&, ...) {}
+
+template <typename Message>
+auto setHangingLevel(Message& message, int) -> decltype(message.hanging_level(50), void()) {
+    message.hanging_level(50);
+}
+template <typename Message>
+void setHangingLevel(Message&, ...) {}
 
 template <typename Predicate>
 bool waitUntil(Predicate&& predicate, std::chrono::milliseconds timeout) {
@@ -421,9 +429,12 @@ int main() {
     std::atomic<bool> received_root{false};
     dds_msg::EstimatorData estimator;
     setRootLink(estimator, 0);
+    setHangingLevel(estimator, 0);
     const auto expected_root = sdk::detail::estimatorRootLink(estimator, 0);
+    const auto expected_hanging = sdk::detail::estimatorHangingLevel(estimator, 0);
     estimator_transport.setEstimatorDataHandler([&](sdk::EstimatorData data) {
-        received_root.store(data.root_link == expected_root && data.header.frame_id == "world");
+        received_root.store(data.root_link == expected_root && data.header.frame_id == "world"
+                            && data.hanging_level == expected_hanging);
     });
     estimator.header().frame_id("world");
     estimator.quat_xyzw({0.0, 0.0, 0.0, 1.0});

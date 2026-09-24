@@ -89,9 +89,14 @@ def test_estimator_getters_preserve_root_link_and_legacy_empty_value():
     for root_link in ("torso_link", ""):
         state = sdk.EstimatorData()
         state.root_link = root_link
+        assert state.hanging_level == 0
+        state.hanging_level = 37
         state.header.frame_id = "world"
         state.pos_W = [1.0, 2.0, 3.0]
         native._testing_inject_estimator_data(state)
+        result, estimator = client.get_estimator_data()
+        assert result.success()
+        assert estimator.hanging_level == 37
         for getter in (client.get_estimator_data, client.get_base_data):
             result, data = getter()
             assert result.success()

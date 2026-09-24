@@ -10,6 +10,7 @@
 
 #include "client_fixture.hpp"
 #include "internal/estimator_root_link.hpp"
+#include "internal/estimator_hanging_level.hpp"
 #include "test_harness.hpp"
 
 namespace sdk = fourier::aurora_sdk;
@@ -40,13 +41,17 @@ void testTraitsAndDefaults(testing::TestHarness &test) {
   struct LegacyEstimatorMessage {};
   struct CurrentEstimatorMessage {
     std::string root_link() const { return "torso_link"; }
+    uint8_t hanging_level() const { return 50; }
   };
+  SDK_CHECK(test, sdk::detail::estimatorHangingLevel(LegacyEstimatorMessage{}, 0) == 0);
+  SDK_CHECK(test, sdk::detail::estimatorHangingLevel(CurrentEstimatorMessage{}, 0) == 50);
   SDK_CHECK(test, sdk::detail::estimatorRootLink(LegacyEstimatorMessage{}, 0).empty());
   SDK_CHECK(test, sdk::detail::estimatorRootLink(CurrentEstimatorMessage{}, 0) == "torso_link");
   // The legacy positional initializer still starts with header and quaternion.
   const sdk::EstimatorData legacy_estimator{{}, {0.0, 0.0, 0.0, 1.0}};
   const sdk::BaseData legacy_base{{}, {0.0, 0.0, 0.0, 1.0}};
   SDK_CHECK(test, legacy_estimator.root_link.empty());
+  SDK_CHECK(test, legacy_estimator.hanging_level == 0);
   SDK_CHECK(test, legacy_base.root_link.empty());
   SDK_CHECK(test, legacy_estimator.quat_xyzw[3] == 1.0);
   SDK_CHECK(test, legacy_base.quat_xyzw[3] == 1.0);
@@ -283,6 +288,7 @@ void testEndpointAndGetterSemantics(testing::TestHarness &test) {
   estimator.rpy = {0.1, 0.2, 0.3};
   estimator.contact_force = {10.0, 20.0};
   estimator.stable_level = 8;
+  estimator.hanging_level = 37;
   session->injectEstimatorData(estimator);
   sdk::BaseData base;
   sdk::ContactData contacts;
@@ -292,6 +298,7 @@ void testEndpointAndGetterSemantics(testing::TestHarness &test) {
   sdk::EstimatorData estimator_output;
   SDK_CHECK(test, client.getEstimatorData(estimator_output).success());
   SDK_CHECK(test, estimator_output.root_link == "torso_link");
+  SDK_CHECK(test, estimator_output.hanging_level == 37);
   SDK_CHECK(test, base.rpy == estimator.rpy);
   SDK_CHECK(test, base.stable_level == 8);
   SDK_CHECK(test, client.getContactData(contacts).success());
