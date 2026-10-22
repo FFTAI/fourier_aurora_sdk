@@ -19,6 +19,7 @@ sdist.include = [
   "LICENSE",
   "README.md",
   "README_CN.md",
+  "AGENTS.md",
   "CHANGELOG",
   "REVISIONS.yaml",
   "docs/*.md",

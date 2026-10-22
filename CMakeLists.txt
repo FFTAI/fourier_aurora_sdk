@@ -186,6 +186,7 @@ if(NOT SKBUILD)
         LICENSE
         README.md
         README_CN.md
+        AGENTS.md
         CHANGELOG
         REVISIONS.yaml
         DESTINATION ${CMAKE_INSTALL_DOCDIR}

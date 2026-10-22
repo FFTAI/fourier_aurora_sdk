@@ -67,6 +67,7 @@ required_files=(
     "${doc_prefix}/LICENSE"
     "${doc_prefix}/README.md"
     "${doc_prefix}/README_CN.md"
+    "${doc_prefix}/AGENTS.md"
     "${doc_prefix}/CHANGELOG"
     "${doc_prefix}/REVISIONS.yaml"
     "${doc_prefix}/docs/overview.md"

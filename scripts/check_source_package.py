@@ -9,7 +9,7 @@ import tarfile
 
 REQUIRED = {
     "LICENSE", "VERSION", "REVISIONS.yaml", "README.md", "README_CN.md",
-    "CHANGELOG", "CMakeLists.txt", "pyproject.toml",
+    "AGENTS.md", "CHANGELOG", "CMakeLists.txt", "pyproject.toml",
     "include/fourier_aurora_sdk/aurora_client.hpp",
     "src/aurora_client.cpp", "src/internal/transport.hpp",
     "python/bindings/module.cpp", "python/fourier_aurora_client/__init__.py",

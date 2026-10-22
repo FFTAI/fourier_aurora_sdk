@@ -146,6 +146,7 @@ clear the work area, and test control changes at conservative limits.
 - [C++ API reference](docs/cpp_api.md)
 - [Python API reference](docs/python_api.md)
 - [Examples and diagnostic clients](docs/examples_and_clients.md)
+- [Developer and agent guide](AGENTS.md)
 - [中文文档入口](README_CN.md)
 
 ## License

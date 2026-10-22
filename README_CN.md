@@ -141,6 +141,7 @@ SDK 会自动续租有效租约。`replaceLease()` 会原子地申请一组新�
 - [C++ API 参考](docs/cpp_api_CN.md)
 - [Python API 参考](docs/python_api_CN.md)
 - [示例与诊断客户端](docs/examples_and_clients_CN.md)
+- [开发者与 Agent 上手指南](AGENTS.md)
 - [English documentation](README.md)
 
 ## 许可证
