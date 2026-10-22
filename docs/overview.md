@@ -46,8 +46,7 @@ and exceptions.
 | `scripts/` | Build, package, and verification entry points |
 | `packaging/`, `cmake/` | Debian and CMake package support |
 | `docs/` | Bilingual user documentation |
-| `docs/internal/` | Maintainer-only ADRs, contracts, and release records |
-| `VERSION`, `REVISIONS.yaml` | SDK version and compatible dependency revisions |
+| `VERSION`, `REVISIONS.yaml` | SDK version and compatible runtime package versions |
 
 ## Runtime design
 
@@ -107,8 +106,8 @@ short lease to expire and then retry within the caller's operation timeout.
 
 ## Dependencies
 
-The source build currently expects Linux and the exact staged dependencies in
-`REVISIONS.yaml`:
+The source build expects Linux and the runtime package versions in the
+[compatibility manifest](../REVISIONS.yaml):
 
 | Dependency | Current package requirement | Purpose |
 |---|---|---|
@@ -118,8 +117,23 @@ The source build currently expects Linux and the exact staged dependencies in
 | `fourier-dds-msgs` | `0.2.0-1` | Generated Aurora DDS messages |
 | FastDDS/FastCDR | supplied with the DDS packages | DDS runtime |
 | Python | Standard-GIL CPython 3.10–3.13 | Python client wheels |
-| pybind11 | 2.13.6 | Python native binding |
-| scikit-build-core, build | required for wheel builds | Python packaging |
+| pybind11 | 2.13.6 or newer | Python native binding |
+| scikit-build-core, build | scikit-build-core 0.9.10 or newer, and build | Python packaging |
+
+Obtain the matching `fourier_dds` and `fourier-dds-msgs` Debian packages from
+your SDK distributor. Use the same architecture as the SDK (`amd64` or
+`arm64`) and verify the distributor's `SHA256SUMS` before installation:
+
+```bash
+cd /path/to/runtime-debs
+sha256sum --check SHA256SUMS
+sudo apt install ./*.deb
+dpkg-query -W fourier_dds fourier-dds-msgs
+```
+
+The wheel does not bundle these native dependencies, and pip cannot install
+them. Packaging scripts require a prepared environment; they do not modify
+apt sources, install system packages, or download build tools.
 
 The dependency prefix must contain:
 
@@ -201,7 +215,7 @@ ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 ```
 
 The output is named
-`fourier-aurora-sdk_<version>[+g<commit>]_<arch>.deb`. Install it with the
+`fourier-aurora-sdk_<version>_<arch>.deb`. Install it with the
 matching DDS packages available:
 
 ```bash
@@ -215,7 +229,7 @@ The x86_64 script builds one interpreter-specific wheel. Select CPython 3.10,
 `scikit-build-core` in that interpreter's environment:
 
 ```bash
-python3 -m pip install build pybind11==2.13.6 scikit-build-core
+python3.10 -m pip install build 'pybind11>=2.13.6' 'scikit-build-core>=0.9.10'
 FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
 ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
@@ -224,6 +238,48 @@ PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
 The wheel contains the Python package, native binding, and private SDK shared
 library. It intentionally does not contain headers, examples, clients, or
 tests. The system still needs compatible DDS and message runtime libraries.
+
+### Build a package matrix
+
+Prepare each selected `python3.x` interpreter on `PATH`, including its development
+headers and the Python build requirements above. The default matrix uses Python
+3.10 through 3.13; select a subset when needed:
+
+```bash
+FOURIER_AURORA_SDK_PY_VERSIONS='3.10' \
+FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
+OUTPUT_DIR=/tmp/aurora-sdk-distribution \
+JOBS=4 bash scripts/build_packages.sh
+```
+
+Each invocation checks a source tarball, then copies it with its DEB and
+wheels into `OUTPUT_DIR` (default `dist/`). Builds use a new temporary directory. Existing output files are not
+deleted. Release builds omit commit identifiers by default; set
+`INCLUDE_COMMIT_HASH=ON` explicitly for a development build from a clean Git
+checkout.
+
+For arm64 cross builds, also set `ARCH=arm64`, `SYSROOT`,
+`CMAKE_TOOLCHAIN_FILE`, and `TARGET_PYTHON_VERSION`. The sysroot must contain
+arm64 DDS packages and matching Python headers; the host Python version must
+match the target Python version. Run runtime checks on an arm64 system.
+
+### Validate source and binary packages
+
+```bash
+python3 -m build --sdist --outdir /tmp/aurora-sdk-source
+python3 scripts/check_source_package.py \
+  /tmp/aurora-sdk-source/fourier_aurora_client-1.0.1.tar.gz
+bash scripts/check_version_consistency.sh
+bash scripts/check_wheel_package.sh /path/to/fourier_aurora_client-1.0.1-cp310-cp310-linux_x86_64.whl
+FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
+  bash scripts/check_deb_package.sh /path/to/fourier-aurora-sdk_1.0.1_amd64.deb
+```
+
+For native library and Python tests, install `pytest` and `pybind11`, then run
+`JOBS=4 bash scripts/test_debug.sh` or `scripts/test_release.sh`. These profiles
+use a mock transport. Run `scripts/test_dds_transport.sh` with
+`FOURIER_AURORA_SDK_DDS_PREFIX` set to test real DDS loopback. Tests are disabled
+in distribution packages.
 
 ## Use the build output
 

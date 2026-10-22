@@ -1,30 +1,11 @@
-revisions:
-  aurora:
-    branch: feature/aurora_config
-    commit: 64cbd264608a1dfd09d82c8cfa4aee99947af5f7
-  aurorapy:
-    branch: feature/aurora_config
-    commit: 1f011a00c3cf48a73a204cff420de5920019c7dd
-  fourierdds:
-    branch: feature/client-server-match-status
-    base_version: 1.2.0
-    commit: 1aec6d3307c3f64c1210b4d26d113fe0979c29c3
-    package: fourier_dds
-    package_version: 1.2.0-1
-    artifact: fourierdds-1.2.0-1aec6d33-amd64.deb
-    sha256: 8e340b3f008b65b308cd0c802fde294c1583f971e1953cc04f21e3dc3acb3b27
-  fourierddsmsgs:
-    branch: feature/aurora_config
-    commit: 18a24585984e04be401cf1acc0151d5b5e95b2cd
-    package: fourier-dds-msgs
-    package_version: 0.1.0-1
-    artifact: fourierddsmsgs-0.1.0-18a24585-0e930b.deb
-    sha256: b594b0d74a4d4962233e16a5d8004f843d8319712fb5c1c0927fb9c08e89bd00
+# Required package versions. Artifact checksums belong to the distribution's
+# SHA256SUMS file because amd64 and arm64 packages have different contents.
 compatibility:
   - aurora_sdk: 1.0.1
     fourierdds_package: fourier_dds
     fourierdds_package_version: 1.2.0-1
-    fourierdds_commit: 1aec6d3307c3f64c1210b4d26d113fe0979c29c3
     message_package: fourier-dds-msgs
-    message_package_version: 0.1.0-1
-    message_commit: 18a24585984e04be401cf1acc0151d5b5e95b2cd
+    message_package_version: 0.2.0-1
+    package_architectures: [amd64, arm64]
+    python: ">=3.10,<3.14"
+    native_dependencies_bundled_in_wheel: false

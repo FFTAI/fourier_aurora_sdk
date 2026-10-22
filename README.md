@@ -15,8 +15,11 @@ SDK-owned types; generated DDS messages stay behind the SDK boundary.
 - Build from source when developing the SDK or producing packages for a
   deployment. See the [SDK overview and build guide](docs/overview.md).
 
-The matching `fourier_dds` and `fourier-dds-msgs` runtime packages must be
-installed first. The supported revisions are recorded in `REVISIONS.yaml`.
+Install `fourier_dds 1.2.0-1` and `fourier-dds-msgs 0.2.0-1` for your
+architecture first. These native runtime libraries are required by both
+packages and are not bundled in the wheel. See the
+[dependency installation instructions](docs/overview.md#dependencies) and
+[compatibility manifest](REVISIONS.yaml).
 
 ## Python quick start: read robot state
 
@@ -33,6 +36,7 @@ from fourier_aurora_client import AuroraClient, Endpoint
 client = AuroraClient.get_instance()
 options = client.config()
 options.domain_id = 123
+options.source_name = "state-reader"
 options.enabled_endpoints = [Endpoint.AURORA_STATE_SUBSCRIBER]
 client.configure(options)
 
@@ -143,10 +147,6 @@ clear the work area, and test control changes at conservative limits.
 - [Python API reference](docs/python_api.md)
 - [Examples and diagnostic clients](docs/examples_and_clients.md)
 - [中文文档入口](README_CN.md)
-
-Design records, implementation contracts, test profiles, and release work are
-kept in the source tree under `docs/internal/`. They are maintainer material,
-not a supported application API and are not installed with binary packages.
 
 ## License
 

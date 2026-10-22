@@ -15,8 +15,10 @@ Fourier Aurora SDK 1.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、�
 - 开发 SDK 或为部署环境制作安装包时，从源码构建。详见
   [SDK 总览与构建指南](docs/overview_CN.md)。
 
-使用前必须先安装匹配的 `fourier_dds` 与 `fourier-dds-msgs` runtime 包；当前
-支持的精确版本记录在 `REVISIONS.yaml`。
+使用前必须先安装与你的架构匹配的 `fourier_dds 1.2.0-1` 和
+`fourier-dds-msgs 0.2.0-1`。两种 SDK 安装包都依赖这些原生运行库，wheel 不会
+捆绑它们。详见[依赖安装说明](docs/overview_CN.md#依赖)和
+[兼容性清单](REVISIONS.yaml)。
 
 ## Python 快速开始：读取机器人状态
 
@@ -32,6 +34,7 @@ from fourier_aurora_client import AuroraClient, Endpoint
 client = AuroraClient.get_instance()
 options = client.config()
 options.domain_id = 123
+options.source_name = "state-reader"
 options.enabled_endpoints = [Endpoint.AURORA_STATE_SUBSCRIBER]
 client.configure(options)
 
@@ -139,10 +142,6 @@ SDK 会自动续租有效租约。`replaceLease()` 会原子地申请一组新�
 - [Python API 参考](docs/python_api_CN.md)
 - [示例与诊断客户端](docs/examples_and_clients_CN.md)
 - [English documentation](README.md)
-
-设计记录、实现约定、测试 profile 和发布工作统一保存在源码树的
-`docs/internal/`，供维护者使用，不属于应用层受支持 API，也不会随二进制安装包
-安装。
 
 ## 许可证
 

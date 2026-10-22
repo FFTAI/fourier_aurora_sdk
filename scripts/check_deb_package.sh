@@ -68,6 +68,7 @@ required_files=(
     "${doc_prefix}/README.md"
     "${doc_prefix}/README_CN.md"
     "${doc_prefix}/CHANGELOG"
+    "${doc_prefix}/REVISIONS.yaml"
     "${doc_prefix}/docs/overview.md"
     "${doc_prefix}/docs/overview_CN.md"
     "${doc_prefix}/docs/cpp_api.md"
@@ -103,8 +104,8 @@ fi
 [[ -L "${sdk_prefix}/lib/libfourier_aurora_sdk.so.${soversion}" ]]
 cmp "${project_root}/LICENSE" "${doc_prefix}/LICENSE"
 
-if find "${sdk_prefix}" -type f -print | grep -Eq '(_fourier_aurora_sdk|mock_transport|/tests?/|__pycache__|\.pyc$)'; then
-    echo "Debian package contains Python or private test content." >&2
+if find "${extract_root}" -type f -print | grep -Eq '(_fourier_aurora_sdk|mock_transport|/tests?/|__pycache__|\.pyc$|/docs/internal/|/CONTEXT\.md$|/ci/)'; then
+    echo "Debian package contains Python, test, or private maintainer content." >&2
     exit 1
 fi
 if grep -ERq 'find_dependency\(fourier_dds|FOURIER_AURORA_SDK_TESTING|mock_transport' \

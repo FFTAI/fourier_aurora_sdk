@@ -20,7 +20,22 @@ sdist.include = [
   "README.md",
   "README_CN.md",
   "CHANGELOG",
+  "REVISIONS.yaml",
   "docs/*.md",
+]
+sdist.exclude = [
+  "docs/internal/**",
+  "CONTEXT.md",
+  "ci/**",
+  "fcb-output/**",
+  "dist/**",
+  "build*/**",
+  ".venv/**",
+  "**/__pycache__/**",
+  "**/*.deb",
+  "**/*.whl",
+  "**/*.so",
+  "**/*.so.*",
 ]
 
 [tool.scikit-build.metadata.version]

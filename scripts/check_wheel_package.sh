@@ -65,8 +65,12 @@ grep -Fq "Version: ${version}" "${dist_info}/METADATA"
 grep -Fq 'Requires-Python: <3.14,>=3.10' "${dist_info}/METADATA"
 grep -Fq "Tag: ${python_tag}-${abi_tag}-linux_${wheel_arch}" "${dist_info}/WHEEL"
 
-if find "${extract_root}" -type f -print | grep -Eq '(/examples?/|/tests?/|mock_transport|client_tools|/include/)'; then
-    echo "Wheel contains examples, tests, tools, or headers." >&2
+if find "${extract_root}" -type f -print | grep -Eq '(/examples?/|/tests?/|mock_transport|client_tools|/include/|/docs/internal/|/CONTEXT\.md$|/ci/)'; then
+    echo "Wheel contains examples, tests, tools, headers, or private maintainer content." >&2
+    exit 1
+fi
+if grep -Eq 'docs/internal/|CONTEXT\.md|https?://[^[:space:]]*\.fftaicorp\.com' "${dist_info}/METADATA"; then
+    echo "Wheel metadata contains private maintainer references." >&2
     exit 1
 fi
 while IFS= read -r entry; do

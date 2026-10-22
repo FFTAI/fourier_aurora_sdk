@@ -2,11 +2,10 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-dist_dir="${repo_root}/dist"
+dist_dir="${OUTPUT_DIR:-${repo_root}/dist}"
 jobs="${JOBS:-8}"
 arch="${ARCH:-amd64}"
 python_versions="${FOURIER_AURORA_SDK_PY_VERSIONS:-3.10 3.11 3.12 3.13}"
-python_apt_repo="${FOURIER_AURORA_SDK_PYTHON_APT_REPO:-http://nexus.fftaicorp.com/repository/deadsnakes-ppa-ubuntu-jammy}"
 
 case "${arch}" in
     amd64|x86_64) arch=amd64; wheel_arch=x86_64 ;;
@@ -31,22 +30,13 @@ wheel_script="${repo_root}/scripts/build_wheel_${arch/amd64/x86_64}.sh"
     echo "SDK package scripts are missing" >&2; exit 2;
 }
 
-dependency_check='
-from importlib.metadata import version
-expected = {
-    "build": "1.4.0",
-    "cmake": "3.22.1",
-    "pybind11": "3.0.4",
-    "scikit-build-core": "1.0.3",
-}
-assert all(version(name) == wanted for name, wanted in expected.items())
-'
-
-install_python_matrix() {
-    local version package apt_source
-    local -a missing=()
-    declare -A wanted=()
-
+check_python_matrix() {
+    local version
+    [[ -n "${python_versions//[[:space:]]/}" ]] || {
+        echo "Select at least one Python version with FOURIER_AURORA_SDK_PY_VERSIONS." >&2
+        exit 2
+    }
+    declare -A seen=()
     for version in ${python_versions}; do
         case "${version}" in
             3.10|3.11|3.12|3.13) ;;
@@ -55,83 +45,63 @@ install_python_matrix() {
                 exit 2
                 ;;
         esac
-        command -v "python${version}" >/dev/null 2>&1 || wanted["python${version}"]=1
-        [[ -f "/usr/include/python${version}/Python.h" ]] || wanted["python${version}-dev"]=1
-        dpkg-query -W -f='${Status}' "python${version}-venv" 2>/dev/null | \
-            grep -q 'install ok installed' || wanted["python${version}-venv"]=1
-    done
-    for package in "${!wanted[@]}"; do
-        missing+=("${package}")
-    done
-    if [[ "${#missing[@]}" -gt 0 ]]; then
-        export DEBIAN_FRONTEND=noninteractive
-        apt_source=/etc/apt/sources.list.d/fourier-aurora-sdk-python-matrix.list
-        printf 'deb [trusted=yes arch=%s] %s jammy main\n' \
-            "$(dpkg --print-architecture)" "${python_apt_repo}" >"${apt_source}"
-        apt-get update \
-            -o "Dir::Etc::sourcelist=${apt_source}" \
-            -o Dir::Etc::sourceparts=- \
-            -o APT::Get::List-Cleanup=0
-        apt-get install -y --no-install-recommends "${missing[@]}"
-    fi
-    for version in ${python_versions}; do
+        [[ -z "${seen[${version}]:-}" ]] || {
+            echo "Duplicate Python version: ${version}" >&2
+            exit 2
+        }
+        seen["${version}"]=1
         command -v "python${version}" >/dev/null 2>&1 || {
-            echo "python${version} installation failed" >&2
-            exit 1
+            echo "Prepare python${version} on PATH before building packages." >&2
+            exit 2
         }
-        [[ -f "/usr/include/python${version}/Python.h" ]] || {
-            echo "python${version} development headers are missing" >&2
-            exit 1
+        "python${version}" -c 'import build, pybind11, scikit_build_core' || {
+            echo "Install build, pybind11>=2.13.6 and scikit-build-core>=0.9.10 in python${version} first." >&2
+            exit 2
         }
+        if [[ "${arch}" == amd64 ]]; then
+            "python${version}" -c 'import pathlib, sysconfig; assert (pathlib.Path(sysconfig.get_path("include")) / "Python.h").is_file(), "Python development headers are missing"'
+        fi
     done
 }
 
-if [[ "${arch}" == amd64 ]]; then
-    install_python_matrix
-else
-    # The cross image supplies host Python and the matching target development SDK.
-    command -v "python${TARGET_PYTHON_VERSION}" >/dev/null
+check_python_matrix
+if [[ "${arch}" == arm64 ]]; then
     [[ -f "${SYSROOT}/usr/include/python${TARGET_PYTHON_VERSION}/Python.h" ]]
 fi
 
-work_root="${FOURIER_AURORA_SDK_CI_ROOT:-/tmp/fourier-aurora-sdk-ci}"
+mkdir -p "${BUILD_ROOT:-/tmp}"
+work_root="$(mktemp -d "${BUILD_ROOT:-/tmp}/fourier-aurora-sdk-packages.XXXXXX")"
 build_root="${work_root}/build"
 artifact_root="${work_root}/artifacts"
-rm -rf "${work_root}" "${dist_dir}"
 mkdir -p "${build_root}" "${artifact_root}/deb" "${artifact_root}/wheel" "${dist_dir}"
 
-# FCB may pass a sysroot symlink. Match the toolchain's canonical root so CMake
+# Match the toolchain's canonical sysroot so CMake
 # does not prepend that root again to an already staged dependency path.
 dds_prefix="$(realpath -e "${FOURIER_AURORA_SDK_DDS_PREFIX:-${SYSROOT:-}/opt/fftai}")"
+
+version="$(tr -d '[:space:]' < "${repo_root}/VERSION")"
+for python_version in ${python_versions}; do
+    "python${python_version}" -m build "${repo_root}" --sdist --no-isolation \
+        --outdir "${artifact_root}/source"
+    source_package="${artifact_root}/source/fourier_aurora_client-${version}.tar.gz"
+    "python${python_version}" "${repo_root}/scripts/check_source_package.py" "${source_package}"
+    break
+done
 
 common_env=(
     "ARTIFACT_ROOT=${artifact_root}/deb"
     "BUILD_ROOT=${build_root}"
-    "FOURIER_AURORA_SDK_COMMIT=${MODULE_HASH:-}"
+    "FOURIER_AURORA_SDK_COMMIT=${FOURIER_AURORA_SDK_COMMIT:-}"
     "FOURIER_AURORA_SDK_DDS_PREFIX=${dds_prefix}"
-    "INCLUDE_COMMIT_HASH=${INCLUDE_COMMIT_HASH:-ON}"
+    "INCLUDE_COMMIT_HASH=${INCLUDE_COMMIT_HASH:-OFF}"
     "JOBS=${jobs}"
 )
 env "${common_env[@]}" "${repo_root}/scripts/build_deb.sh"
 
 common_env[0]="ARTIFACT_ROOT=${artifact_root}/wheel"
 for python_version in ${python_versions}; do
-    python_tag="cp${python_version/./}"
-    venv_dir="${work_root}/venvs/${python_tag}"
-    "python${python_version}" -m venv "${venv_dir}"
-    "${venv_dir}/bin/python" -m pip install \
-        --disable-pip-version-check \
-        --no-compile \
-        --retries "${FOURIER_AURORA_SDK_PIP_RETRIES:-2}" \
-        --timeout "${FOURIER_AURORA_SDK_PIP_TIMEOUT:-120}" \
-        --upgrade \
-        "build==1.4.0" \
-        "cmake==3.22.1" \
-        "pybind11==3.0.4" \
-        "scikit-build-core==1.0.3"
-    "${venv_dir}/bin/python" -c "${dependency_check}"
     env "${common_env[@]}" \
-        "PYTHON_BIN=${venv_dir}/bin/python" \
+        "PYTHON_BIN=$(command -v "python${python_version}")" \
         "${wheel_script}"
 done
 
@@ -157,7 +127,8 @@ if [[ "${#debs[@]}" -ne 1 || "${#wheels[@]}" -ne "${expected_wheel_count}" ]]; t
     exit 1
 fi
 
-cp "${debs[0]}" "${wheels[@]}" "${dist_dir}/"
+cp "${source_package}" "${debs[0]}" "${wheels[@]}" "${dist_dir}/"
+echo "Built ${dist_dir}/$(basename "${source_package}")"
 echo "Built ${dist_dir}/$(basename "${debs[0]}")"
 for wheel in "${wheels[@]}"; do
     echo "Built ${dist_dir}/$(basename "${wheel}")"

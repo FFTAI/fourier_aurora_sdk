@@ -44,7 +44,6 @@ flowchart LR
 | `scripts/` | 构建、打包与验证入口 |
 | `packaging/`、`cmake/` | Debian 与 CMake package 支持 |
 | `docs/` | 中英文用户文档 |
-| `docs/internal/` | 仅供维护者使用的 ADR、contract 与发布记录 |
 | `VERSION`、`REVISIONS.yaml` | SDK 版本和兼容依赖版本 |
 
 ## 运行时设计
@@ -97,7 +96,7 @@ SDK 也应将该选项设置为空字符串。
 
 ## 依赖
 
-源码构建当前面向 Linux，并要求使用 `REVISIONS.yaml` 中记录的精确依赖：
+源码构建面向 Linux，并要求使用[兼容性清单](../REVISIONS.yaml)中的运行库版本：
 
 | 依赖 | 当前 package 要求 | 用途 |
 |---|---|---|
@@ -107,8 +106,22 @@ SDK 也应将该选项设置为空字符串。
 | `fourier-dds-msgs` | `0.2.0-1` | Aurora DDS 生成消息 |
 | FastDDS/FastCDR | 随 DDS 包提供 | DDS runtime |
 | Python | standard-GIL CPython 3.10–3.13 | Python client wheel |
-| pybind11 | 2.13.6 | Python 原生绑定 |
-| scikit-build-core、build | 构建 wheel 时需要 | Python 打包 |
+| pybind11 | 2.13.6 或更新 | Python 原生绑定 |
+| scikit-build-core、build | scikit-build-core 0.9.10 或更新，以及 build | Python 打包 |
+
+从 SDK 分发方获取匹配的 `fourier_dds` 和 `fourier-dds-msgs` Debian 包。架构
+必须与 SDK 一致（`amd64` 或 `arm64`），安装前使用分发方提供的 `SHA256SUMS`
+核对文件：
+
+```bash
+cd /path/to/runtime-debs
+sha256sum --check SHA256SUMS
+sudo apt install ./*.deb
+dpkg-query -W fourier_dds fourier-dds-msgs
+```
+
+Wheel 不捆绑这些原生依赖，pip 也不会安装它们。打包脚本要求环境已准备好，
+不会修改 apt 源、安装系统包或下载构建工具。
 
 依赖前缀中必须包含：
 
@@ -185,7 +198,7 @@ ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 ./scripts/build_deb.sh
 ```
 
-输出文件名为 `fourier-aurora-sdk_<version>[+g<commit>]_<arch>.deb`。确保系统能
+输出文件名为 `fourier-aurora-sdk_<version>_<arch>.deb`。确保系统能
 获得匹配的 DDS package，再安装：
 
 ```bash
@@ -199,7 +212,7 @@ x86_64 脚本每次构建一个解释器专用 wheel。通过 `PYTHON_BIN` 选�
 `scikit-build-core`：
 
 ```bash
-python3 -m pip install build pybind11==2.13.6 scikit-build-core
+python3.10 -m pip install build 'pybind11>=2.13.6' 'scikit-build-core>=0.9.10'
 FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
 ARTIFACT_ROOT=/tmp/aurora-sdk-artifacts \
 PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
@@ -207,6 +220,44 @@ PYTHON_BIN=python3.10 ./scripts/build_wheel_x86_64.sh
 
 Wheel 包含 Python package、原生 binding 和私有 SDK 动态库，不包含头文件、
 示例、客户端或测试。系统仍需提供兼容的 DDS 与消息 runtime 库。
+
+### 批量构建安装包
+
+在 `PATH` 中准备好选定的 `python3.x` 解释器、各自的开发头文件和上述 Python
+构建依赖。默认构建 Python 3.10–3.13，也可以指定子集：
+
+```bash
+FOURIER_AURORA_SDK_PY_VERSIONS='3.10' \
+FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
+OUTPUT_DIR=/tmp/aurora-sdk-distribution \
+JOBS=4 bash scripts/build_packages.sh
+```
+
+每次构建使用新的临时目录，检查源码包，并将源码包、DEB 和 wheel 复制到 `OUTPUT_DIR`（默认
+`dist/`），不删除已有输出文件。默认生成不含提交号的发布包名；开发构建可从
+干净的 Git checkout 显式设置 `INCLUDE_COMMIT_HASH=ON`。
+
+交叉编译 arm64 时还需设置 `ARCH=arm64`、`SYSROOT`、
+`CMAKE_TOOLCHAIN_FILE` 和 `TARGET_PYTHON_VERSION`。Sysroot 必须包含 arm64
+DDS 包和匹配的 Python 头文件；宿主 Python 版本必须与目标 Python 版本一致。
+运行时验证应在 arm64 系统上执行。
+
+### 验证源码包和安装包
+
+```bash
+python3 -m build --sdist --outdir /tmp/aurora-sdk-source
+python3 scripts/check_source_package.py \
+  /tmp/aurora-sdk-source/fourier_aurora_client-1.0.1.tar.gz
+bash scripts/check_version_consistency.sh
+bash scripts/check_wheel_package.sh /path/to/fourier_aurora_client-1.0.1-cp310-cp310-linux_x86_64.whl
+FOURIER_AURORA_SDK_DDS_PREFIX=/opt/fftai \
+  bash scripts/check_deb_package.sh /path/to/fourier-aurora-sdk_1.0.1_amd64.deb
+```
+
+原生库和 Python 测试需要 `pytest` 与 `pybind11`，运行
+`JOBS=4 bash scripts/test_debug.sh` 或 `scripts/test_release.sh` 即可。这两个
+profile 使用 mock transport。设置 `FOURIER_AURORA_SDK_DDS_PREFIX` 后运行
+`scripts/test_dds_transport.sh` 可以验证真实 DDS loopback。交付包默认关闭测试。
 
 ## 使用构建结果
 

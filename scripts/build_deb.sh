@@ -2,7 +2,7 @@
 set -euo pipefail
 
 project_root="$(cd "$(dirname "$0")/.." && pwd)"
-include_commit="${INCLUDE_COMMIT_HASH:-ON}"
+include_commit="${INCLUDE_COMMIT_HASH:-OFF}"
 dds_prefix="${FOURIER_AURORA_SDK_DDS_PREFIX:-}"
 
 require_external_root() {

@@ -187,6 +187,7 @@ if(NOT SKBUILD)
         README.md
         README_CN.md
         CHANGELOG
+        REVISIONS.yaml
         DESTINATION ${CMAKE_INSTALL_DOCDIR}
     )
     install(FILES
