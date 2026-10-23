@@ -1,5 +1,7 @@
 # 示例与诊断客户端
 
+GR3-Mini 用户从[主板环境检查与 Python/C++ 用例](../examples/gr3mini/README_CN.md)开始。Python 示例包含读取、行走和头部控制；C++ 示例提供只读对照。
+
 [English](examples_and_clients.md) · [快速开始](../README_CN.md) ·
 [总览](overview_CN.md) · [C++ API](cpp_api_CN.md) ·
 [Python API](python_api_CN.md)

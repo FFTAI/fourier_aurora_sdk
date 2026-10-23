@@ -1,5 +1,7 @@
 # Fourier Aurora SDK
 
+GR3-Mini 主板开发请参阅[环境检查与 Python/C++ 用例](examples/gr3mini/README_CN.md)。
+
 [English](README.md)
 
 Fourier Aurora SDK 1.0.1 是通过 FourierDDS 读取 Aurora 机器人状态、发送控制

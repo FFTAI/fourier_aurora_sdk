@@ -225,7 +225,7 @@ if(NOT SKBUILD)
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/fourier_aurora_sdk
     )
     if(FOURIER_AURORA_SDK_BUILD_EXAMPLES)
-        install(DIRECTORY examples/gr3
+        install(DIRECTORY examples/gr3 examples/gr3mini
             DESTINATION ${CMAKE_INSTALL_DOCDIR}/examples
         )
     endif()
@@ -505,6 +505,8 @@ if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND
 endif()
 
 if(FOURIER_AURORA_SDK_ENABLE_DDS_TRANSPORT AND FOURIER_AURORA_SDK_BUILD_EXAMPLES)
+    add_executable(gr3mini_read_state examples/gr3mini/cpp/read_state.cpp)
+    target_link_libraries(gr3mini_read_state PRIVATE fourier_aurora_sdk)
     foreach(recipe_name get_info walk_forward swing_arms aurora_state_callback)
         add_executable(
             gr3_${recipe_name}

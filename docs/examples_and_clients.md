@@ -1,5 +1,7 @@
 # Examples and Diagnostic Clients
 
+For GR3-Mini, start with the [onboard environment guide and Python/C++ examples](../examples/gr3mini/README.md). The Python example covers state reading, walking, and head control; the C++ example is read-only.
+
 [中文](examples_and_clients_CN.md) · [Quick start](../README.md) ·
 [Overview](overview.md) · [C++ API](cpp_api.md) · [Python API](python_api.md)
 

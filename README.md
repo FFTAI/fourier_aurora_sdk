@@ -2,6 +2,8 @@
 
 [中文](README_CN.md)
 
+For GR3-Mini onboard development, see the [environment checks and Python/C++ examples](examples/gr3mini/README.md).
+
 Fourier Aurora SDK 1.0.1 is the C++17 and Python client library for reading
 Aurora robot state and sending commands over FourierDDS. Applications use
 SDK-owned types; generated DDS messages stay behind the SDK boundary.
